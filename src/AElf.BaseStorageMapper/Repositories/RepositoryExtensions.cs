@@ -1,6 +1,6 @@
 namespace AElf.BaseStorageMapper.Repositories;
 
-public class RepositoryExtensions
+public static class RepositoryExtensions
 {
     
 }
