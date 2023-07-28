@@ -3,6 +3,7 @@ using AElf.BaseStorageMapper.Elasticsearch.Exceptions;
 using AElf.BaseStorageMapper.Elasticsearch.Linq;
 using Microsoft.Extensions.Options;
 using Nest;
+using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Repositories;
@@ -22,19 +23,29 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         _elasticsearchOptions = options.Value;
     }
 
-    public Task<TEntity> GetAsync(TKey id, string collection = null, CancellationToken cancellationToken = default)
+    public async Task<TEntity> GetAsync(TKey id, string collection = null, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        // TODO: Get index by id
+        var indexName = GetCollectionName(collection);
+        var client = await GetElasticsearchClientAsync(cancellationToken);
+        var selector = new Func<GetDescriptor<TEntity>, IGetRequest>(s => s
+            .Index(indexName));
+        var result =
+            await client.GetAsync(new Nest.DocumentPath<TEntity>(new Id(new {id = id.ToString()})),
+                selector, cancellationToken);
+        return result.Found ? result.Source : null;
     }
 
-    public Task<List<TEntity>> GetListAsync(string collection = null, CancellationToken cancellationToken = default)
+    public async Task<List<TEntity>> GetListAsync(string collection = null, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var queryable = await GetElasticsearchQueryableAsync(collection, cancellationToken);
+        return queryable.ToList();
     }
 
-    public Task<long> GetCountAsync(string collection = null, CancellationToken cancellationToken = default)
+    public async Task<long> GetCountAsync(string collection = null, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var queryable = await GetElasticsearchQueryableAsync(collection, cancellationToken);
+        return queryable.Count();
     }
 
     public async Task<IQueryable<TEntity>> GetQueryableAsync(string collection = null,
@@ -43,16 +54,18 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         return await GetElasticsearchQueryableAsync(collection, cancellationToken);
     }
 
-    public Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate, string collection = null,
+    public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate, string collection = null,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var queryable = await GetElasticsearchQueryableAsync(collection, cancellationToken);
+        return queryable.Where(predicate).ToList();
     }
 
-    public Task<long> GetCountAsync(Expression<Func<TEntity, bool>> predicate, string collection = null,
+    public async Task<long> GetCountAsync(Expression<Func<TEntity, bool>> predicate, string collection = null,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var queryable = await GetElasticsearchQueryableAsync(collection, cancellationToken);
+        return queryable.Where(predicate).Count();
     }
 
     public async Task AddAsync(TEntity model, string collection = null, CancellationToken cancellationToken = default)
