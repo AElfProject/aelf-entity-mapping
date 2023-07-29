@@ -1,0 +1,6 @@
+namespace AElf.BaseStorageMapper.Elasticsearch.Services;
+
+public interface IElasticIndexService
+{
+    Task CreateIndexAsync(string indexName, Type type, int shard = 1, int numberOfReplicas = 1);
+}
