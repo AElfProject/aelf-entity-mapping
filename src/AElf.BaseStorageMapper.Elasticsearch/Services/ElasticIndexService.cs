@@ -1,6 +1,10 @@
+using System.Reflection;
 using AElf.BaseStorageMapper.Elasticsearch.Exceptions;
+using AElf.BaseStorageMapper.Sharding;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Nest;
+using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Services;
@@ -9,11 +13,14 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
 {
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ElasticIndexService> _logger;
+    private readonly IDistributedCache<List<IndexMarkField>> _indexMarkFieldCache;
+    private readonly string _indexMarkFieldCachePrefix = "MarkField_";
 
-    public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider, ILogger<ElasticIndexService> logger)
+    public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider, ILogger<ElasticIndexService> logger,IDistributedCache<List<IndexMarkField>> indexMarkFieldCache)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
+        _indexMarkFieldCache = indexMarkFieldCache;
     }
 
     public Task<IElasticClient> GetElasticsearchClientAsync()
@@ -87,5 +94,43 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         {
             _logger.LogInformation("Index template created successfully");
         }
+    }
+
+    public async Task InitializeIndexMarkedFieldAsync(Type type)
+    {
+        var indexMarkFieldList = new List<IndexMarkField>();
+        var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        foreach (var property in properties)
+        {
+            var indexMarkField = new IndexMarkField
+            {
+                FieldName = property.Name,
+                IndexEntityName = type.Name,
+            };
+            
+            //Find the field with the ShardPropertyAttributes annotation set
+            ShardPropertyAttributes shardAttribute = (ShardPropertyAttributes)Attribute.GetCustomAttribute(property, typeof(ShardPropertyAttributes));
+            if (shardAttribute != null)
+            {
+                indexMarkField.IsShardKey = true;
+            }
+
+            //Find the field with the ShardRoutePropertyAttributes annotation set
+            NeedShardRouteAttribute shardRouteAttribute = (NeedShardRouteAttribute)Attribute.GetCustomAttribute(property, typeof(NeedShardRouteAttribute));
+            if (shardRouteAttribute != null)
+            {
+                indexMarkField.IsRouteKey = true;
+            }
+            
+            indexMarkFieldList.Add(indexMarkField);
+        }
+
+        var cacheName = await GetIndexMarkFieldNameAsync(type);
+        _indexMarkFieldCache.Set(cacheName, indexMarkFieldList);
+    }
+
+    public Task<string> GetIndexMarkFieldNameAsync(Type type)
+    {
+        return Task.FromResult(_indexMarkFieldCachePrefix + type.Name);
     }
 }

@@ -48,6 +48,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
             await _elasticIndexService.CreateIndexTemplateAsync(indexTemplateName, t,
                 _indexSettingOptions.NumberOfShards,
                 _indexSettingOptions.NumberOfReplicas);
+            await _elasticIndexService.InitializeIndexMarkedFieldAsync(t);
         }
     }
 
