@@ -21,7 +21,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
         _indexSettingOptions = indexSettingOptions.Value;
     }
     
-    public void EnsureIndexesCreateAsync()
+    public void EnsureIndexesCreate()
     {
         AsyncHelper.RunSync(async () =>
         {
@@ -42,6 +42,12 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
                 : $"{_indexSettingOptions.IndexPrefix.ToLower()}.{t.Name.ToLower()}";
             await _elasticIndexService.CreateIndexAsync(indexName, t, _indexSettingOptions.NumberOfShards,
                 _indexSettingOptions.NumberOfReplicas);
+
+            //TODO: if shard index, create index Template
+            var indexTemplateName = indexName;
+            await _elasticIndexService.CreateIndexTemplateAsync(indexTemplateName, t,
+                _indexSettingOptions.NumberOfShards,
+                _indexSettingOptions.NumberOfReplicas);
         }
     }
 
@@ -53,4 +59,6 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
                            !type.IsAbstract && type.IsClass && compareType != type)
             .Cast<Type>().ToList();
     }
+
+
 }

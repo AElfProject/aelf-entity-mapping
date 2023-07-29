@@ -26,6 +26,6 @@ public class AElfBaseStorageMapperElasticsearchModule : AbpModule
     public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
     {
         var ensureIndexBuildService = context.ServiceProvider.GetService<IEnsureIndexBuildService>();
-        ensureIndexBuildService?.EnsureIndexesCreateAsync();
+        ensureIndexBuildService?.EnsureIndexesCreate();
     }
 }

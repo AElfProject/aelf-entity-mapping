@@ -1,10 +1,11 @@
 using AElf.BaseStorageMapper.Elasticsearch.Exceptions;
 using Microsoft.Extensions.Logging;
 using Nest;
+using Volo.Abp.DependencyInjection;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Services;
 
-public class ElasticIndexService
+public class ElasticIndexService: IElasticIndexService, ITransientDependency
 {
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ElasticIndexService> _logger;
@@ -49,5 +50,42 @@ public class ElasticIndexService
             throw new ElasticsearchException($"Create Index {indexName} failed : :" +
                                              result.ServerError.Error.Reason);
         //await client.Indices.PutAliasAsync(newName, indexName);
+    }
+
+    public async Task CreateIndexTemplateAsync(string indexTemplateName, Type type, int numberOfShards = 1,
+        int numberOfReplicas = 1)
+    {
+        var elasticClient = await GetElasticsearchClientAsync();
+
+        // Add an index template to Elasticsearch
+        var putIndexTemplateResponse = elasticClient.Indices.PutTemplate(indexTemplateName, p => p
+            .IndexPatterns(indexTemplateName + "*")
+            .Mappings(m => m
+                .Map(t => t.AutoMap(type))
+            )
+            .Settings(s => s
+                    .NumberOfShards(numberOfShards)
+                    .NumberOfReplicas(numberOfReplicas)
+                // .Analysis(a => a
+                //     .Analyzers(an => an
+                //         .Custom("my_custom_analyzer", ca => ca
+                //             .Tokenizer("standard")
+                //             .Filters("lowercase", "stop")
+                //         )
+                //     )
+                // )
+            )
+        );
+
+        // Check the creation status of the index template
+        if (!putIndexTemplateResponse.IsValid)
+        {
+            var errorMessage = putIndexTemplateResponse.OriginalException.Message;
+            _logger.LogError($"Failed to create index template: {errorMessage}");
+        }
+        else
+        {
+            _logger.LogInformation("Index template created successfully");
+        }
     }
 }
