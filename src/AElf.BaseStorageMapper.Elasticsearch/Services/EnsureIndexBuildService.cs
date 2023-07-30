@@ -37,18 +37,20 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
         var types = GetTypesAssignableFrom<IIndexBuild>(moduleType.Assembly);
         foreach (var t in types)
         {
-            var indexName = _indexSettingOptions.IndexPrefix.IsNullOrWhiteSpace()
-                ? t.Name.ToLower()
-                : $"{_indexSettingOptions.IndexPrefix.ToLower()}.{t.Name.ToLower()}";
+            var indexName = await _elasticIndexService.GetDefaultIndexNameAsync(t);
             await _elasticIndexService.CreateIndexAsync(indexName, t, _indexSettingOptions.NumberOfShards,
                 _indexSettingOptions.NumberOfReplicas);
 
             //TODO: if shard index, create index Template
-            var indexTemplateName = indexName;
-            await _elasticIndexService.CreateIndexTemplateAsync(indexTemplateName, t,
+            var indexTemplateName = "." + indexName + "-template";
+            await _elasticIndexService.CreateIndexTemplateAsync(indexTemplateName,indexName, t,
                 _indexSettingOptions.NumberOfShards,
                 _indexSettingOptions.NumberOfReplicas);
+            //create index marked field cache
             await _elasticIndexService.InitializeIndexMarkedFieldAsync(t);
+            //create non shard key route index
+            await _elasticIndexService.CreateNonShardKeyRouteIndexAsync(t, _indexSettingOptions.NumberOfShards,
+                _indexSettingOptions.NumberOfReplicas);
         }
     }
 
