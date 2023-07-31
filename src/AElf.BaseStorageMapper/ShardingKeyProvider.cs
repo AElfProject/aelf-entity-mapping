@@ -91,7 +91,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         List<ShardProviderEntity<TEntity>> sahrdEntitys = GetShardingKeyByEntity(typeof(TEntity));
         if (sahrdEntitys is null || sahrdEntitys.Count == 0)
         {
-            return indexName;
+            return indexName.ToLower();
         }
         
         string groupNo = "";
@@ -115,7 +115,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 }
             }
         }
-        return indexName;
+        return indexName.ToLower();
     }
 
     public bool IsShardingCollection()
@@ -135,7 +135,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
         if (entitys is null || entitys.Count == 0)
         {
-            return indexName;
+            return indexName.ToLower();
         }
         
         string groupNo = "";
@@ -160,7 +160,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             }
         }
 
-        return indexName;
+        return indexName.ToLower();
     }
 
     
