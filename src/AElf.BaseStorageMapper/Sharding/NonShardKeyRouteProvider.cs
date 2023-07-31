@@ -1,6 +1,6 @@
 namespace AElf.BaseStorageMapper.Sharding;
 
-public class NonShardKeyRouteProvider
+public class NonShardKeyRouteProvider<TEntity> where TEntity : class
 {
     
 }

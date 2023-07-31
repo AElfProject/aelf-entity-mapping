@@ -16,15 +16,17 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     private readonly ElasticsearchOptions _elasticsearchOptions;
     private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
+    private readonly INonShardKeyRouteProvider<TEntity> _nonShardKeyRouteProvider;
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
         IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider,
-        IShardingKeyProvider<TEntity> shardingKeyProvider)
+        IShardingKeyProvider<TEntity> shardingKeyProvider,INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _collectionNameProvider = collectionNameProvider;
         _elasticsearchOptions = options.Value;
         _shardingKeyProvider = shardingKeyProvider;
+        _nonShardKeyRouteProvider = nonShardKeyRouteProvider;
     }
 
     public async Task<TEntity> GetAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default)
@@ -77,6 +79,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var result = await client.IndexAsync(model, ss => ss.Index(indexName).Refresh(_elasticsearchOptions.Refresh),
             cancellationToken);
+        
+        //TODO: if shard collection, need to save non shard key to route collection 
+        
+        
         if (result.IsValid)
             return;
         throw new ElasticsearchException(

@@ -1,6 +1,6 @@
 namespace AElf.BaseStorageMapper.Sharding;
 
-public interface INonShardKeyRouteProvider
+public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
 {
     /// <summary>
     /// 
