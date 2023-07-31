@@ -23,4 +23,6 @@ public class ShardKey
     public string Value { get; set; }
     public string Step { get; set; }
     public int StepType { get; set; }
+    
+    public string GroupNo { get; set; }
 }

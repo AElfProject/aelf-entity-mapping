@@ -84,6 +84,7 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
         Assert.True(propertyFuncs[2].SharKeyName == "BlockHeight");
         Assert.True(propertyFuncs[3].SharKeyName == "BlockHeight");
     }
+    
     [Fact]
     public void IsShardingCollectionTest()
     {
@@ -131,9 +132,8 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
         Dictionary<string, object> conditions2 = new Dictionary<string, object>();
         conditions2.Add("ChainId", "tDVV");
         conditions2.Add("BlockHeight",100000);
-        var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionNameForRead(conditions);
+        var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionNameForRead(conditions2);
         Assert.True(blockIndexNameSide == "AElfIndexer.BlockIndex-tDVV-"+100000/1000);
-        
     }
     
     [Fact]

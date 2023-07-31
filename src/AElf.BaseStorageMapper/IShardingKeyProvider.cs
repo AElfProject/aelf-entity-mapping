@@ -5,7 +5,7 @@ namespace AElf.BaseStorageMapper;
 
 public interface IShardingKeyProvider<TEntity> where TEntity : class
 {
-    public void SetShardingKey(string keyName, string step,int order, string value, Expression body, ReadOnlyCollection<ParameterExpression> parameterExpressions);
+    public void SetShardingKey(string keyName, string step,int order, string value, string groupNo, Expression body, ReadOnlyCollection<ParameterExpression> parameterExpressions);
 
     public ShardProviderEntity<TEntity> GetShardingKeyByEntityAndFieldName(TEntity entity, string fieldName);
 

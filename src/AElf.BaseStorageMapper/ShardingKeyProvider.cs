@@ -36,7 +36,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return false;
     }
 
-    public void SetShardingKey(string keyName, string step, int order, string value, Expression body, ReadOnlyCollection<ParameterExpression> parameterExpressions)
+    public void SetShardingKey(string keyName, string step, int order, string value, string groupNo, Expression body, ReadOnlyCollection<ParameterExpression> parameterExpressions)
     {
         var expression = Expression.Lambda<Func<TEntity, object>>(
             Expression.Convert(body, typeof(object)), parameterExpressions);
@@ -44,10 +44,10 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         if (_getPropertyFunc is null)
         {
             _getPropertyFunc = new List<ShardProviderEntity<TEntity>>();
-            _getPropertyFunc.Add(new ShardProviderEntity<TEntity>(keyName, step.ToString(), order, value, func));
+            _getPropertyFunc.Add(new ShardProviderEntity<TEntity>(keyName, step.ToString(), order, value, groupNo, func));
         }else
         {
-            _getPropertyFunc.Add(new ShardProviderEntity<TEntity>(keyName,step.ToString(), order, value, func));
+            _getPropertyFunc.Add(new ShardProviderEntity<TEntity>(keyName,step.ToString(), order, value, groupNo, func));
         }
     }
     
@@ -167,7 +167,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         }*/
 
         //filter
-        
+        string groupNo = ""; 
         
         
         
@@ -175,11 +175,20 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         {
             if (entity.Step == "")
             {
-                indexName = indexName + "-" + conditions[entity.SharKeyName] ?? throw new InvalidOleVariantTypeException();
+                if((groupNo == "" || entity.GroupNo == groupNo) && conditions[entity.SharKeyName] == entity.Value){ 
+                    indexName = indexName + "-" + conditions[entity.SharKeyName] ?? throw new InvalidOleVariantTypeException();
+                    groupNo = groupNo == "" ? entity.GroupNo : groupNo;
+                }
             }
             else
             {
-                indexName = indexName + "-" + (int.Parse(conditions[entity.SharKeyName].ToString() ?? throw new InvalidOperationException()) / int.Parse(entity.Step));
+                if (groupNo == "" || entity.GroupNo == groupNo)
+                {
+                    indexName = indexName + "-" +
+                                (int.Parse(conditions[entity.SharKeyName].ToString() ??
+                                           throw new InvalidOperationException()) / int.Parse(entity.Step));
+                    groupNo = groupNo == "" ? entity.GroupNo : groupNo;
+                }
             }
         }
 
@@ -208,7 +217,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 foreach (var shardChain in shardChains)
                 {
                     ShardKey? shardKey = shardChain?.ShardKeys.Find(a => a.Name == property.Name);
-                    method?.Invoke(providerObj, new object[] {property.Name, shardKey.Step, attribute.Order, shardKey.Value, propertyExpression.Body, propertyExpression.Parameters}); 
+                    method?.Invoke(providerObj, new object[] {property.Name, shardKey.Step, attribute.Order, shardKey.Value, shardKey.GroupNo, propertyExpression.Body, propertyExpression.Parameters}); 
                 }
 
                 isShard = true;
@@ -242,15 +251,18 @@ public class ShardProviderEntity<TEntity> where TEntity : class
     public int Order { get; set; }
     
     public string Value { get; set; }
+    
+    public string GroupNo { get; set; }
     public Func<TEntity, object> Func { get; set; }
     
-    public ShardProviderEntity(string keyName, string step, int order, string value, Func<TEntity, object> func)
+    public ShardProviderEntity(string keyName, string step, int order, string value, string groupNo, Func<TEntity, object> func)
     {
         SharKeyName = keyName;
         Func = func;
         Step = step;
         Order = order;
         Value = value;
+        GroupNo = groupNo;
     }
 
 }
