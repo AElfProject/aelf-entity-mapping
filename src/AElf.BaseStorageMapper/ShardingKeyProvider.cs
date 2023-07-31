@@ -128,9 +128,15 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return "";
     }
 
-    public bool IsShardingCollection(Type type)
+    public bool IsShardingCollection()
     {
-        throw new NotImplementedException();
+        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(new TEntity());
+        if (entitys is null || entitys.Count == 0)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public string GetCollectionNameForRead(Dictionary<string, object> conditions)

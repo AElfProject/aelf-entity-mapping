@@ -15,6 +15,6 @@ public interface IShardingKeyProvider<TEntity> where TEntity : class, new()
     
     public string GetCollectionNameForWrite(TEntity entity);
     
-    public bool IsShardingCollection(Type type);
+    public bool IsShardingCollection();
 
 }
