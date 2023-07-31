@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace AElf.BaseStorageMapper;
 
-public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where TEntity : class, new()
+public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where TEntity : class
 {
     private readonly IndexSettingOptions _indexSettingOptions;
     private readonly ShardInitSettingOptions _indexShardOptions;
@@ -234,7 +234,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     }
 }
 
-public class ShardProviderEntity<TEntity> where TEntity : class, new()
+public class ShardProviderEntity<TEntity> where TEntity : class
 {
     public string SharKeyName { get; set; }
     public string Step { get; set; }
@@ -254,7 +254,7 @@ public class ShardProviderEntity<TEntity> where TEntity : class, new()
     }
 
 }
-public class ShardProviderEntityComparer<TEntity> : IComparer<ShardProviderEntity<TEntity>> where TEntity : class, new()
+public class ShardProviderEntityComparer<TEntity> : IComparer<ShardProviderEntity<TEntity>> where TEntity : class
 {
     public int Compare(ShardProviderEntity<TEntity> x, ShardProviderEntity<TEntity> y)
     {

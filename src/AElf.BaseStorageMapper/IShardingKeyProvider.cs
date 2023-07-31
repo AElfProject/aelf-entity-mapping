@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 
 namespace AElf.BaseStorageMapper;
 
-public interface IShardingKeyProvider<TEntity> where TEntity : class, new()
+public interface IShardingKeyProvider<TEntity> where TEntity : class
 {
     public void SetShardingKey(string keyName, string step,int order, string value, Expression body, ReadOnlyCollection<ParameterExpression> parameterExpressions);
 
