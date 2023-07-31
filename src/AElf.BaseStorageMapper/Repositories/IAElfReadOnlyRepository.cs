@@ -7,11 +7,11 @@ namespace AElf.BaseStorageMapper.Repositories;
 public interface IAElfReadOnlyRepository<TEntity, TKey> : IAElfReadOnlyBasicRepository<TEntity, TKey>
     where TEntity : class, IEntity<TKey>
 {
-    Task<IQueryable<TEntity>> GetQueryableAsync(string collection = null, CancellationToken cancellationToken = default);
+    Task<IQueryable<TEntity>> GetQueryableAsync(string collectionName = null, CancellationToken cancellationToken = default);
     
-    Task<List<TEntity>> GetListAsync([NotNull]Expression<Func<TEntity, bool>> predicate, string collection = null,
+    Task<List<TEntity>> GetListAsync([NotNull]Expression<Func<TEntity, bool>> predicate, string collectionName = null,
         CancellationToken cancellationToken = default);
 
-    Task<long> GetCountAsync([NotNull]Expression<Func<TEntity, bool>> predicate, string collection = null,
+    Task<long> GetCountAsync([NotNull]Expression<Func<TEntity, bool>> predicate, string collectionName = null,
         CancellationToken cancellationToken = default);
 }
