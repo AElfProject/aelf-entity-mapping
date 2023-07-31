@@ -13,7 +13,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
     private readonly IndexSettingOptions _indexSettingOptions;
     
     
-    public EnsureIndexBuildService(IOptions<IndexCreateOption> moduleConfiguration,
+    public EnsureIndexBuildService(IOptions<CollectionCreateOption> moduleConfiguration,
         IElasticIndexService elasticIndexService, IOptions<IndexSettingOptions> indexSettingOptions)
     {
         _elasticIndexService = elasticIndexService;

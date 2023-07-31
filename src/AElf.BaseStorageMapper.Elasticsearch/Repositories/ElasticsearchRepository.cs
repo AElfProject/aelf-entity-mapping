@@ -15,13 +15,16 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ElasticsearchOptions _elasticsearchOptions;
     private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
+    private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
-        IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider)
+        IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider,
+        IShardingKeyProvider<TEntity> shardingKeyProvider)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _collectionNameProvider = collectionNameProvider;
         _elasticsearchOptions = options.Value;
+        _shardingKeyProvider = shardingKeyProvider;
     }
 
     public async Task<TEntity> GetAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default)
