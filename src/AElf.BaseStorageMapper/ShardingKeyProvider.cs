@@ -36,7 +36,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return false;
     }
 
-    public void SetShardingKey(string keyName, string step, int order, Expression body, ReadOnlyCollection<ParameterExpression> parameterExpressions)
+    public void SetShardingKey(string keyName, string step, int order, string value, Expression body, ReadOnlyCollection<ParameterExpression> parameterExpressions)
     {
         var expression = Expression.Lambda<Func<TEntity, object>>(
             Expression.Convert(body, typeof(object)), parameterExpressions);
@@ -44,39 +44,51 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         if (_getPropertyFunc is null)
         {
             _getPropertyFunc = new List<ShardProviderEntity<TEntity>>();
-            _getPropertyFunc.Add(new ShardProviderEntity<TEntity>(keyName, step.ToString(), order, func));
+            _getPropertyFunc.Add(new ShardProviderEntity<TEntity>(keyName, step.ToString(), order, value, func));
         }else
         {
-            _getPropertyFunc.Add(new ShardProviderEntity<TEntity>(keyName,step.ToString(), order, func));
+            _getPropertyFunc.Add(new ShardProviderEntity<TEntity>(keyName,step.ToString(), order, value, func));
         }
     }
     
 
     public ShardProviderEntity<TEntity> GetShardingKeyByEntityAndFieldName(TEntity entity, string fieldName)
     {
-        return GetShardingKeyByEntity(entity).Find(a=>a.SharKeyName==fieldName);
-    }
+        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(entity.GetType()).FindAll(a=>a.SharKeyName==fieldName);
+        //return GetShardingKeyByEntity(entity).Find(a=>a.SharKeyName==fieldName);
+        foreach (var shardProviderEntity in entitys)
+        {
+            if (shardProviderEntity.Value != null && shardProviderEntity.Value != "" && shardProviderEntity.Value != "0")
+            {
+                return entitys.Find(a => a.Value == a.Func(entity));
+            }
+        }
 
-    public List<ShardProviderEntity<TEntity>> GetShardingKeyByEntity(TEntity entity)
+        return (entitys == null || entitys.Count == 0) ? null : entitys.First();
+    }
+    
+    public List<ShardProviderEntity<TEntity>> GetShardingKeyByEntity(Type type)
     {
         if ( _isShardIndex == 0 || _getPropertyFunc is null || _getPropertyFunc.Count == 0)
         {
-            if (CheckCollectionType(entity.GetType()))
+            if (CheckCollectionType(type))
             {
-                InitShardProvider(entity);
+                InitShardProvider(type);
             }
             else
             {
                 return null!;
             }
         }
-        return _getPropertyFunc.FindAll(a=> a.Func(entity) != null);
+
+        return _getPropertyFunc;
+        //return _getPropertyFunc.FindAll(a=> a.Func(entity) != null);
     }
 
     public string GetCollectionName(Dictionary<string, object> conditions)
     {
         var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
-        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(new TEntity());
+        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
         if (entitys is null || entitys.Count == 0)
         {
             return indexName;
@@ -107,7 +119,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public string GetCollectionNameForWrite(TEntity entity)
     {
         var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
-        List<ShardProviderEntity<TEntity>> sahrdEntitys = GetShardingKeyByEntity(new TEntity());
+        List<ShardProviderEntity<TEntity>> sahrdEntitys = GetShardingKeyByEntity(typeof(TEntity));
         if (sahrdEntitys is null || sahrdEntitys.Count == 0)
         {
             return indexName;
@@ -130,7 +142,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public bool IsShardingCollection()
     {
-        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(new TEntity());
+        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
         if (entitys is null || entitys.Count == 0)
         {
             return false;
@@ -142,7 +154,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public string GetCollectionNameForRead(Dictionary<string, object> conditions)
     {
         var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
-        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(new TEntity());
+        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
         if (entitys is null || entitys.Count == 0)
         {
             return indexName;
@@ -154,15 +166,20 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             filterEntitys.Add(entitys.Find(a => a.SharKeyName == dictionary.Key));
         }*/
 
+        //filter
+        
+        
+        
+        
         foreach (var entity in entitys)
         {
             if (entity.Step == "")
             {
-                indexName = "-" + conditions[entity.SharKeyName] ?? throw new InvalidOleVariantTypeException();
+                indexName = indexName + "-" + conditions[entity.SharKeyName] ?? throw new InvalidOleVariantTypeException();
             }
             else
             {
-                indexName = "-" + (int.Parse(conditions[entity.SharKeyName].ToString() ?? throw new InvalidOperationException()) / int.Parse(entity.Step));
+                indexName = indexName + "-" + (int.Parse(conditions[entity.SharKeyName].ToString() ?? throw new InvalidOperationException()) / int.Parse(entity.Step));
             }
         }
 
@@ -170,9 +187,9 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     }
 
     
-    public void InitShardProvider(TEntity entity)
+    public void InitShardProvider(Type type)
     {
-        Type type = entity.GetType();
+       // Type type = entity.GetType();
         Type shardProviderType = typeof(IShardingKeyProvider<>).MakeGenericType(type);
         Type providerImplementationType = typeof(ShardingKeyProvider<>).MakeGenericType(type);
         
@@ -187,9 +204,13 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             {
                 var propertyExpression = GetPropertyExpression(type, property.Name);
                 MethodInfo? method = shardProviderType.GetMethod("SetShardingKey");
-                ShardChain? shardChain = _indexShardOptions.ShardInitSettings.Find(a => a.IndexName == type.Name)?.ShardChains.First();
-                ShardKey? shardKey = shardChain?.ShardKeys.Find(a => a.Name == property.Name);
-                method?.Invoke(providerObj, new object[] {property.Name, shardKey.Step, attribute.Order, propertyExpression.Body, propertyExpression.Parameters});
+                List<ShardChain>? shardChains = _indexShardOptions.ShardInitSettings.Find(a => a.IndexName == type.Name)?.ShardChains;
+                foreach (var shardChain in shardChains)
+                {
+                    ShardKey? shardKey = shardChain?.ShardKeys.Find(a => a.Name == property.Name);
+                    method?.Invoke(providerObj, new object[] {property.Name, shardKey.Step, attribute.Order, shardKey.Value, propertyExpression.Body, propertyExpression.Parameters}); 
+                }
+
                 isShard = true;
             }
         }
@@ -219,15 +240,17 @@ public class ShardProviderEntity<TEntity> where TEntity : class, new()
     public string Step { get; set; }
     
     public int Order { get; set; }
+    
+    public string Value { get; set; }
     public Func<TEntity, object> Func { get; set; }
     
-    public ShardProviderEntity(string keyName, string step, int order, Func<TEntity, object> func)
+    public ShardProviderEntity(string keyName, string step, int order, string value, Func<TEntity, object> func)
     {
         SharKeyName = keyName;
         Func = func;
         Step = step;
         Order = order;
-        
+        Value = value;
     }
 
 }
