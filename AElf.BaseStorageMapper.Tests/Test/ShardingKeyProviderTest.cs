@@ -127,13 +127,13 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
         conditions.Add("ChainId", "AELF");
         conditions.Add("BlockHeight",100000);
         var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-        Assert.True(blockIndexNameMain == "AElfIndexer.BlockIndex-AELF-"+100000/2000);
+        Assert.True(blockIndexNameMain == "aelfindexer.blockindex-aelf-"+100000/2000);
         
         Dictionary<string, object> conditions2 = new Dictionary<string, object>();
         conditions2.Add("ChainId", "tDVV");
         conditions2.Add("BlockHeight",100000);
         var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionName(conditions2);
-        Assert.True(blockIndexNameSide == "AElfIndexer.BlockIndex-tDVV-"+100000/1000);
+        Assert.True(blockIndexNameSide == "aelfindexer.blockindex-tdvv-"+100000/1000);
     }
     
     [Fact]
@@ -148,7 +148,7 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
             Confirmed = true
         };
         var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(blockIndex);
-        Assert.True(blockIndexNameMain == "AElfIndexer.BlockIndex-AELF-"+100000/2000);
+        Assert.True(blockIndexNameMain == "aelfindexer.blockindex-aelf-"+100000/2000);
         
         BlockIndex blockIndex2 = new BlockIndex()
         {
@@ -159,6 +159,6 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
             Confirmed = true
         };
         var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionName(blockIndex2);
-        Assert.True(blockIndexNameSide == "AElfIndexer.BlockIndex-tDVV-"+100000/1000);
+        Assert.True(blockIndexNameSide == "aelfindexer.blockindex-tdvv-"+100000/1000);
     }
 }
