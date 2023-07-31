@@ -14,16 +14,13 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 {
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ElasticsearchOptions _elasticsearchOptions;
-    private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
-    private readonly IShardingRouteProvider _shardingRouteProvider;
+    private readonly ICollectionNameProvider<TEntity, TKey> _collectionNameProvider;
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
-        IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider,
-        IShardingRouteProvider shardingRouteProvider)
+        IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity, TKey> collectionNameProvider)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _collectionNameProvider = collectionNameProvider;
-        _shardingRouteProvider = shardingRouteProvider;
         _elasticsearchOptions = options.Value;
     }
 
@@ -216,15 +213,17 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         return Task.FromResult(_elasticsearchClientProvider.GetClient());
     }
 
-    public async Task<IElasticsearchQueryable<TEntity>> GetElasticsearchQueryableAsync(string collectionName,
+    public async Task<IElasticsearchQueryable<TEntity, TKey>> GetElasticsearchQueryableAsync(string collectionName,
         CancellationToken cancellationToken = default)
     {
         var client = await GetElasticsearchClientAsync(cancellationToken);
-        return client.AsQueryable<TEntity>(_shardingRouteProvider, collectionName);
+        return client.AsQueryable<TEntity, TKey>(_collectionNameProvider, collectionName);
     }
 
     private string GetCollectionName(string collection)
     {
-        return !string.IsNullOrWhiteSpace(collection) ? collection : _collectionNameProvider.GetFullCollectionName();
+        return !string.IsNullOrWhiteSpace(collection)
+            ? collection
+            : string.Join(",", _collectionNameProvider.GetFullCollectionName(null));
     }
 }

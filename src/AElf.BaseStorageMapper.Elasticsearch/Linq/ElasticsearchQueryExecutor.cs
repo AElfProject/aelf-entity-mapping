@@ -10,26 +10,29 @@ using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
 using Newtonsoft.Json;
+using Volo.Abp.Domain.Entities;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Linq
 {
-    public class ElasticsearchQueryExecutor<TK>: IQueryExecutor
+    public class ElasticsearchQueryExecutor<TEntity, TKey>: IQueryExecutor
+        where TEntity : class, IEntity<TKey>
     {
         private readonly IElasticClient _elasticClient;
         private readonly string _dataId;
         private readonly PropertyNameInferrerParser _propertyNameInferrerParser;
-        private readonly ElasticsearchGeneratorQueryModelVisitor<TK> _elasticsearchGeneratorQueryModelVisitor;
+        private readonly ElasticsearchGeneratorQueryModelVisitor<TEntity> _elasticsearchGeneratorQueryModelVisitor;
         private readonly JsonSerializerSettings _deserializerSettings;
-        private readonly IShardingRouteProvider _shardingRouteProvider;
+        private readonly ICollectionNameProvider<TEntity, TKey> collectionNameProvider;
         private const int ElasticQueryLimit = 10000;
-            
-        public ElasticsearchQueryExecutor(IElasticClient elasticClient, IShardingRouteProvider shardingRouteProvider, string dataId)
+
+        public ElasticsearchQueryExecutor(IElasticClient elasticClient,
+            ICollectionNameProvider<TEntity, TKey> collectionNameProvider, string dataId)
         {
             _elasticClient = elasticClient;
-            _shardingRouteProvider = shardingRouteProvider;
             _dataId = dataId;
             _propertyNameInferrerParser = new PropertyNameInferrerParser(_elasticClient);
-            _elasticsearchGeneratorQueryModelVisitor = new ElasticsearchGeneratorQueryModelVisitor<TK>(_propertyNameInferrerParser);
+            _elasticsearchGeneratorQueryModelVisitor =
+                new ElasticsearchGeneratorQueryModelVisitor<TEntity>(_propertyNameInferrerParser);
             _deserializerSettings = new JsonSerializerSettings
             {
                 // Nest maps TimeSpan as a long (TimeSpan ticks)
@@ -155,8 +158,8 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
             
             if (queryAggregator.GroupByExpressions.Any())
             {
-                var docDeserializer = new Func<object, TK>(input => 
-                    JsonConvert.DeserializeObject<TK>(JsonConvert.SerializeObject(input), _deserializerSettings));
+                var docDeserializer = new Func<object, TEntity>(input => 
+                    JsonConvert.DeserializeObject<TEntity>(JsonConvert.SerializeObject(input), _deserializerSettings));
             
                 var originalGroupingType = queryModel.GetResultType().GenericTypeArguments.First();
                 var originalGroupingGenerics = originalGroupingType.GetGenericArguments();

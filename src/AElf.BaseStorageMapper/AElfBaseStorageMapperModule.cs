@@ -14,7 +14,7 @@ namespace AElf.BaseStorageMapper
             Configure<AElfBaseStorageMapperOptions>(configuration.GetSection("BaseStorageMapper"));
             
             var services = context.Services;
-            services.AddTransient(typeof(ICollectionNameProvider<>), typeof(DefaultCollectionNameProvider<>));
+            services.AddTransient(typeof(ICollectionNameProvider<,>), typeof(DefaultCollectionNameProvider<,>));
             context.Services.AddSingleton(typeof (IShardingKeyProvider<>), typeof (ShardingKeyProvider<>));
             Configure<IndexSettingOptions>(configuration.GetSection("IndexSetting"));
             Configure<ShardInitSettingOptions>(configuration.GetSection("ShardSetting"));

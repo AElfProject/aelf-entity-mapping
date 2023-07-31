@@ -1,16 +1,21 @@
 namespace AElf.BaseStorageMapper;
 
-public class DefaultCollectionNameProvider<TEntity>:CollectionNameProviderBase<TEntity>
+public class DefaultCollectionNameProvider<TEntity, TKey> : CollectionNameProviderBase<TEntity, TKey>
     where TEntity : class, new()
 {
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
-    
+
     public DefaultCollectionNameProvider(IShardingKeyProvider<TEntity> shardingKeyProvider)
     {
         _shardingKeyProvider = shardingKeyProvider;
     }
-    
-    protected override string GetCollectionName()
+
+    protected override List<string> GetCollectionName(List<CollectionNameCondition> conditions)
+    {
+        return new List<string> { typeof(TEntity).Name };
+    }
+
+    protected override string GetCollectionNameById(TKey id)
     {
         return typeof(TEntity).Name;
     }
