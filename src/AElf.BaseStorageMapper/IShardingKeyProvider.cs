@@ -11,9 +11,9 @@ public interface IShardingKeyProvider<TEntity> where TEntity : class
 
     public List<ShardProviderEntity<TEntity>> GetShardingKeyByEntity(Type type);
     
-    public string GetCollectionNameForRead(Dictionary<string,object> conditions);
+    public string GetCollectionName(Dictionary<string,object> conditions);
     
-    public string GetCollectionNameForWrite(TEntity entity);
+    public string GetCollectionName(TEntity entity);
     
     public bool IsShardingCollection();
 

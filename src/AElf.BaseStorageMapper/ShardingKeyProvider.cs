@@ -85,38 +85,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         //return _getPropertyFunc.FindAll(a=> a.Func(entity) != null);
     }
 
-    public string GetCollectionName(Dictionary<string, object> conditions)
-    {
-        var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
-        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
-        if (entitys is null || entitys.Count == 0)
-        {
-            return indexName;
-        }
-
-        /*List<ShardProviderEntity<TEntity>> filterEntitys = new List<ShardProviderEntity<TEntity>>();
-        foreach (var dictionary in conditions)
-        {
-            filterEntitys.Add(entitys.Find(a => a.SharKeyName == dictionary.Key));
-        }*/
-        entitys.Sort(new ShardProviderEntityComparer<TEntity>());
-
-        foreach (var entity in entitys)
-        {
-            if (entity.Step == "")
-            {
-                indexName = "-" + conditions[entity.SharKeyName] ?? throw new InvalidOleVariantTypeException();
-            }
-            else
-            {
-                indexName = "-" + (int.Parse(conditions[entity.SharKeyName].ToString() ?? throw new InvalidOperationException()) / int.Parse(entity.Step));
-            }
-        }
-
-        return indexName;
-    }
-
-    public string GetCollectionNameForWrite(TEntity entity)
+    public string GetCollectionName(TEntity entity)
     {
         var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
         List<ShardProviderEntity<TEntity>> sahrdEntitys = GetShardingKeyByEntity(typeof(TEntity));
@@ -160,7 +129,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return true;
     }
 
-    public string GetCollectionNameForRead(Dictionary<string, object> conditions)
+    public string GetCollectionName(Dictionary<string, object> conditions)
     {
         var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
