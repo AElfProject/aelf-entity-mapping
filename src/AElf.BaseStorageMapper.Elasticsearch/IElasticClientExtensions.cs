@@ -5,9 +5,10 @@ namespace AElf.BaseStorageMapper.Elasticsearch;
 
 public static class IElasticClientExtensions
 {
-    public static IElasticsearchQueryable<TEntity> AsQueryable<TEntity>(this IElasticClient elasticClient, string index)
+    public static IElasticsearchQueryable<TEntity> AsQueryable<TEntity>(this IElasticClient elasticClient,
+        IShardingRouteProvider shardingRouteProvider, string index = null)
         where TEntity : class
     {
-        return new ElasticsearchQueryable<TEntity>(elasticClient, index);
+        return new ElasticsearchQueryable<TEntity>(elasticClient, shardingRouteProvider, index);
     }
 }
