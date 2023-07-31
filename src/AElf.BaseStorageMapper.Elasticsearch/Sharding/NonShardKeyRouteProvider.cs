@@ -8,7 +8,7 @@ using Volo.Abp.Threading;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Sharding;
 
-public class NonShardKeyRouteProvider<TEntity> where TEntity : class
+public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity> where TEntity : class
 {
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
@@ -41,6 +41,11 @@ public class NonShardKeyRouteProvider<TEntity> where TEntity : class
         List<CollectionNameCondition> conditions)
     {
         var collectionNameList = new List<string>();
+        if (_nonShardKeys == null || _nonShardKeys.Count == 0)
+        {
+            return collectionNameList;
+        }
+
         foreach (var condition in conditions)
         {
             var nonShardKey = _nonShardKeys.FirstOrDefault(f => f.FieldName == condition.Key);
@@ -49,6 +54,13 @@ public class NonShardKeyRouteProvider<TEntity> where TEntity : class
             {
                 continue;
             }
+
+            if (condition.Value == null)
+            {
+                continue;
+            }
+
+            var fieldValue = Convert.ChangeType(condition.Value, nonShardKey.FieldValueType);
             var nonShardKeyRouteIndexName =
                 _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
             if (condition.Type == ConditionType.Equal)
@@ -60,7 +72,7 @@ public class NonShardKeyRouteProvider<TEntity> where TEntity : class
                 MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
 
                 // 定义一个常量表达式，表示要查询的字段值
-                ConstantExpression value = Expression.Constant(condition.Value);
+                ConstantExpression value = Expression.Constant(fieldValue);
 
                 // 定义一个相等比较表达式，表示要查询的条件
                 BinaryExpression equals = Expression.Equal(field, value);
@@ -88,7 +100,7 @@ public class NonShardKeyRouteProvider<TEntity> where TEntity : class
                 MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
 
                 // 定义一个常量表达式，表示要查询的字段值
-                ConstantExpression value = Expression.Constant(condition.Value);
+                ConstantExpression value = Expression.Constant(fieldValue);
 
                 // 定义一个相等比较表达式，表示要查询的条件
                 BinaryExpression equals = Expression.GreaterThan(field, value);
@@ -116,7 +128,7 @@ public class NonShardKeyRouteProvider<TEntity> where TEntity : class
                 MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
 
                 // 定义一个常量表达式，表示要查询的字段值
-                ConstantExpression value = Expression.Constant(condition.Value);
+                ConstantExpression value = Expression.Constant(fieldValue);
 
                 // 定义一个相等比较表达式，表示要查询的条件
                 BinaryExpression equals = Expression.GreaterThanOrEqual(field, value);
@@ -172,7 +184,7 @@ public class NonShardKeyRouteProvider<TEntity> where TEntity : class
                 MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
 
                 // 定义一个常量表达式，表示要查询的字段值
-                ConstantExpression value = Expression.Constant(condition.Value);
+                ConstantExpression value = Expression.Constant(fieldValue);
 
                 // 定义一个相等比较表达式，表示要查询的条件
                 BinaryExpression equals = Expression.LessThanOrEqual(field, value);
@@ -193,6 +205,25 @@ public class NonShardKeyRouteProvider<TEntity> where TEntity : class
         }
 
         return collectionNameList;
+    }
+
+    public async Task<string> GetShardCollectionNameListByIdAsync(string id)
+    {
+        var collectionName=string.Empty;
+        if (_nonShardKeys == null || _nonShardKeys.Count == 0)
+        {
+            return collectionName;
+        }
+        
+        var nonShardKey= _nonShardKeys[0];
+        var nonShardKeyRouteIndexName = _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+        var routeIndex=await _nonShardKeyRouteIndexRepository.GetAsync(id, nonShardKeyRouteIndexName);
+        if (routeIndex != null)
+        {
+            collectionName = routeIndex.ShardCollectionName;
+        }
+
+        return collectionName;
     }
 
     public async Task<List<CollectionMarkField>> GetNonShardKeysAsync()

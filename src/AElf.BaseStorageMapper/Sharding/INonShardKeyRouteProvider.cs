@@ -10,7 +10,7 @@ public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
     /// <returns></returns>
     Task<List<string>> GetShardCollectionNameListByConditionsAsync(List<CollectionNameCondition> conditions);
 
-    Task<List<string>> GetShardCollectionNameListByIdAsync<TKey>(TKey id);
+    Task<string> GetShardCollectionNameListByIdAsync(string id);
 
     Task<List<CollectionMarkField>> GetNonShardKeysAsync();
 
