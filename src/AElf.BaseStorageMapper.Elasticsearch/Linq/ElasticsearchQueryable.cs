@@ -3,15 +3,17 @@ using AElf.BaseStorageMapper.Sharding;
 using Nest;
 using Remotion.Linq;
 using Remotion.Linq.Parsing.Structure;
+using Volo.Abp.Domain.Entities;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Linq
 {
-    public class ElasticsearchQueryable<T> : QueryableBase<T>, IElasticsearchQueryable<T>
+    public class ElasticsearchQueryable<TEntity, TKey> : QueryableBase<TEntity>, IElasticsearchQueryable<TEntity, TKey>
+        where TEntity : class, IEntity<TKey>
     {
-        public ElasticsearchQueryable(IElasticClient elasticClient, INonShardKeyRouteProvider shardingRouteProvider,
+        public ElasticsearchQueryable(IElasticClient elasticClient, ICollectionNameProvider<TEntity, TKey> collectionNameProvider,
             string index)
-            : base(new DefaultQueryProvider(typeof(ElasticsearchQueryable<>), QueryParser.CreateDefault(),
-                new ElasticsearchQueryExecutor<T>(elasticClient, shardingRouteProvider, index)))
+            : base(new DefaultQueryProvider(typeof(ElasticsearchQueryable<TEntity, TKey>), QueryParser.CreateDefault(),
+                new ElasticsearchQueryExecutor<TEntity, TKey>(elasticClient, collectionNameProvider, index)))
         {
         }
 
