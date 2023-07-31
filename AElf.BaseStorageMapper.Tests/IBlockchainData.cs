@@ -1,6 +1,6 @@
 namespace AElf.BaseStorageMapper.Tests;
 
-public interface IBlockchainData
+public partial interface IBlockchainData
 {
     string ChainId {get;set;}
     string BlockHash { get; set; }
