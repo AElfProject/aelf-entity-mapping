@@ -42,7 +42,6 @@ namespace AElf.BaseStorageMapper.TestBase
                 options.Refresh = Refresh.True;
                 options.IndexPrefix = "AElfIndexer";
             });
-
         }
 
         public override void OnApplicationInitialization(ApplicationInitializationContext context)

@@ -26,8 +26,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
     public async Task<TEntity> GetAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default)
     {
-        // TODO: Get index by id
-        var indexName = GetCollectionName(collectionName);
+        var indexName = GetCollectionNameById(id, collectionName);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var selector = new Func<GetDescriptor<TEntity>, IGetRequest>(s => s
             .Index(indexName));
@@ -225,5 +224,12 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         return !string.IsNullOrWhiteSpace(collection)
             ? collection
             : string.Join(",", _collectionNameProvider.GetFullCollectionName(null));
+    }
+    
+    private string GetCollectionNameById(TKey id, string collection = null)
+    {
+        return !string.IsNullOrWhiteSpace(collection)
+            ? collection
+            : _collectionNameProvider.GetFullCollectionNameById(id);
     }
 }

@@ -12,7 +12,7 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
     {
         public ElasticsearchQueryable(IElasticClient elasticClient, ICollectionNameProvider<TEntity, TKey> collectionNameProvider,
             string index)
-            : base(new DefaultQueryProvider(typeof(ElasticsearchQueryable<TEntity, TKey>), QueryParser.CreateDefault(),
+            : base(new DefaultQueryProvider(typeof(ElasticsearchQueryable<,>), QueryParser.CreateDefault(),
                 new ElasticsearchQueryExecutor<TEntity, TKey>(elasticClient, collectionNameProvider, index)))
         {
         }

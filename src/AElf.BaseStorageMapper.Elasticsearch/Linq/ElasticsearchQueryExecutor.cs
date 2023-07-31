@@ -2,14 +2,12 @@
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq.Expressions;
-using AElf.BaseStorageMapper.Sharding;
 using Elasticsearch.Net;
 using Nest;
 using Newtonsoft.Json;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
-using Newtonsoft.Json;
 using Volo.Abp.Domain.Entities;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Linq
@@ -18,18 +16,19 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
         where TEntity : class, IEntity<TKey>
     {
         private readonly IElasticClient _elasticClient;
-        private readonly string _dataId;
+        private readonly string _index;
         private readonly PropertyNameInferrerParser _propertyNameInferrerParser;
         private readonly ElasticsearchGeneratorQueryModelVisitor<TEntity> _elasticsearchGeneratorQueryModelVisitor;
         private readonly JsonSerializerSettings _deserializerSettings;
-        private readonly ICollectionNameProvider<TEntity, TKey> collectionNameProvider;
+        private readonly ICollectionNameProvider<TEntity, TKey> _collectionNameProvider;
         private const int ElasticQueryLimit = 10000;
 
         public ElasticsearchQueryExecutor(IElasticClient elasticClient,
-            ICollectionNameProvider<TEntity, TKey> collectionNameProvider, string dataId)
+            ICollectionNameProvider<TEntity, TKey> collectionNameProvider, string index)
         {
             _elasticClient = elasticClient;
-            _dataId = dataId;
+            _collectionNameProvider = collectionNameProvider;
+            _index = index;
             _propertyNameInferrerParser = new PropertyNameInferrerParser(_elasticClient);
             _elasticsearchGeneratorQueryModelVisitor =
                 new ElasticsearchGeneratorQueryModelVisitor<TEntity>(_propertyNameInferrerParser);
@@ -46,11 +45,12 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
 
         public IEnumerable<T> ExecuteCollection<T>(QueryModel queryModel)
         {
+            var index = GetIndexName(queryModel);
             var queryAggregator = _elasticsearchGeneratorQueryModelVisitor.GenerateElasticQuery<T>(queryModel);
             
             var documents= _elasticClient.Search<IDictionary<string, object>>(descriptor =>
             {
-                descriptor.Index(_dataId);
+                descriptor.Index(index);
             
                 if (queryModel.SelectClause != null && queryModel.SelectClause.Selector is MemberExpression memberExpression)
                 {
@@ -135,8 +135,6 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
             
                 }
 
-                var dsl = _elasticClient.RequestResponseSerializer.SerializeToString(descriptor);
-                Console.WriteLine(dsl);
                 return descriptor;
             
             });
@@ -208,6 +206,7 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
 
         public T ExecuteScalar<T>(QueryModel queryModel) 
         {
+            var index = GetIndexName(queryModel);
             var queryAggregator = _elasticsearchGeneratorQueryModelVisitor.GenerateElasticQuery<T>(queryModel);
 
             foreach (var resultOperator in queryModel.ResultOperators)
@@ -216,14 +215,13 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
                 {
                     var result = _elasticClient.Count<object>(descriptor =>
                     {
-                        descriptor.Index(_dataId);
+                        descriptor.Index(index);
                     
                         if (queryAggregator.Query != null)
                         {
                             descriptor.Query(q => queryAggregator.Query);
                         }
                         var dsl = _elasticClient.RequestResponseSerializer.SerializeToString(descriptor);
-                        Console.WriteLine(dsl);
                         return descriptor;
                     }).Count;
 
@@ -278,6 +276,18 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
         {
             var date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Local);
             return date.AddMilliseconds(d).ToLocalTime();
+        }
+
+        private string GetIndexName(QueryModel queryModel)
+        {
+            if (!string.IsNullOrWhiteSpace(_index))
+            {
+                return _index;
+            }
+
+            var conditions = queryModel.GetCollectionNameConditions();
+            var indexNames = _collectionNameProvider.GetFullCollectionName(conditions);
+            return string.Join(",", indexNames);
         }
     }
 

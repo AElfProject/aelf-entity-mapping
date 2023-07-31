@@ -13,9 +13,8 @@ public interface ICollectionNameProvider<TEntity, TKey>
 public class CollectionNameCondition
 {
     public string Key { get; set; }
-    public string Value { get; set; }
+    public object Value { get; set; }
     public ConditionType Type { get; set; }
-
 }
 
 public enum ConditionType
