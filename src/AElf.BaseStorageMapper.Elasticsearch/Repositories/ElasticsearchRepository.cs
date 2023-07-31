@@ -1,8 +1,10 @@
 using System.Linq.Expressions;
 using AElf.BaseStorageMapper.Elasticsearch.Exceptions;
 using AElf.BaseStorageMapper.Elasticsearch.Linq;
+using AElf.BaseStorageMapper.Sharding;
 using Microsoft.Extensions.Options;
 using Nest;
+using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Repositories;
@@ -13,51 +15,66 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ElasticsearchOptions _elasticsearchOptions;
     private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
+    private readonly IShardingRouteProvider _shardingRouteProvider;
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
-        IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider)
+        IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider,
+        IShardingRouteProvider shardingRouteProvider)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _collectionNameProvider = collectionNameProvider;
+        _shardingRouteProvider = shardingRouteProvider;
         _elasticsearchOptions = options.Value;
     }
 
-    public Task<TEntity> GetAsync(TKey id, string collection = null, CancellationToken cancellationToken = default)
+    public async Task<TEntity> GetAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        // TODO: Get index by id
+        var indexName = GetCollectionName(collectionName);
+        var client = await GetElasticsearchClientAsync(cancellationToken);
+        var selector = new Func<GetDescriptor<TEntity>, IGetRequest>(s => s
+            .Index(indexName));
+        var result =
+            await client.GetAsync(new Nest.DocumentPath<TEntity>(new Id(new {id = id.ToString()})),
+                selector, cancellationToken);
+        return result.Found ? result.Source : null;
     }
 
-    public Task<List<TEntity>> GetListAsync(string collection = null, CancellationToken cancellationToken = default)
+    public async Task<List<TEntity>> GetListAsync(string collectionName = null, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var queryable = await GetElasticsearchQueryableAsync(collectionName, cancellationToken);
+        return queryable.ToList();
     }
 
-    public Task<long> GetCountAsync(string collection = null, CancellationToken cancellationToken = default)
+    public async Task<long> GetCountAsync(string collectionName = null, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var queryable = await GetElasticsearchQueryableAsync(collectionName, cancellationToken);
+        return queryable.Count();
     }
 
-    public async Task<IQueryable<TEntity>> GetQueryableAsync(string collection = null,
+    public async Task<IQueryable<TEntity>> GetQueryableAsync(string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        return await GetElasticsearchQueryableAsync(collection, cancellationToken);
+        return await GetElasticsearchQueryableAsync(collectionName, cancellationToken);
     }
 
-    public Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate, string collection = null,
+    public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var queryable = await GetElasticsearchQueryableAsync(collectionName, cancellationToken);
+        return queryable.Where(predicate).ToList();
     }
 
-    public Task<long> GetCountAsync(Expression<Func<TEntity, bool>> predicate, string collection = null,
+    public async Task<long> GetCountAsync(Expression<Func<TEntity, bool>> predicate, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var queryable = await GetElasticsearchQueryableAsync(collectionName, cancellationToken);
+        return queryable.Where(predicate).Count();
     }
 
-    public async Task AddAsync(TEntity model, string collection = null, CancellationToken cancellationToken = default)
+    public async Task AddAsync(TEntity model, string collectionName = null, CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collection);
+        var indexName = GetCollectionName(collectionName);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var result = await client.IndexAsync(model, ss => ss.Index(indexName).Refresh(_elasticsearchOptions.Refresh),
             cancellationToken);
@@ -67,10 +84,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             $"Insert Document failed at index {indexName} : {result.ServerError.Error.Reason}");
     }
 
-    public async Task AddOrUpdateAsync(TEntity model, string collection = null,
+    public async Task AddOrUpdateAsync(TEntity model, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collection);
+        var indexName = GetCollectionName(collectionName);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var exits = await client.DocumentExistsAsync(DocumentPath<TEntity>.Id(new Id(model)), dd => dd.Index(indexName),
             cancellationToken);
@@ -98,10 +115,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         }
     }
 
-    public async Task AddOrUpdateManyAsync(List<TEntity> list, string collection = null,
+    public async Task AddOrUpdateManyAsync(List<TEntity> list, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collection);
+        var indexName = GetCollectionName(collectionName);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var bulk = new BulkRequest(indexName)
         {
@@ -121,10 +138,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         }
     }
 
-    public async Task UpdateAsync(TEntity model, string collection = null,
+    public async Task UpdateAsync(TEntity model, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collection);
+        var indexName = GetCollectionName(collectionName);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var result = await client.UpdateAsync(DocumentPath<TEntity>.Id(new Id(model)),
             ss => ss.Index(indexName).Doc(model).RetryOnConflict(3).Refresh(_elasticsearchOptions.Refresh),
@@ -136,9 +153,9 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             $"Update Document failed at index {indexName} : {result.ServerError.Error.Reason}");
     }
 
-    public async Task DeleteAsync(TKey id, string collection = null, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collection);
+        var indexName = GetCollectionName(collectionName);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response =
             await client.DeleteAsync(
@@ -152,10 +169,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         throw new Exception($"Delete Document at index {indexName} :{response.ServerError.Error.Reason}");
     }
 
-    public async Task DeleteAsync(TEntity model, string collection = null,
+    public async Task DeleteAsync(TEntity model, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collection);
+        var indexName = GetCollectionName(collectionName);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response =
             await client.DeleteAsync(
@@ -169,10 +186,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         throw new Exception($"Delete Document at index {indexName} :{response.ServerError.Error.Reason}");
     }
 
-    public async Task DeleteManyAsync(List<TEntity> list, string collection = null,
+    public async Task DeleteManyAsync(List<TEntity> list, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collection);
+        var indexName = GetCollectionName(collectionName);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var bulk = new BulkRequest(indexName)
         {
@@ -199,11 +216,11 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         return Task.FromResult(_elasticsearchClientProvider.GetClient());
     }
 
-    public async Task<IElasticsearchQueryable<TEntity>> GetElasticsearchQueryableAsync(string collection,
+    public async Task<IElasticsearchQueryable<TEntity>> GetElasticsearchQueryableAsync(string collectionName,
         CancellationToken cancellationToken = default)
     {
         var client = await GetElasticsearchClientAsync(cancellationToken);
-        return client.AsQueryable<TEntity>(collection);
+        return client.AsQueryable<TEntity>(_shardingRouteProvider, collectionName);
     }
 
     private string GetCollectionName(string collection)
