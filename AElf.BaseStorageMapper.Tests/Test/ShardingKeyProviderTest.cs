@@ -139,6 +139,26 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
     [Fact]
     public void GetCollectionNameForWriteTest()
     {
+        BlockIndex blockIndex = new BlockIndex()
+        {
+            ChainId = "AELF",
+            BlockHeight = 100000,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionNameForWrite(blockIndex);
+        Assert.True(blockIndexNameMain == "AElfIndexer.BlockIndex-AELF-"+100000/2000);
         
+        BlockIndex blockIndex2 = new BlockIndex()
+        {
+            ChainId = "tDVV",
+            BlockHeight = 100000,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionNameForWrite(blockIndex2);
+        Assert.True(blockIndexNameSide == "AElfIndexer.BlockIndex-tDVV-"+100000/1000);
     }
 }

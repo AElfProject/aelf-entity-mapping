@@ -125,19 +125,28 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             return indexName;
         }
         
+        string groupNo = "";
         foreach (var shardEntity in sahrdEntitys)
         {
             if (shardEntity.Step == "")
             {
-                indexName = "-" + shardEntity.Func(entity) ?? throw new InvalidOleVariantTypeException();
+                if ((groupNo == "" || shardEntity.GroupNo == groupNo) && shardEntity.Func(entity).ToString() == shardEntity.Value)
+                {
+                    indexName = indexName + "-" + shardEntity.Func(entity) ?? throw new InvalidOleVariantTypeException();
+                    groupNo = groupNo == "" ? shardEntity.GroupNo : groupNo;
+                }
             }
             else
             {
-                var value = shardEntity.Func(entity);
-                indexName = "-" + int.Parse(value.ToString() ?? string.Empty) / int.Parse(shardEntity.Step);
+                if (groupNo == "" || shardEntity.GroupNo == groupNo)
+                {
+                    var value = shardEntity.Func(entity);
+                    indexName = indexName + "-" + int.Parse(value.ToString() ?? string.Empty) / int.Parse(shardEntity.Step);
+                    groupNo = groupNo == "" ? shardEntity.GroupNo : groupNo;
+                }
             }
         }
-        return "";
+        return indexName;
     }
 
     public bool IsShardingCollection()
@@ -159,18 +168,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         {
             return indexName;
         }
-
-        /*List<ShardProviderEntity<TEntity>> filterEntitys = new List<ShardProviderEntity<TEntity>>();
-        foreach (var dictionary in conditions)
-        {
-            filterEntitys.Add(entitys.Find(a => a.SharKeyName == dictionary.Key));
-        }*/
-
-        //filter
-        string groupNo = ""; 
         
-        
-        
+        string groupNo = "";
         foreach (var entity in entitys)
         {
             if (entity.Step == "")
