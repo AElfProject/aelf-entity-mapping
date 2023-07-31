@@ -1,6 +1,6 @@
 namespace AElf.BaseStorageMapper.Options;
 
-public class IndexCreateOption
+public class CollectionCreateOption
 {
     public List<Type> Modules { get; } = new List<Type>();
 

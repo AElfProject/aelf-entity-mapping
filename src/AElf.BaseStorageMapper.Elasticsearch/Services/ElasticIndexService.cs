@@ -140,7 +140,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         }
 
         var cacheName = await GetIndexMarkFieldCacheNameAsync(type);
-        _indexMarkFieldCache.Set(cacheName, indexMarkFieldList);
+        await _indexMarkFieldCache.SetAsync(cacheName, indexMarkFieldList);
         
         _logger.LogInformation("{cacheName} cached successfully", cacheName);
     }
