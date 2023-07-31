@@ -17,4 +17,6 @@ public interface IElasticIndexService
     Task<string> GetDefaultIndexNameAsync(Type indexEntityType);
     
     Task<string> GetNonShardKeyRouteIndexNameAsync(Type indexEntityType, string fieldName);
+
+    Task<bool> IsShardingCollection(Type type);
 }
