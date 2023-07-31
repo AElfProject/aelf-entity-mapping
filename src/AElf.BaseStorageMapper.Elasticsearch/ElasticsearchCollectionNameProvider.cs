@@ -2,7 +2,7 @@ using Nest;
 
 namespace AElf.BaseStorageMapper.Elasticsearch;
 
-public class ElasticsearchCollectionNameProvider<TEntity, TKey> : CollectionNameProviderBase<TEntity, TKey>
+public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProviderBase<TEntity>
     where TEntity : class
 {
     protected override List<string> GetCollectionName(List<CollectionNameCondition> conditions)
@@ -11,7 +11,7 @@ public class ElasticsearchCollectionNameProvider<TEntity, TKey> : CollectionName
         throw new NotImplementedException();
     }
 
-    protected override string GetCollectionNameById(TKey id)
+    protected override string GetCollectionNameById<TKey>(TKey id)
     {
         // TODO: Add sharding support
         throw new NotImplementedException();

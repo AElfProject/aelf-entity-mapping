@@ -7,13 +7,13 @@ using Volo.Abp.Domain.Entities;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Linq
 {
-    public class ElasticsearchQueryable<TEntity, TKey> : QueryableBase<TEntity>, IElasticsearchQueryable<TEntity, TKey>
-        where TEntity : class, IEntity<TKey>
+    public class ElasticsearchQueryable<T> : QueryableBase<T>, IElasticsearchQueryable<T>
+        where T : class, IEntity
     {
-        public ElasticsearchQueryable(IElasticClient elasticClient, ICollectionNameProvider<TEntity, TKey> collectionNameProvider,
+        public ElasticsearchQueryable(IElasticClient elasticClient, ICollectionNameProvider<T> collectionNameProvider,
             string index)
-            : base(new DefaultQueryProvider(typeof(ElasticsearchQueryable<,>), QueryParser.CreateDefault(),
-                new ElasticsearchQueryExecutor<TEntity, TKey>(elasticClient, collectionNameProvider, index)))
+            : base(new DefaultQueryProvider(typeof(ElasticsearchQueryable<>), QueryParser.CreateDefault(),
+                new ElasticsearchQueryExecutor<T>(elasticClient, collectionNameProvider, index)))
         {
         }
 

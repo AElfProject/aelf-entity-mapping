@@ -10,5 +10,5 @@ public interface IElasticsearchRepository<TEntity, TKey> : IAElfRepository<TEnti
 {
     Task<IElasticClient> GetElasticsearchClientAsync(CancellationToken cancellationToken = default);
     
-    Task<IElasticsearchQueryable<TEntity, TKey>> GetElasticsearchQueryableAsync(string collectionName = null, CancellationToken cancellationToken = default);
+    Task<IElasticsearchQueryable<TEntity>> GetElasticsearchQueryableAsync(string collectionName = null, CancellationToken cancellationToken = default);
 }

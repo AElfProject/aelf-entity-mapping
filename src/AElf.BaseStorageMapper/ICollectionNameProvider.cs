@@ -2,12 +2,12 @@ using Volo.Abp.Domain.Entities;
 
 namespace AElf.BaseStorageMapper;
 
-public interface ICollectionNameProvider<TEntity, TKey>
+public interface ICollectionNameProvider<TEntity>
     where TEntity : class
 {
     List<string> GetFullCollectionName(List<CollectionNameCondition> conditions);
 
-    string GetFullCollectionNameById(TKey id);
+    string GetFullCollectionNameById<TKey>(TKey id);
 }
 
 public class CollectionNameCondition

@@ -7,10 +7,10 @@ namespace AElf.BaseStorageMapper.Elasticsearch;
 
 public static class IElasticClientExtensions
 {
-    public static IElasticsearchQueryable<TEntity, TKey> AsQueryable<TEntity, TKey>(this IElasticClient elasticClient,
-        ICollectionNameProvider<TEntity, TKey> collectionNameProvider, string index = null)
-        where TEntity : class, IEntity<TKey>
+    public static IElasticsearchQueryable<TEntity> AsQueryable<TEntity>(this IElasticClient elasticClient,
+        ICollectionNameProvider<TEntity> collectionNameProvider, string index = null)
+        where TEntity : class, IEntity
     {
-        return new ElasticsearchQueryable<TEntity, TKey>(elasticClient, collectionNameProvider, index);
+        return new ElasticsearchQueryable<TEntity>(elasticClient, collectionNameProvider, index);
     }
 }

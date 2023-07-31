@@ -12,19 +12,19 @@ using Volo.Abp.Domain.Entities;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Linq
 {
-    public class ElasticsearchQueryExecutor<TEntity, TKey>: IQueryExecutor
-        where TEntity : class, IEntity<TKey>
+    public class ElasticsearchQueryExecutor<TEntity>: IQueryExecutor
+        where TEntity : class
     {
         private readonly IElasticClient _elasticClient;
         private readonly string _index;
         private readonly PropertyNameInferrerParser _propertyNameInferrerParser;
         private readonly ElasticsearchGeneratorQueryModelVisitor<TEntity> _elasticsearchGeneratorQueryModelVisitor;
         private readonly JsonSerializerSettings _deserializerSettings;
-        private readonly ICollectionNameProvider<TEntity, TKey> _collectionNameProvider;
+        private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
         private const int ElasticQueryLimit = 10000;
 
         public ElasticsearchQueryExecutor(IElasticClient elasticClient,
-            ICollectionNameProvider<TEntity, TKey> collectionNameProvider, string index)
+            ICollectionNameProvider<TEntity> collectionNameProvider, string index)
         {
             _elasticClient = elasticClient;
             _collectionNameProvider = collectionNameProvider;

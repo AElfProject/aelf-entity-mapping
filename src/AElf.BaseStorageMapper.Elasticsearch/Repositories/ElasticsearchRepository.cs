@@ -14,10 +14,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 {
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ElasticsearchOptions _elasticsearchOptions;
-    private readonly ICollectionNameProvider<TEntity, TKey> _collectionNameProvider;
+    private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
-        IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity, TKey> collectionNameProvider)
+        IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _collectionNameProvider = collectionNameProvider;
@@ -212,11 +212,11 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         return Task.FromResult(_elasticsearchClientProvider.GetClient());
     }
 
-    public async Task<IElasticsearchQueryable<TEntity, TKey>> GetElasticsearchQueryableAsync(string collectionName,
+    public async Task<IElasticsearchQueryable<TEntity>> GetElasticsearchQueryableAsync(string collectionName,
         CancellationToken cancellationToken = default)
     {
         var client = await GetElasticsearchClientAsync(cancellationToken);
-        return client.AsQueryable<TEntity, TKey>(_collectionNameProvider, collectionName);
+        return client.AsQueryable<TEntity>(_collectionNameProvider, collectionName);
     }
 
     private string GetCollectionName(string collection)
