@@ -126,19 +126,39 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
         Dictionary<string, object> conditions = new Dictionary<string, object>();
         conditions.Add("ChainId", "AELF");
         conditions.Add("BlockHeight",100000);
-        var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionNameForRead(conditions);
-        Assert.True(blockIndexNameMain == "AElfIndexer.BlockIndex-AELF-"+100000/2000);
+        var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
+        Assert.True(blockIndexNameMain == "aelfindexer.blockindex-aelf-"+100000/2000);
         
         Dictionary<string, object> conditions2 = new Dictionary<string, object>();
         conditions2.Add("ChainId", "tDVV");
         conditions2.Add("BlockHeight",100000);
-        var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionNameForRead(conditions2);
-        Assert.True(blockIndexNameSide == "AElfIndexer.BlockIndex-tDVV-"+100000/1000);
+        var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionName(conditions2);
+        Assert.True(blockIndexNameSide == "aelfindexer.blockindex-tdvv-"+100000/1000);
     }
     
     [Fact]
     public void GetCollectionNameForWriteTest()
     {
+        BlockIndex blockIndex = new BlockIndex()
+        {
+            ChainId = "AELF",
+            BlockHeight = 100000,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(blockIndex);
+        Assert.True(blockIndexNameMain == "aelfindexer.blockindex-aelf-"+100000/2000);
         
+        BlockIndex blockIndex2 = new BlockIndex()
+        {
+            ChainId = "tDVV",
+            BlockHeight = 100000,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionName(blockIndex2);
+        Assert.True(blockIndexNameSide == "aelfindexer.blockindex-tdvv-"+100000/1000);
     }
 }
