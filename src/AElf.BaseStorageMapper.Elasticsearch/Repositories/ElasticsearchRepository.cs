@@ -15,15 +15,15 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ElasticsearchOptions _elasticsearchOptions;
     private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
-    private readonly INonShardKeyRouteProvider _shardingRouteProvider;
+    private readonly INonShardKeyRouteProvider _nonShardKeyRouteProvider;
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
         IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider,
-        INonShardKeyRouteProvider shardingRouteProvider)
+        INonShardKeyRouteProvider nonShardKeyRouteProvider)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _collectionNameProvider = collectionNameProvider;
-        _shardingRouteProvider = shardingRouteProvider;
+        _nonShardKeyRouteProvider = nonShardKeyRouteProvider;
         _elasticsearchOptions = options.Value;
     }
 
@@ -220,7 +220,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         CancellationToken cancellationToken = default)
     {
         var client = await GetElasticsearchClientAsync(cancellationToken);
-        return client.AsQueryable<TEntity>(_shardingRouteProvider, collectionName);
+        return client.AsQueryable<TEntity>(_nonShardKeyRouteProvider, collectionName);
     }
 
     private string GetCollectionName(string collection)

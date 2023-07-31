@@ -20,13 +20,13 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
         private readonly PropertyNameInferrerParser _propertyNameInferrerParser;
         private readonly ElasticsearchGeneratorQueryModelVisitor<TK> _elasticsearchGeneratorQueryModelVisitor;
         private readonly JsonSerializerSettings _deserializerSettings;
-        private readonly INonShardKeyRouteProvider _shardingRouteProvider;
+        private readonly INonShardKeyRouteProvider _nonShardKeyRouteProvider;
         private const int ElasticQueryLimit = 10000;
             
-        public ElasticsearchQueryExecutor(IElasticClient elasticClient, INonShardKeyRouteProvider shardingRouteProvider, string dataId)
+        public ElasticsearchQueryExecutor(IElasticClient elasticClient, INonShardKeyRouteProvider nonShardKeyRouteProvider, string dataId)
         {
             _elasticClient = elasticClient;
-            _shardingRouteProvider = shardingRouteProvider;
+            _nonShardKeyRouteProvider = nonShardKeyRouteProvider;
             _dataId = dataId;
             _propertyNameInferrerParser = new PropertyNameInferrerParser(_elasticClient);
             _elasticsearchGeneratorQueryModelVisitor = new ElasticsearchGeneratorQueryModelVisitor<TK>(_propertyNameInferrerParser);

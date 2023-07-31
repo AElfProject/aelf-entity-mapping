@@ -8,10 +8,10 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
 {
     public class ElasticsearchQueryable<T> : QueryableBase<T>, IElasticsearchQueryable<T>
     {
-        public ElasticsearchQueryable(IElasticClient elasticClient, INonShardKeyRouteProvider shardingRouteProvider,
+        public ElasticsearchQueryable(IElasticClient elasticClient, INonShardKeyRouteProvider nonShardKeyRouteProvider,
             string index)
             : base(new DefaultQueryProvider(typeof(ElasticsearchQueryable<>), QueryParser.CreateDefault(),
-                new ElasticsearchQueryExecutor<T>(elasticClient, shardingRouteProvider, index)))
+                new ElasticsearchQueryExecutor<T>(elasticClient, nonShardKeyRouteProvider, index)))
         {
         }
 
