@@ -123,6 +123,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
             var indexMarkField = new IndexMarkField
             {
                 FieldName = property.Name,
+                FieldValueType = property.PropertyType,
                 IndexEntityName = type.Name,
             };
             
@@ -157,6 +158,11 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
             NeedShardRouteAttribute shardRouteAttribute = (NeedShardRouteAttribute)Attribute.GetCustomAttribute(property, typeof(NeedShardRouteAttribute));
             if (shardRouteAttribute != null)
             {
+                if (property.PropertyType != typeof(string))
+                {
+                    throw new NotSupportedException(
+                        $"{type.Name} Attribute Error! NeedShardRouteAttribute only support string type, please check field: {property.Name}");
+                }
                 var indexName = GetNonShardKeyRouteIndexName(type, property.Name);
                 await CreateIndexAsync(indexName, type, shard, numberOfReplicas);
             }

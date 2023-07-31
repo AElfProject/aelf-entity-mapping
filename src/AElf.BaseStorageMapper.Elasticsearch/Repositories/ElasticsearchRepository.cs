@@ -104,27 +104,25 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             cancellationToken);
         
         //TODO: if shard collection, need to save non shard key to route collection 
-        // var nonShardKeys = _indexMarkFields.FindAll(f => f.IsRouteKey).ToList();
         if (_nonShardKeys.Any())
         {
             foreach (var nonShardKey in _nonShardKeys)
             {
                 var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
-                if (value != null)
-                {
-                    var nonShardKeyRouteIndexModel = new NonShardKeyRouteIndex()
-                    {
-                        Id = model.Id.ToString(),
-                        ShardCollectionName = indexName,
-                        SearchKey = value
-                    };
 
-                    var nonShardKeyRouteIndexName =
-                        _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
-                    var nonShardKeyRouteResult = await client.IndexAsync(nonShardKeyRouteIndexModel,
-                        ss => ss.Index(nonShardKeyRouteIndexName).Refresh(_elasticsearchOptions.Refresh),
-                        cancellationToken);
-                }
+                var nonShardKeyRouteIndexModel = new NonShardKeyRouteIndex()
+                {
+                    Id = model.Id.ToString(),
+                    ShardCollectionName = indexName,
+                    // SearchKey = Convert.ChangeType(value, nonShardKey.FieldValueType)
+                    SearchKey = value?.ToString()
+                };
+
+                var nonShardKeyRouteIndexName =
+                    _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                var nonShardKeyRouteResult = await client.IndexAsync(nonShardKeyRouteIndexModel,
+                    ss => ss.Index(nonShardKeyRouteIndexName).Refresh(_elasticsearchOptions.Refresh),
+                    cancellationToken);
 
             }
         }
@@ -149,6 +147,32 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 ss => ss.Index(indexName).Doc(model).RetryOnConflict(3).Refresh(_elasticsearchOptions.Refresh),
                 cancellationToken);
 
+            //TODO: if shard collection, need to update non shard key to route collection 
+            if (_nonShardKeys.Any())
+            {
+                foreach (var nonShardKey in _nonShardKeys)
+                {
+                    var nonShardKeyRouteIndexName =
+                        _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                    var nonShardKeyRouteIndexId = model.Id.ToString();
+                    var nonShardKeyRouteIndexModel = await _nonShardKeyRouteProvider.GetNonShardKeyRouteIndexAsync(nonShardKeyRouteIndexId, nonShardKeyRouteIndexName);
+                    
+                    var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
+                    if (nonShardKeyRouteIndexModel != null)
+                    {
+
+                        // nonShardKeyRouteIndexModel.SearchKey = Convert.ChangeType(value, nonShardKey.FieldValueType);
+                        nonShardKeyRouteIndexModel.SearchKey = value?.ToString();
+
+                        var nonShardKeyRouteResult = await client.UpdateAsync(
+                            DocumentPath<NonShardKeyRouteIndex>.Id(new Id(nonShardKeyRouteIndexModel)),
+                            ss => ss.Index(nonShardKeyRouteIndexName).Doc(nonShardKeyRouteIndexModel).RetryOnConflict(3)
+                                .Refresh(_elasticsearchOptions.Refresh),
+                            cancellationToken);
+                    }
+                }
+            }
+            
             if (result.IsValid)
                 return;
             throw new ElasticsearchException(
@@ -159,6 +183,30 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             var result =
                 await client.IndexAsync(model, ss => ss.Index(indexName).Refresh(_elasticsearchOptions.Refresh),
                     cancellationToken);
+            
+            //TODO: if shard collection, need to save non shard key to route collection 
+            if (_nonShardKeys.Any())
+            {
+                foreach (var nonShardKey in _nonShardKeys)
+                {
+                    var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
+
+                    var nonShardKeyRouteIndexModel = new NonShardKeyRouteIndex()
+                    {
+                        Id = model.Id.ToString(),
+                        ShardCollectionName = indexName,
+                        // SearchKey = Convert.ChangeType(value, nonShardKey.FieldValueType)
+                        SearchKey = value?.ToString()
+                    };
+
+                    var nonShardKeyRouteIndexName =
+                        _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                    var nonShardKeyRouteResult = await client.IndexAsync(nonShardKeyRouteIndexModel,
+                        ss => ss.Index(nonShardKeyRouteIndexName).Refresh(_elasticsearchOptions.Refresh),
+                        cancellationToken);
+                }
+            }
+            
             if (result.IsValid)
                 return;
             throw new ElasticsearchException(
@@ -182,6 +230,38 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         }
 
         var response = await client.BulkAsync(bulk, cancellationToken);
+        
+        //TODO: if shard collection, need to bulk index non shard key to route collection 
+        if (_nonShardKeys.Any())
+        {
+            foreach (var nonShardKey in _nonShardKeys)
+            {
+                var nonShardKeyRouteIndexName =
+                    _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                var nonShardKeyRouteBulk = new BulkRequest(nonShardKeyRouteIndexName)
+                {
+                    Operations = new List<IBulkOperation>(),
+                    Refresh = _elasticsearchOptions.Refresh
+                };
+                foreach (var item in list)
+                {
+                    var value = item.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(item);
+                    var nonShardKeyRouteIndexModel = new NonShardKeyRouteIndex()
+                    {
+                        Id = item.Id.ToString(),
+                        ShardCollectionName = indexName,
+                        // SearchKey = Convert.ChangeType(value, nonShardKey.FieldValueType)
+                        SearchKey = value?.ToString()
+                    };
+                    nonShardKeyRouteBulk.Operations.Add(
+                        new BulkIndexOperation<NonShardKeyRouteIndex>(nonShardKeyRouteIndexModel));
+
+                }
+
+                var nonShardKeyRouteResponse = await client.BulkAsync(nonShardKeyRouteBulk, cancellationToken);
+            }
+        }
+        
         if (!response.IsValid)
         {
             throw new ElasticsearchException(
@@ -197,6 +277,31 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var result = await client.UpdateAsync(DocumentPath<TEntity>.Id(new Id(model)),
             ss => ss.Index(indexName).Doc(model).RetryOnConflict(3).Refresh(_elasticsearchOptions.Refresh),
             cancellationToken);
+        
+        //TODO: if shard collection, need to update non shard key to route collection 
+        if (_nonShardKeys.Any())
+        {
+            foreach (var nonShardKey in _nonShardKeys)
+            {
+                var nonShardKeyRouteIndexName =
+                    _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                var nonShardKeyRouteIndexId = model.Id.ToString();
+                var nonShardKeyRouteIndexModel = await _nonShardKeyRouteProvider.GetNonShardKeyRouteIndexAsync(nonShardKeyRouteIndexId, nonShardKeyRouteIndexName);
+                    
+                var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
+                if (nonShardKeyRouteIndexModel != null)
+                {
+                    // nonShardKeyRouteIndexModel.SearchKey = Convert.ChangeType(value, nonShardKey.FieldValueType);
+                    nonShardKeyRouteIndexModel.SearchKey = value?.ToString();
+
+                    var nonShardKeyRouteResult = await client.UpdateAsync(
+                        DocumentPath<NonShardKeyRouteIndex>.Id(new Id(nonShardKeyRouteIndexModel)),
+                        ss => ss.Index(nonShardKeyRouteIndexName).Doc(nonShardKeyRouteIndexModel).RetryOnConflict(3)
+                            .Refresh(_elasticsearchOptions.Refresh),
+                        cancellationToken);
+                }
+            }
+        }
 
         if (result.IsValid)
             return;
@@ -212,6 +317,22 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             await client.DeleteAsync(
                 new DeleteRequest(indexName, new Id(new { id = id.ToString() }))
                     { Refresh = _elasticsearchOptions.Refresh }, cancellationToken);
+        
+        //TODO: if shard collection, need to delete non shard key to route collection 
+        if (_nonShardKeys.Any())
+        {
+            foreach (var nonShardKey in _nonShardKeys)
+            {
+                var nonShardKeyRouteIndexName =
+                    _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                var nonShardKeyRouteIndexId = id.ToString();
+                var nonShardKeyRouteResult=await client.DeleteAsync(
+                    new DeleteRequest(nonShardKeyRouteIndexName, new Id(new { id = nonShardKeyRouteIndexId.ToString() }))
+                        { Refresh = _elasticsearchOptions.Refresh }, cancellationToken);
+            }
+        }
+        
+        
         if (response.ServerError == null)
         {
             return;
@@ -229,6 +350,21 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             await client.DeleteAsync(
                 new DeleteRequest(indexName, new Id(model)) { Refresh = _elasticsearchOptions.Refresh },
                 cancellationToken);
+        
+        //TODO: if shard collection, need to delete non shard key to route collection 
+        if (_nonShardKeys.Any())
+        {
+            foreach (var nonShardKey in _nonShardKeys)
+            {
+                var nonShardKeyRouteIndexName =
+                    _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                var nonShardKeyRouteIndexId = model.Id.ToString();
+                var nonShardKeyRouteResult=await client.DeleteAsync(
+                    new DeleteRequest(nonShardKeyRouteIndexName, new Id(new { id = nonShardKeyRouteIndexId.ToString() }))
+                        { Refresh = _elasticsearchOptions.Refresh }, cancellationToken);
+            }
+        }
+        
         if (response.ServerError == null)
         {
             return;
@@ -253,6 +389,28 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         }
 
         var response = await client.BulkAsync(bulk, cancellationToken);
+        
+        //TODO: if shard collection, need to bulk delete non shard key to route collection 
+        if (_nonShardKeys.Any())
+        {
+            foreach (var nonShardKey in _nonShardKeys)
+            {
+                var nonShardKeyRouteIndexName =
+                    _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                var nonShardKeyRouteBulk = new BulkRequest(nonShardKeyRouteIndexName)
+                {
+                    Operations = new List<IBulkOperation>(),
+                    Refresh = _elasticsearchOptions.Refresh
+                };
+                foreach (var item in list)
+                {
+                    nonShardKeyRouteBulk.Operations.Add(new BulkDeleteOperation<NonShardKeyRouteIndex>(new Id(item)));
+                }
+                
+                var nonShardKeyRouteResponse = await client.BulkAsync(nonShardKeyRouteBulk, cancellationToken);
+            }
+        }
+
         if (response.ServerError == null)
         {
             return;
@@ -287,4 +445,6 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             ? collection
             : _collectionNameProvider.GetFullCollectionNameById(id);
     }
+    
+    
 }

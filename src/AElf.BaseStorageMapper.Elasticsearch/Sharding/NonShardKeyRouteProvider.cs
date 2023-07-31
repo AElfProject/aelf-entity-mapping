@@ -1,3 +1,5 @@
+using System.Net.NetworkInformation;
+using AElf.BaseStorageMapper.Elasticsearch.Repositories;
 using AElf.BaseStorageMapper.Elasticsearch.Services;
 using AElf.BaseStorageMapper.Sharding;
 using Volo.Abp.Caching;
@@ -8,13 +10,17 @@ public class NonShardKeyRouteProvider<TEntity> where TEntity : class
 {
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IDistributedCache<List<IndexMarkField>> _indexMarkFieldCache;
-    
-    public NonShardKeyRouteProvider(IDistributedCache<List<IndexMarkField>> indexMarkFieldCache,IElasticIndexService elasticIndexService)
+    private readonly IElasticsearchRepository<NonShardKeyRouteIndex,string> _nonShardKeyRouteIndexRepository;
+
+    public NonShardKeyRouteProvider(IDistributedCache<List<IndexMarkField>> indexMarkFieldCache,
+        IElasticIndexService elasticIndexService,
+        IElasticsearchRepository<NonShardKeyRouteIndex, string> nonShardKeyRouteIndexRepository)
     {
         _indexMarkFieldCache = indexMarkFieldCache;
         _elasticIndexService = elasticIndexService;
+        _nonShardKeyRouteIndexRepository = nonShardKeyRouteIndexRepository;
     }
-    
+
     public async Task<List<IndexMarkField>> GetNonShardKeysAsync()
     {
         var indexMarkFieldsCacheKey = _elasticIndexService.GetIndexMarkFieldCacheName(typeof(TEntity));
@@ -25,5 +31,10 @@ public class NonShardKeyRouteProvider<TEntity> where TEntity : class
         }
 
         return indexMarkFields;
+    }
+    
+    public async Task<NonShardKeyRouteIndex> GetNonShardKeyRouteIndexAsync(string id,string indexName)
+    {
+        return await _nonShardKeyRouteIndexRepository.GetAsync(id, indexName);
     }
 }

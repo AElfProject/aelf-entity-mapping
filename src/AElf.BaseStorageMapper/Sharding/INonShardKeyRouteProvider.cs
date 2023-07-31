@@ -13,4 +13,6 @@ public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
     Task<List<string>> GetShardCollectionNameListByIdAsync<TEntity,TKey>(TKey id);
 
     Task<List<IndexMarkField>> GetNonShardKeysAsync();
+
+    Task<NonShardKeyRouteIndex> GetNonShardKeyRouteIndexAsync(string id, string indexName);
 }
