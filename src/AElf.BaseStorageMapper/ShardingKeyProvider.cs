@@ -12,7 +12,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly IndexSettingOptions _indexSettingOptions;
     private readonly ShardInitSettingOptions _indexShardOptions;
     private int _isShardIndex = 0;//0-init ,1-yes,2-no
-    public  List<ShardProviderEntity<TEntity>> _getPropertyFunc = new List<ShardProviderEntity<TEntity>>();
+    public  List<ShardProviderEntity<TEntity>> ShardProviderEntityList = new List<ShardProviderEntity<TEntity>>();
     
     public ShardingKeyProvider(IOptions<IndexSettingOptions> indexSettingOptions, IOptions<ShardInitSettingOptions> indexShardOptions)
     {
@@ -41,13 +41,13 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         var expression = Expression.Lambda<Func<TEntity, object>>(
             Expression.Convert(body, typeof(object)), parameterExpressions);
         var func = expression.Compile();
-        if (_getPropertyFunc is null)
+        if (ShardProviderEntityList is null)
         {
-            _getPropertyFunc = new List<ShardProviderEntity<TEntity>>();
-            _getPropertyFunc.Add(new ShardProviderEntity<TEntity>(keyName, step.ToString(), order, value, groupNo, func));
+            ShardProviderEntityList = new List<ShardProviderEntity<TEntity>>();
+            ShardProviderEntityList.Add(new ShardProviderEntity<TEntity>(keyName, step.ToString(), order, value, groupNo, func));
         }else
         {
-            _getPropertyFunc.Add(new ShardProviderEntity<TEntity>(keyName,step.ToString(), order, value, groupNo, func));
+            ShardProviderEntityList.Add(new ShardProviderEntity<TEntity>(keyName,step.ToString(), order, value, groupNo, func));
         }
     }
     
@@ -69,7 +69,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     
     public List<ShardProviderEntity<TEntity>> GetShardingKeyByEntity(Type type)
     {
-        if ( _isShardIndex == 0 || _getPropertyFunc is null || _getPropertyFunc.Count == 0)
+        if ( _isShardIndex == 0 || ShardProviderEntityList is null || ShardProviderEntityList.Count == 0)
         {
             if (CheckCollectionType(type))
             {
@@ -81,7 +81,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             }
         }
 
-        return _getPropertyFunc;
+        return ShardProviderEntityList;
         //return _getPropertyFunc.FindAll(a=> a.Func(entity) != null);
     }
 
@@ -191,9 +191,9 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 isShard = true;
             }
         }
-        object? getPropertyFunc = providerObj.GetType().GetField("_getPropertyFunc").GetValue(providerObj);
-        _getPropertyFunc = (List<ShardProviderEntity<TEntity>>)getPropertyFunc;
-        _getPropertyFunc.Sort(new ShardProviderEntityComparer<TEntity>());
+        object? getPropertyFunc = providerObj.GetType().GetField("ShardProviderEntityList").GetValue(providerObj);
+        ShardProviderEntityList = (List<ShardProviderEntity<TEntity>>)getPropertyFunc;
+        ShardProviderEntityList.Sort(new ShardProviderEntityComparer<TEntity>());
         _isShardIndex = isShard ? 1 : 2;
     }
     
