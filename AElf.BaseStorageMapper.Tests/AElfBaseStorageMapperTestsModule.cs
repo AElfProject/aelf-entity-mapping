@@ -63,14 +63,16 @@ public class AElfBaseStorageMapperTestsModule : AbpModule
                         Name = "ChainId",
                         Value = "AELF",
                         Step = "",
-                        StepType = 0
+                        StepType = 0,
+                        GroupNo = "0"
                     },
                     new ShardKey()
                     {
                         Name = "BlockHeight",
                         Value = "0",
                         Step = "2000",
-                        StepType = 1
+                        StepType = 1,
+                        GroupNo = "0"
                     }
                 }
             },
@@ -83,14 +85,16 @@ public class AElfBaseStorageMapperTestsModule : AbpModule
                         Name = "ChainId",
                         Value = "tDVV",
                         Step = "",
-                        StepType = 0
+                        StepType = 0,
+                        GroupNo = "1"
                     },
                     new ShardKey()
                     {
                         Name = "BlockHeight",
                         Value = "0",
                         Step = "1000",
-                        StepType = 1
+                        StepType = 1,
+                        GroupNo = "1"
                     }
                 }
             }
@@ -109,14 +113,16 @@ public class AElfBaseStorageMapperTestsModule : AbpModule
                         Name = "ChainId",
                         Value = "AELF",
                         Step = "",
-                        StepType = 0
+                        StepType = 0,
+                        GroupNo = "0"
                     },
                     new ShardKey()
                     {
                         Name = "BlockHeight",
                         Value = "0",
                         Step = "2000",
-                        StepType = 1
+                        StepType = 1,
+                        GroupNo = "0"
                     }
                 }
             },
@@ -129,14 +135,16 @@ public class AElfBaseStorageMapperTestsModule : AbpModule
                         Name = "ChainId",
                         Value = "tDVV",
                         Step = "",
-                        StepType = 0
+                        StepType = 0,
+                        GroupNo = "1"
                     },
                     new ShardKey()
                     {
                         Name = "BlockHeight",
                         Value = "0",
                         Step = "1000",
-                        StepType = 1
+                        StepType = 1,
+                        GroupNo = "1"
                     }
                 }
             }
