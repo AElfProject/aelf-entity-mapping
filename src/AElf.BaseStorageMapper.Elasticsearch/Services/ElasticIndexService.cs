@@ -16,13 +16,13 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ElasticIndexService> _logger;
     private readonly IndexSettingOptions _indexSettingOptions;
-    private readonly IDistributedCache<List<IndexMarkField>> _indexMarkFieldCache;
+    private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
     private readonly ShardInitSettingOptions _indexShardOptions;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
         ILogger<ElasticIndexService> logger, IOptions<IndexSettingOptions> indexSettingOptions,
-        IDistributedCache<List<IndexMarkField>> indexMarkFieldCache, IOptions<ShardInitSettingOptions> indexShardOptions)
+        IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache, IOptions<ShardInitSettingOptions> indexShardOptions)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
@@ -116,11 +116,11 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
 
     public async Task InitializeIndexMarkedFieldAsync(Type type)
     {
-        var indexMarkFieldList = new List<IndexMarkField>();
+        var indexMarkFieldList = new List<CollectionMarkField>();
         var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         foreach (var property in properties)
         {
-            var indexMarkField = new IndexMarkField
+            var indexMarkField = new CollectionMarkField
             {
                 FieldName = property.Name,
                 FieldValueType = property.PropertyType,

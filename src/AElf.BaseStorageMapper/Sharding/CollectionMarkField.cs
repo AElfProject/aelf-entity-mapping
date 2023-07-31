@@ -1,6 +1,6 @@
 namespace AElf.BaseStorageMapper.Sharding;
 
-public class IndexMarkField
+public class CollectionMarkField
 {
     public string FieldName { get; set; }
     public Type FieldValueType { get; set; }

@@ -8,11 +8,11 @@ public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
     /// <param name="conditions"></param>
     /// <typeparam name="TEntity">ElasticSearch Index Entity</typeparam>
     /// <returns></returns>
-    Task<List<string>> GetShardCollectionNameListByConditionsAsync<TEntity>(Dictionary<string,object> conditions);
+    Task<List<string>> GetShardCollectionNameListByConditionsAsync(List<CollectionNameCondition> conditions);
 
-    Task<List<string>> GetShardCollectionNameListByIdAsync<TEntity,TKey>(TKey id);
+    Task<List<string>> GetShardCollectionNameListByIdAsync<TKey>(TKey id);
 
-    Task<List<IndexMarkField>> GetNonShardKeysAsync();
+    Task<List<CollectionMarkField>> GetNonShardKeysAsync();
 
     Task<NonShardKeyRouteIndex> GetNonShardKeyRouteIndexAsync(string id, string indexName);
 }

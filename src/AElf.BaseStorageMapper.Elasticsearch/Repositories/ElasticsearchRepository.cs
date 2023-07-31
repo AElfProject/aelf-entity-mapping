@@ -21,7 +21,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
     private readonly INonShardKeyRouteProvider<TEntity> _nonShardKeyRouteProvider;
     private readonly IElasticIndexService _elasticIndexService;
-    private List<IndexMarkField> _nonShardKeys;
+    private List<CollectionMarkField> _nonShardKeys;
     
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
@@ -37,17 +37,16 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         _elasticIndexService = elasticIndexService;
 
         //TODO: if shard collection
-        InitializeIndexMarkFields();
+        InitializeNonShardKeys();
     }
     
-    private void InitializeIndexMarkFields()
+    private void InitializeNonShardKeys()
     {
         if (_nonShardKeys == null)
         {
             AsyncHelper.RunSync(async () =>
             {
-                var _indexMarkFields = await _nonShardKeyRouteProvider.GetNonShardKeysAsync();
-                _nonShardKeys = _indexMarkFields.FindAll(f => f.IsRouteKey).ToList();
+                _nonShardKeys = await _nonShardKeyRouteProvider.GetNonShardKeysAsync();
             });
         }
     }
