@@ -12,9 +12,9 @@ public interface IElasticIndexService
     
     Task InitializeIndexMarkedFieldAsync(Type indexEntityType);
     
-    Task<string> GetIndexMarkFieldCacheNameAsync(Type indexEntityType);
+    string GetIndexMarkFieldCacheName(Type indexEntityType);
 
-    Task<string> GetDefaultIndexNameAsync(Type indexEntityType);
+    string GetDefaultIndexName(Type indexEntityType);
     
-    Task<string> GetNonShardKeyRouteIndexNameAsync(Type indexEntityType, string fieldName);
+    string GetNonShardKeyRouteIndexName(Type indexEntityType, string fieldName);
 }

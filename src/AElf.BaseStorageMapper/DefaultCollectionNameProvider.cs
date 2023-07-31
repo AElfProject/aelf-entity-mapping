@@ -10,6 +10,13 @@ public class DefaultCollectionNameProvider<TEntity> : CollectionNameProviderBase
         _shardingKeyProvider = shardingKeyProvider;
     }
 
+    protected override string GetDefaultCollectionName()
+    {
+        return string.IsNullOrWhiteSpace(AElfBaseStorageMapperOptions.CollectionPrefix)
+        ? typeof(TEntity).Name
+        : $"{AElfBaseStorageMapperOptions.CollectionPrefix}.{typeof(TEntity).Name}";
+    }
+
     protected override List<string> GetCollectionName(List<CollectionNameCondition> conditions)
     {
         return new List<string> { typeof(TEntity).Name };

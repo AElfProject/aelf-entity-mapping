@@ -37,7 +37,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
         var types = GetTypesAssignableFrom<IIndexBuild>(moduleType.Assembly);
         foreach (var t in types)
         {
-            var indexName = await _elasticIndexService.GetDefaultIndexNameAsync(t);
+            var indexName = _elasticIndexService.GetDefaultIndexName(t);
             await _elasticIndexService.CreateIndexAsync(indexName, t, _indexSettingOptions.NumberOfShards,
                 _indexSettingOptions.NumberOfReplicas);
 

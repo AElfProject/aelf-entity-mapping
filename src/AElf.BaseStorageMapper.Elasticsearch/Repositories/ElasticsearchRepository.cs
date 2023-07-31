@@ -1,11 +1,14 @@
 using System.Linq.Expressions;
 using AElf.BaseStorageMapper.Elasticsearch.Exceptions;
 using AElf.BaseStorageMapper.Elasticsearch.Linq;
+using AElf.BaseStorageMapper.Elasticsearch.Services;
 using AElf.BaseStorageMapper.Sharding;
 using Microsoft.Extensions.Options;
 using Nest;
 using Volo.Abp;
+using Volo.Abp.Caching;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.Threading;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Repositories;
 
@@ -17,16 +20,36 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
     private readonly INonShardKeyRouteProvider<TEntity> _nonShardKeyRouteProvider;
+    private readonly IElasticIndexService _elasticIndexService;
+    private List<IndexMarkField> _nonShardKeys;
+    
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
         IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider,
-        IShardingKeyProvider<TEntity> shardingKeyProvider,INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider)
+        IShardingKeyProvider<TEntity> shardingKeyProvider, INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider,
+        IElasticIndexService elasticIndexService)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _collectionNameProvider = collectionNameProvider;
         _elasticsearchOptions = options.Value;
         _shardingKeyProvider = shardingKeyProvider;
         _nonShardKeyRouteProvider = nonShardKeyRouteProvider;
+        _elasticIndexService = elasticIndexService;
+
+        //TODO: if shard collection
+        InitializeIndexMarkFields();
+    }
+    
+    private void InitializeIndexMarkFields()
+    {
+        if (_nonShardKeys == null)
+        {
+            AsyncHelper.RunSync(async () =>
+            {
+                var _indexMarkFields = await _nonShardKeyRouteProvider.GetNonShardKeysAsync();
+                _nonShardKeys = _indexMarkFields.FindAll(f => f.IsRouteKey).ToList();
+            });
+        }
     }
 
     public async Task<TEntity> GetAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default)
@@ -81,7 +104,30 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             cancellationToken);
         
         //TODO: if shard collection, need to save non shard key to route collection 
-        
+        // var nonShardKeys = _indexMarkFields.FindAll(f => f.IsRouteKey).ToList();
+        if (_nonShardKeys.Any())
+        {
+            foreach (var nonShardKey in _nonShardKeys)
+            {
+                var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
+                if (value != null)
+                {
+                    var nonShardKeyRouteIndexModel = new NonShardKeyRouteIndex()
+                    {
+                        Id = model.Id.ToString(),
+                        ShardCollectionName = indexName,
+                        SearchKey = value
+                    };
+
+                    var nonShardKeyRouteIndexName =
+                        _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                    var nonShardKeyRouteResult = await client.IndexAsync(nonShardKeyRouteIndexModel,
+                        ss => ss.Index(nonShardKeyRouteIndexName).Refresh(_elasticsearchOptions.Refresh),
+                        cancellationToken);
+                }
+
+            }
+        }
         
         if (result.IsValid)
             return;

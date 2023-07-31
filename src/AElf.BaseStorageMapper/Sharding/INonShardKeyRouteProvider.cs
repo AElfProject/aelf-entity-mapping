@@ -11,4 +11,6 @@ public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
     Task<List<string>> GetShardCollectionNameListByConditionsAsync<TEntity>(Dictionary<string,object> conditions);
 
     Task<List<string>> GetShardCollectionNameListByIdAsync<TEntity,TKey>(TKey id);
+
+    Task<List<IndexMarkField>> GetNonShardKeysAsync();
 }

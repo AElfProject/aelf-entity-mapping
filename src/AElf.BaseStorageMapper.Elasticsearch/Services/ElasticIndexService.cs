@@ -19,7 +19,9 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     private readonly IDistributedCache<List<IndexMarkField>> _indexMarkFieldCache;
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
 
-    public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider, ILogger<ElasticIndexService> logger,IOptions<IndexSettingOptions> indexSettingOptions,IDistributedCache<List<IndexMarkField>> indexMarkFieldCache)
+    public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
+        ILogger<ElasticIndexService> logger, IOptions<IndexSettingOptions> indexSettingOptions,
+        IDistributedCache<List<IndexMarkField>> indexMarkFieldCache)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
@@ -139,7 +141,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
             indexMarkFieldList.Add(indexMarkField);
         }
 
-        var cacheName = await GetIndexMarkFieldCacheNameAsync(type);
+        var cacheName = GetIndexMarkFieldCacheName(type);
         await _indexMarkFieldCache.SetAsync(cacheName, indexMarkFieldList);
         
         _logger.LogInformation("{cacheName} cached successfully", cacheName);
@@ -153,32 +155,32 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
             NeedShardRouteAttribute shardRouteAttribute = (NeedShardRouteAttribute)Attribute.GetCustomAttribute(property, typeof(NeedShardRouteAttribute));
             if (shardRouteAttribute != null)
             {
-                var indexName = await GetNonShardKeyRouteIndexNameAsync(type, property.Name);
+                var indexName = GetNonShardKeyRouteIndexName(type, property.Name);
                 await CreateIndexAsync(indexName, type, shard, numberOfReplicas);
             }
         }
     }
 
-    public Task<string> GetIndexMarkFieldCacheNameAsync(Type type)
+    public string GetIndexMarkFieldCacheName(Type type)
     {
         var cacheName = _indexSettingOptions.IndexPrefix.IsNullOrWhiteSpace()
             ? $"{_indexMarkFieldCachePrefix}_{type.Name}"
             : $"{_indexMarkFieldCachePrefix}{_indexSettingOptions.IndexPrefix}_{type.Name}";
-        return Task.FromResult(cacheName);
+        return cacheName;
     }
     
-    public Task<string> GetDefaultIndexNameAsync(Type type)
+    public string GetDefaultIndexName(Type type)
     {
         var indexName = _indexSettingOptions.IndexPrefix.IsNullOrWhiteSpace()
             ? type.Name.ToLower()
             : $"{_indexSettingOptions.IndexPrefix.ToLower()}.{type.Name.ToLower()}";
-        return Task.FromResult(indexName);
+        return indexName;
     }
-    public Task<string> GetNonShardKeyRouteIndexNameAsync(Type type, string fieldName)
+    public string GetNonShardKeyRouteIndexName(Type type, string fieldName)
     {
         var routeIndexName= _indexSettingOptions.IndexPrefix.IsNullOrWhiteSpace()
             ? $"{type.Name.ToLower()}.{fieldName.ToLower()}.route"
             : $"{_indexSettingOptions.IndexPrefix.ToLower()}.{type.Name.ToLower()}.{fieldName.ToLower()}.route";
-        return Task.FromResult(_indexMarkFieldCachePrefix + type.Name);
+        return (_indexMarkFieldCachePrefix + type.Name);
     }
 }

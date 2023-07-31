@@ -27,6 +27,8 @@ public abstract class CollectionNameProviderBase<TEntity> : ICollectionNameProvi
         return FormatCollectionName(collectionName);
     }
 
+    protected abstract string GetDefaultCollectionName();
+
     protected abstract List<string> GetCollectionName(List<CollectionNameCondition> conditions);
     
     protected abstract string GetCollectionNameById<TKey>(TKey id);
