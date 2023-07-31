@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using AElf.BaseStorageMapper.Sharding;
 using Nest;
 using Remotion.Linq;
 using Remotion.Linq.Parsing.Structure;

@@ -1,4 +1,5 @@
 using AElf.BaseStorageMapper.Elasticsearch.Linq;
+using AElf.BaseStorageMapper.Sharding;
 using Nest;
 
 namespace AElf.BaseStorageMapper.Elasticsearch;

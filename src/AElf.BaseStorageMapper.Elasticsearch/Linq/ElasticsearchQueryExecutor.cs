@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq.Expressions;
+using AElf.BaseStorageMapper.Sharding;
 using Elasticsearch.Net;
 using Nest;
 using Newtonsoft.Json;
