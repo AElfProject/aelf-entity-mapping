@@ -435,7 +435,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     {
         return !string.IsNullOrWhiteSpace(collection)
             ? collection
-            : string.Join(",", _collectionNameProvider.GetFullCollectionName(null));
+            : IndexNameHelper.FormatIndexName(_collectionNameProvider.GetFullCollectionName(null));
     }
     
     private string GetCollectionNameById(TKey id, string collection = null)
