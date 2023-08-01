@@ -138,38 +138,43 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             {
                 if (groupNo == "" || entity.GroupNo == groupNo)
                 {
-                    var conditionType = conditions.Find(a => a.Key == entity.SharKeyName).Type;
-                    if (conditionType == ConditionType.Equal)
+                   
+                    var shardConditions = conditions.FindAll(a => a.Key == entity.SharKeyName);
+                    foreach (var condition in shardConditions)
                     {
-                        indexName = indexName + "-" +
-                                    (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
-                                               throw new InvalidOperationException()) / int.Parse(entity.Step));
-                        groupNo = groupNo == "" ? entity.GroupNo : groupNo;
-                        return new List<string>(){indexName.ToLower()};
-                    }
+                        var conditionType = condition.Type;
+                        if (conditionType == ConditionType.Equal)
+                        {
+                            indexName = indexName + "-" +
+                                        (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                                   throw new InvalidOperationException()) / int.Parse(entity.Step));
+                            groupNo = groupNo == "" ? entity.GroupNo : groupNo;
+                            return new List<string>(){indexName.ToLower()};
+                        }
 
-                    if (conditionType == ConditionType.GreaterThan)
-                    {
-                        min = (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
-                                         throw new InvalidOperationException()) / int.Parse(entity.Step)) + 1;
-                    }
+                        if (conditionType == ConditionType.GreaterThan)
+                        {
+                            min = (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                             throw new InvalidOperationException()) / int.Parse(entity.Step)) + 1;
+                        }
                     
-                    if (conditionType == ConditionType.GreaterThanOrEqual)
-                    {
-                        min =  (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
-                                          throw new InvalidOperationException()) / int.Parse(entity.Step));
-                    }
+                        if (conditionType == ConditionType.GreaterThanOrEqual)
+                        {
+                            min =  (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                              throw new InvalidOperationException()) / int.Parse(entity.Step));
+                        }
                     
-                    if (conditionType == ConditionType.LessThan)
-                    {
-                        max = Math.Min(max, (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
-                                                       throw new InvalidOperationException()) / int.Parse(entity.Step)) - 1);
-                    }
+                        if (conditionType == ConditionType.LessThan)
+                        {
+                            max = Math.Min(max, (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                                           throw new InvalidOperationException()) / int.Parse(entity.Step)) - 1);
+                        }
                     
-                    if (conditionType == ConditionType.LessThanOrEqual)
-                    {
-                        max = Math.Min(max, (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
-                                                       throw new InvalidOperationException()) / int.Parse(entity.Step)));
+                        if (conditionType == ConditionType.LessThanOrEqual)
+                        {
+                            max = Math.Min(max, (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                                           throw new InvalidOperationException()) / int.Parse(entity.Step)));
+                        }
                     }
                 }
             }

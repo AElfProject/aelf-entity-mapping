@@ -234,13 +234,13 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
         condition2.Type = ConditionType.GreaterThanOrEqual;
         CollectionNameCondition condition3 = new CollectionNameCondition();
         condition2.Key = "BlockHeight";
-        condition2.Value = "100";
+        condition2.Value = "10000";
         condition2.Type = ConditionType.LessThanOrEqual;
         conditions.Add(condition1);
         conditions.Add(condition2);
         conditions.Add(condition3);
         List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-        Assert.True(indexNames.Count == 51);
+        Assert.True(indexNames.Count == 6);
         
     }
 }
