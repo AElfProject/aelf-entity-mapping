@@ -162,14 +162,14 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                     
                     if (conditionType == ConditionType.LessThan)
                     {
-                        max = (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
-                                         throw new InvalidOperationException()) / int.Parse(entity.Step)) - 1;
+                        max = Math.Min(max, (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                                       throw new InvalidOperationException()) / int.Parse(entity.Step)) - 1);
                     }
                     
                     if (conditionType == ConditionType.LessThanOrEqual)
                     {
-                        max = (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
-                                         throw new InvalidOperationException()) / int.Parse(entity.Step));
+                        max = Math.Min(max, (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                                       throw new InvalidOperationException()) / int.Parse(entity.Step)));
                     }
                 }
             }
