@@ -1,5 +1,6 @@
 using System.Reflection;
 using AElf.BaseStorageMapper.Elasticsearch.Exceptions;
+using AElf.BaseStorageMapper.Entities;
 using AElf.BaseStorageMapper.Options;
 using AElf.BaseStorageMapper.Sharding;
 using Microsoft.Extensions.Caching.Distributed;
@@ -38,7 +39,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     
     public async Task CreateIndexAsync(string indexName, Type type, int shard = 1, int numberOfReplicas = 1)
     {
-        if (!type.IsClass || type.IsAbstract || !typeof(IIndexBuild).IsAssignableFrom(type))
+        if (!type.IsClass || type.IsAbstract || !typeof(IAElfEntity).IsAssignableFrom(type))
         {
             _logger.LogInformation($" type: {type.FullName} invalid type");
             return;

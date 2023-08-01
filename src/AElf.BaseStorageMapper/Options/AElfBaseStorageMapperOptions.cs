@@ -1,4 +1,4 @@
-namespace AElf.BaseStorageMapper;
+namespace AElf.BaseStorageMapper.Options;
 
 public class AElfBaseStorageMapperOptions
 {

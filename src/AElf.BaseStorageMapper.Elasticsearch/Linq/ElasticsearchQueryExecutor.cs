@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq.Expressions;
+using AElf.BaseStorageMapper.Elasticsearch.Exceptions;
 using Elasticsearch.Net;
 using Nest;
 using Newtonsoft.Json;
@@ -138,7 +139,13 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
                 return descriptor;
             
             });
-            
+
+            if (!documents.IsValid)
+            {
+                throw new ElasticsearchException($"Search document failed at index {index} :" +
+                                                 documents.ServerError.Error.Reason);
+            }
+
             if (queryModel.SelectClause?.Selector is MemberExpression)
             {
                 var lastSorts = documents.Hits.LastOrDefault()?.Sorts;//?.LastOrDefault()?.ToString();

@@ -161,4 +161,23 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
         var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionName(blockIndex2);
         Assert.True(blockIndexNameSide == "aelfindexer.blockindex-tdvv-"+100000/1000);
     }
+
+    [Fact]
+    public void GetCacheTest()
+    {
+        GetCollectionNameForWriteTest();
+        List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
+        CollectionNameCondition condition1 = new CollectionNameCondition();
+        condition1.Key = "ChainId";
+        condition1.Value = "AELF";
+        condition1.Type = ConditionType.Equal;
+        CollectionNameCondition condition2 = new CollectionNameCondition();
+        condition2.Key = "BlockHeight";
+        condition2.Value = "100000";
+        condition2.Type = ConditionType.Equal;
+        conditions.Add(condition1);
+        conditions.Add(condition2);
+        List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
+        Assert.True(indexNames.First() == "aelfindexer.blockindex-aelf-"+100000/2000);
+    }
 }

@@ -1,8 +1,9 @@
+using AElf.BaseStorageMapper.Entities;
 using Nest;
 
 namespace AElf.BaseStorageMapper.Tests;
 
-public class LogEventIndex:AElfIndexerEntity<string>,IIndexBuild,IBlockchainData
+public class LogEventIndex:AElfIndexerEntity<string>,IAElfEntity,IBlockchainData
 {
     [Keyword]
     public override string Id
