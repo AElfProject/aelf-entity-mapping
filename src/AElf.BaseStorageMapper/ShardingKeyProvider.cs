@@ -60,7 +60,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public ShardProviderEntity<TEntity> GetShardingKeyByEntityAndFieldName(TEntity entity, string fieldName)
     {
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(entity.GetType()).FindAll(a=>a.SharKeyName==fieldName);
-        //return GetShardingKeyByEntity(entity).Find(a=>a.SharKeyName==fieldName);
         foreach (var shardProviderEntity in entitys)
         {
             if (shardProviderEntity.Value != null && shardProviderEntity.Value != "" && shardProviderEntity.Value != "0")
@@ -87,7 +86,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         }
 
         return ShardProviderEntityList;
-        //return _getPropertyFunc.FindAll(a=> a.Func(entity) != null);
     }
 
     private long GetShardCollectionCache(List<CollectionNameCondition> conditions)
@@ -164,14 +162,14 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                     
                     if (conditionType == ConditionType.LessThan)
                     {
-                        max = (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
-                                         throw new InvalidOperationException()) / int.Parse(entity.Step)) - 1;
+                        max = Math.Min(max, (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                                       throw new InvalidOperationException()) / int.Parse(entity.Step)) - 1);
                     }
                     
                     if (conditionType == ConditionType.LessThanOrEqual)
                     {
-                        max = (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
-                                         throw new InvalidOperationException()) / int.Parse(entity.Step));
+                        max = Math.Min(max, (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                                       throw new InvalidOperationException()) / int.Parse(entity.Step)));
                     }
                 }
             }
@@ -180,7 +178,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         List<string> collectionNames = new List<string>();
         for(long i = min; i <= max; i++)
         {
-            //indexName = indexName + "-" + i;
             collectionNames.Add((indexName + "-" + i).ToLower());
         }
 
@@ -326,7 +323,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     
     public void InitShardProvider(Type type)
     {
-       // Type type = entity.GetType();
         Type shardProviderType = typeof(IShardingKeyProvider<>).MakeGenericType(type);
         Type providerImplementationType = typeof(ShardingKeyProvider<>).MakeGenericType(type);
         

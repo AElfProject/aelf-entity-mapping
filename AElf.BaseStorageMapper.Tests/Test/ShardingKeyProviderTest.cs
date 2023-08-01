@@ -90,11 +90,11 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
     {
         BlockIndex blockIndex = new BlockIndex();
         Assert.True(_blockIndexShardingKeyProvider.IsShardingCollection());
+        Assert.True(_blockIndexShardingKeyProvider.IsShardingCollection());
 
         TransactionIndex transactionIndex = new TransactionIndex();
         Assert.False(_logTransationIndexShardingKeyProvider.IsShardingCollection());
-        
-        LogEventIndex eventIndex = new LogEventIndex();
+        Assert.False(_logTransationIndexShardingKeyProvider.IsShardingCollection());
     }
     
     [Fact]
@@ -163,7 +163,7 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
     }
 
     [Fact]
-    public void GetCollectionNameTestV1()
+    public void GetCollectionNameEqual()
     {
         GetCollectionNameForWriteTest();
         List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
@@ -181,9 +181,27 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
         Assert.True(indexNames.First() == "aelfindexer.blockindex-aelf-"+100000/2000);
         
     }
-    
     [Fact]
-    public void GetCollectionNameTestV2()
+    public void GetCollectionNameGreaterThan()
+    {
+        GetCollectionNameForWriteTest();
+        List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
+        CollectionNameCondition condition1 = new CollectionNameCondition();
+        condition1.Key = "ChainId";
+        condition1.Value = "AELF";
+        condition1.Type = ConditionType.Equal;
+        CollectionNameCondition condition2 = new CollectionNameCondition();
+        condition2.Key = "BlockHeight";
+        condition2.Value = "100";
+        condition2.Type = ConditionType.GreaterThan;
+        conditions.Add(condition1);
+        conditions.Add(condition2);
+        List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
+        Assert.True(indexNames.Count == 50);
+        
+    }
+    [Fact]
+    public void GetCollectionNameGreaterThanOrEqual()
     {
         GetCollectionNameForWriteTest();
         List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
@@ -197,6 +215,30 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
         condition2.Type = ConditionType.GreaterThanOrEqual;
         conditions.Add(condition1);
         conditions.Add(condition2);
+        List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
+        Assert.True(indexNames.Count == 51);
+    }
+    
+    [Fact]
+    public void GetCollectionNameGreaterThanOrEqualAndLessThanOrEqual()
+    {
+        GetCollectionNameForWriteTest();
+        List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
+        CollectionNameCondition condition1 = new CollectionNameCondition();
+        condition1.Key = "ChainId";
+        condition1.Value = "AELF";
+        condition1.Type = ConditionType.Equal;
+        CollectionNameCondition condition2 = new CollectionNameCondition();
+        condition2.Key = "BlockHeight";
+        condition2.Value = "100";
+        condition2.Type = ConditionType.GreaterThanOrEqual;
+        CollectionNameCondition condition3 = new CollectionNameCondition();
+        condition2.Key = "BlockHeight";
+        condition2.Value = "100";
+        condition2.Type = ConditionType.LessThanOrEqual;
+        conditions.Add(condition1);
+        conditions.Add(condition2);
+        conditions.Add(condition3);
         List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
         Assert.True(indexNames.Count == 51);
         
