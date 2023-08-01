@@ -3,7 +3,9 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using AElf.BaseStorageMapper.Options;
+using AElf.BaseStorageMapper.Sharding;
 using Microsoft.Extensions.Options;
+using Volo.Abp.Caching;
 
 namespace AElf.BaseStorageMapper;
 
@@ -13,11 +15,13 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly ShardInitSettingOptions _indexShardOptions;
     private int _isShardIndex = 0;//0-init ,1-yes,2-no
     public  List<ShardProviderEntity<TEntity>> ShardProviderEntityList = new List<ShardProviderEntity<TEntity>>();
-    
-    public ShardingKeyProvider(IOptions<IndexSettingOptions> indexSettingOptions, IOptions<ShardInitSettingOptions> indexShardOptions)
+    private readonly IDistributedCache<List<ShardCollectionCacheDto>> _indexCollectionCache;
+
+    public ShardingKeyProvider(IOptions<IndexSettingOptions> indexSettingOptions, IOptions<ShardInitSettingOptions> indexShardOptions, IDistributedCache<List<ShardCollectionCacheDto>> indexCollectionCache)
     {
         _indexSettingOptions = indexSettingOptions.Value;
         _indexShardOptions = indexShardOptions.Value;
+        _indexCollectionCache = indexCollectionCache;
 
     }
     public ShardingKeyProvider()
@@ -85,6 +89,68 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         //return _getPropertyFunc.FindAll(a=> a.Func(entity) != null);
     }
 
+    public List<string> GetCollectionName(List<CollectionNameCondition> conditions)
+    {
+        var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
+        int min = 0;
+        int max = 0;
+        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
+        if (entitys is null || entitys.Count == 0)
+        {
+            return new List<string>(){indexName.ToLower()};
+        }
+        
+        string groupNo = "";
+        foreach (var entity in entitys)
+        {
+            if (entity.Step == "")
+            {
+                if((groupNo == "" || entity.GroupNo == groupNo) && conditions.Find(a=>a.Key == entity.SharKeyName).Value == entity.Value){ 
+                    indexName = indexName + "-" + conditions.Find(a=>a.Key == entity.SharKeyName).Value ?? throw new InvalidOleVariantTypeException();
+                    groupNo = groupNo == "" ? entity.GroupNo : groupNo;
+                }
+            }
+            else
+            {
+                if (groupNo == "" || entity.GroupNo == groupNo)
+                {
+                    var conditionType = conditions.Find(a => a.Key == entity.SharKeyName).Type;
+                    if (conditionType == ConditionType.Equal)
+                    {
+                        indexName = indexName + "-" +
+                                    (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                               throw new InvalidOperationException()) / int.Parse(entity.Step));
+                        groupNo = groupNo == "" ? entity.GroupNo : groupNo;
+                    }
+
+                    if (conditionType == ConditionType.GreaterThan)
+                    {
+                        
+                    }
+                    
+                    if (conditionType == ConditionType.GreaterThanOrEqual)
+                    {
+                        
+                    }
+                    
+                    if (conditionType == ConditionType.LessThan)
+                    {
+                        
+                    }
+                    
+                    if (conditionType == ConditionType.LessThanOrEqual)
+                    {
+                        
+                    }
+                }
+            }
+        }
+
+        return new List<string>(){indexName.ToLower()};
+        /*List<ShardCollectionCacheDto> list =  _indexCollectionCache.Get(typeof(TEntity).Name);
+        return null;*/
+    }
+
     public string GetCollectionName(TEntity entity)
     {
         var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
@@ -93,7 +159,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         {
             return indexName.ToLower();
         }
-        
         string groupNo = "";
         foreach (var shardEntity in sahrdEntitys)
         {
@@ -115,7 +180,66 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 }
             }
         }
+        //addCache
+        SetShardCollectionCache(typeof(TEntity).Name, indexName.ToLower());
         return indexName.ToLower();
+    }
+
+    private void SetShardCollectionCache(string entityName, string collectionName)
+    {
+        string[] split = collectionName.Split("-");
+        string keys = "";
+        long maxShardNo = 0;
+        for(int i=0; i<split.Length; i++)
+        {
+            if (i == 0)
+            {
+                continue;
+            }
+            if(i == split.Length - 1)
+            {
+                maxShardNo = long.Parse(split[i]);
+                break;
+            }
+            keys = keys + split[i] + "-";
+        }
+        List<ShardCollectionCacheDto> shardCollectionCacheDtos = _indexCollectionCache.Get(typeof(TEntity).Name);
+        if (shardCollectionCacheDtos is null)
+        {
+            shardCollectionCacheDtos = new List<ShardCollectionCacheDto>();
+            ShardCollectionCacheDto cacheDto = new ShardCollectionCacheDto();
+            
+            cacheDto.Keys = keys;
+            cacheDto.MaxShardNo = maxShardNo;
+            shardCollectionCacheDtos.Add(cacheDto);
+            _indexCollectionCache.Set(entityName, shardCollectionCacheDtos);
+            return;
+        }
+        
+        ShardCollectionCacheDto shardCollectionCacheDto = shardCollectionCacheDtos.Find(a => a.Keys == keys);
+        if (shardCollectionCacheDto is null)
+        {
+            ShardCollectionCacheDto cacheDto = new ShardCollectionCacheDto();
+            cacheDto.Keys = keys;
+            cacheDto.MaxShardNo = maxShardNo;
+            shardCollectionCacheDtos.Add(cacheDto);
+            _indexCollectionCache.Set(entityName, shardCollectionCacheDtos);
+            return;
+        }
+        else
+        {
+            long oldMaxShardNo = shardCollectionCacheDto.MaxShardNo;
+            if(oldMaxShardNo < maxShardNo)
+            {
+                shardCollectionCacheDtos.Remove(shardCollectionCacheDto);
+                ShardCollectionCacheDto currentCacheDto = new ShardCollectionCacheDto();
+                currentCacheDto.MaxShardNo = maxShardNo;
+                currentCacheDto.Keys = keys;
+                shardCollectionCacheDtos.Add(currentCacheDto);
+            }
+            _indexCollectionCache.Set(entityName, shardCollectionCacheDtos);
+            return;
+        }
     }
 
     public bool IsShardingCollection()
