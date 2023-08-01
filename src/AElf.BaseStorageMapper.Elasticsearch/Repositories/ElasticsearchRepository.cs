@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using AElf.BaseStorageMapper.Elasticsearch.Exceptions;
 using AElf.BaseStorageMapper.Elasticsearch.Linq;
+using AElf.BaseStorageMapper.Elasticsearch.Options;
 using AElf.BaseStorageMapper.Elasticsearch.Services;
 using AElf.BaseStorageMapper.Sharding;
 using Microsoft.Extensions.Options;
@@ -337,7 +338,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             return;
         }
 
-        throw new Exception($"Delete Document at index {indexName} :{response.ServerError.Error.Reason}");
+        throw new ElasticsearchException($"Delete Document at index {indexName} :{response.ServerError.Error.Reason}");
     }
 
     public async Task DeleteAsync(TEntity model, string collectionName = null,
@@ -369,7 +370,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             return;
         }
 
-        throw new Exception($"Delete Document at index {indexName} :{response.ServerError.Error.Reason}");
+        throw new ElasticsearchException($"Delete Document at index {indexName} :{response.ServerError.Error.Reason}");
     }
 
     public async Task DeleteManyAsync(List<TEntity> list, string collectionName = null,
