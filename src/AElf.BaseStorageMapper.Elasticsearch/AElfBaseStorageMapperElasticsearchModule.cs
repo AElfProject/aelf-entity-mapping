@@ -1,7 +1,9 @@
 ﻿using AElf.BaseStorageMapper.Elasticsearch.Options;
 using AElf.BaseStorageMapper.Elasticsearch.Repositories;
 using AElf.BaseStorageMapper.Elasticsearch.Services;
+using AElf.BaseStorageMapper.Elasticsearch.Sharding;
 using AElf.BaseStorageMapper.Repositories;
+using AElf.BaseStorageMapper.Sharding;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
@@ -22,6 +24,7 @@ public class AElfBaseStorageMapperElasticsearchModule : AbpModule
         services.AddTransient(typeof(IAElfRepository<,>), typeof(ElasticsearchRepository<,>));
         services.AddTransient(typeof(IElasticsearchRepository<,>), typeof(ElasticsearchRepository<,>));
         services.AddTransient(typeof(ICollectionNameProvider<>), typeof(ElasticsearchCollectionNameProvider<>));
+        services.AddTransient(typeof(INonShardKeyRouteProvider<>), typeof(NonShardKeyRouteProvider<>));
         var configuration = context.Services.GetConfiguration();
         Configure<ElasticsearchOptions>(configuration.GetSection("Elasticsearch"));
     }
