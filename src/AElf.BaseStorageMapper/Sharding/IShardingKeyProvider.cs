@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 
-namespace AElf.BaseStorageMapper;
+namespace AElf.BaseStorageMapper.Sharding;
 
 public interface IShardingKeyProvider<TEntity> where TEntity : class
 {

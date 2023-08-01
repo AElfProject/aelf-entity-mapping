@@ -2,28 +2,31 @@ using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using AElf.BaseStorageMapper.Elasticsearch.Options;
+using AElf.BaseStorageMapper.Elasticsearch.Services;
 using AElf.BaseStorageMapper.Entities;
 using AElf.BaseStorageMapper.Options;
 using AElf.BaseStorageMapper.Sharding;
 using Microsoft.Extensions.Options;
 using Volo.Abp.Caching;
 
-namespace AElf.BaseStorageMapper;
+namespace AElf.BaseStorageMapper.Sharding;
 
 public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where TEntity : class
 {
-    private readonly IndexSettingOptions _indexSettingOptions;
+    private readonly ElasticsearchOptions _indexSettingOptions;
+    private readonly IElasticIndexService _elasticIndexService;
     private readonly ShardInitSettingOptions _indexShardOptions;
     private int _isShardIndex = 0;//0-init ,1-yes,2-no
     public  List<ShardProviderEntity<TEntity>> ShardProviderEntityList = new List<ShardProviderEntity<TEntity>>();
     private readonly IDistributedCache<List<ShardCollectionCacheDto>> _indexCollectionCache;
 
-    public ShardingKeyProvider(IOptions<IndexSettingOptions> indexSettingOptions, IOptions<ShardInitSettingOptions> indexShardOptions, IDistributedCache<List<ShardCollectionCacheDto>> indexCollectionCache)
+    public ShardingKeyProvider(IOptions<ElasticsearchOptions> indexSettingOptions, IOptions<ShardInitSettingOptions> indexShardOptions, IDistributedCache<List<ShardCollectionCacheDto>> indexCollectionCache,IElasticIndexService elasticIndexService)
     {
         _indexSettingOptions = indexSettingOptions.Value;
         _indexShardOptions = indexShardOptions.Value;
         _indexCollectionCache = indexCollectionCache;
-
+        _elasticIndexService = elasticIndexService;
     }
     public ShardingKeyProvider()
     {
@@ -115,7 +118,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public List<string> GetCollectionName(List<CollectionNameCondition> conditions)
     {
-        var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
+        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
         long min = 0;
         long max = GetShardCollectionCache(conditions);
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
@@ -189,7 +192,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public string GetCollectionName(TEntity entity)
     {
-        var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
+        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
         List<ShardProviderEntity<TEntity>> sahrdEntitys = GetShardingKeyByEntity(typeof(TEntity));
         if (sahrdEntitys is null || sahrdEntitys.Count == 0)
         {
@@ -291,7 +294,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public string GetCollectionName(Dictionary<string, object> conditions)
     {
-        var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
+        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
         if (entitys is null || entitys.Count == 0)
         {
@@ -371,48 +374,4 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     }
 }
 
-public class ShardProviderEntity<TEntity> where TEntity : class
-{
-    public string SharKeyName { get; set; }
-    public string Step { get; set; }
-    
-    public int Order { get; set; }
-    
-    public string Value { get; set; }
-    
-    public string GroupNo { get; set; }
-    public Func<TEntity, object> Func { get; set; }
-    
-    public ShardProviderEntity(string keyName, string step, int order, string value, string groupNo, Func<TEntity, object> func)
-    {
-        SharKeyName = keyName;
-        Func = func;
-        Step = step;
-        Order = order;
-        Value = value;
-        GroupNo = groupNo;
-    }
 
-}
-public class ShardProviderEntityComparer<TEntity> : IComparer<ShardProviderEntity<TEntity>> where TEntity : class
-{
-    public int Compare(ShardProviderEntity<TEntity> x, ShardProviderEntity<TEntity> y)
-    {
-        if (x == null && y == null)
-        {
-            return 0;
-        }
-        else if (x == null)
-        {
-            return -1;
-        }
-        else if (y == null)
-        {
-            return 1;
-        }
-        else
-        {
-            return x.Order.CompareTo(y.Order);
-        }
-    }
-}

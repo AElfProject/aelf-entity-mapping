@@ -1,5 +1,6 @@
 using System.Reflection;
 using AElf.BaseStorageMapper.Elasticsearch.Exceptions;
+using AElf.BaseStorageMapper.Elasticsearch.Options;
 using AElf.BaseStorageMapper.Entities;
 using AElf.BaseStorageMapper.Options;
 using AElf.BaseStorageMapper.Sharding;
@@ -16,13 +17,13 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
 {
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ElasticIndexService> _logger;
-    private readonly IndexSettingOptions _indexSettingOptions;
+    private readonly ElasticsearchOptions _indexSettingOptions;
     private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
     private readonly ShardInitSettingOptions _indexShardOptions;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
-        ILogger<ElasticIndexService> logger, IOptions<IndexSettingOptions> indexSettingOptions,
+        ILogger<ElasticIndexService> logger, IOptions<ElasticsearchOptions> indexSettingOptions,
         IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache, IOptions<ShardInitSettingOptions> indexShardOptions)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
@@ -190,7 +191,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         var routeIndexName= _indexSettingOptions.IndexPrefix.IsNullOrWhiteSpace()
             ? $"{type.Name.ToLower()}.{fieldName.ToLower()}.route"
             : $"{_indexSettingOptions.IndexPrefix.ToLower()}.{type.Name.ToLower()}.{fieldName.ToLower()}.route";
-        return (_indexMarkFieldCachePrefix + type.Name);
+        return routeIndexName;
     }
 
     public bool IsShardingCollection(Type type)

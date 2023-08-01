@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using AElf.BaseStorageMapper;
+using AElf.BaseStorageMapper.Elasticsearch.Options;
 using AElf.BaseStorageMapper.Options;
 using AElf.BaseStorageMapper.TestBase;
 /*using AElf.Indexing.Elasticsearch;
@@ -22,8 +23,8 @@ public class AElfBaseStorageMapperTestsModule : AbpModule
     {
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AElfBaseStorageMapperTestsModule>(); });
 
-        context.Services.Configure<IndexSettingOptions>(options => { options.Refresh = Refresh.True; });
-        Configure<IndexCreateOption>(x =>
+        context.Services.Configure<ElasticsearchOptions>(options => { options.Refresh = Refresh.True; });
+        Configure<CollectionCreateOption>(x =>
         {
             x.AddModule(typeof(AElfBaseStorageMapperTestsModule));
         });
@@ -32,17 +33,14 @@ public class AElfBaseStorageMapperTestsModule : AbpModule
             options.Uris = new List<string> { "http://127.0.0.1:9200"};
         });
             
-        context.Services.Configure<IndexSettingOptions>(options =>
+        context.Services.Configure<ElasticsearchOptions>(options =>
         {
             options.NumberOfReplicas = 1;
             options.NumberOfShards = 6;
             options.Refresh = Refresh.True;
             options.IndexPrefix = "AElfIndexer";
         });
-        
-        
-        
-        
+
     }
 
     

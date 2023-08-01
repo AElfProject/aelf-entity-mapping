@@ -1,3 +1,4 @@
+using AElf.BaseStorageMapper.Sharding;
 using AElf.BaseStorageMapper.TestBase;
 using AElf.LinqToElasticSearch;
 using Volo.Abp.DependencyInjection;

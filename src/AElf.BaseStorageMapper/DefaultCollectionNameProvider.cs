@@ -1,3 +1,5 @@
+using AElf.BaseStorageMapper.Sharding;
+
 namespace AElf.BaseStorageMapper;
 
 public class DefaultCollectionNameProvider<TEntity> : CollectionNameProviderBase<TEntity>

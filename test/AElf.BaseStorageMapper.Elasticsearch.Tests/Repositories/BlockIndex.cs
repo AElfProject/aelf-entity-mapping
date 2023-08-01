@@ -1,9 +1,11 @@
+using AElf.BaseStorageMapper.Entities;
+using AElf.BaseStorageMapper.Sharding;
 using Nest;
 using Volo.Abp.Domain.Entities;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Repositories;
 
-public class BlockIndex : IEntity<string>
+public class BlockIndex : IEntity<string>,IAElfEntity
 {
     [Keyword] public string Id { get; set; }
 
@@ -11,6 +13,7 @@ public class BlockIndex : IEntity<string>
     [ShardPropertyAttributes("ChainId", 1)]
     public string ChainId { get; set; }
 
+    [NeedShardRoute]
     [Keyword] public string BlockHash { get; set; }
 
     [ShardPropertyAttributes("BlockHeight", 2)]
