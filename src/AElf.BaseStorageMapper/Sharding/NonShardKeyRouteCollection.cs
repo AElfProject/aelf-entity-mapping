@@ -3,7 +3,7 @@ using Volo.Abp.Domain.Entities;
 
 namespace AElf.BaseStorageMapper.Sharding;
 
-public class NonShardKeyRouteIndex:Entity,IEntity<string>
+public class NonShardKeyRouteCollection:Entity,IEntity<string>
 {
     [Keyword]public string Id { get; set; }
 
