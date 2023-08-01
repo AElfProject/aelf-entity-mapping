@@ -26,8 +26,6 @@ public class AElfBaseStorageMapperElasticsearchModule : AbpModule
         services.AddTransient(typeof(ICollectionNameProvider<>), typeof(ElasticsearchCollectionNameProvider<>));
         services.AddTransient(typeof (IShardingKeyProvider<>), typeof (ShardingKeyProvider<>));
         services.AddTransient(typeof(INonShardKeyRouteProvider<>), typeof(NonShardKeyRouteProvider<>));
-        services.AddTransient(typeof(IElasticIndexService), typeof(ElasticIndexService));
-        services.AddTransient(typeof(IEnsureIndexBuildService), typeof(EnsureIndexBuildService));
         var configuration = context.Services.GetConfiguration();
         Configure<ElasticsearchOptions>(configuration.GetSection("Elasticsearch"));
     }

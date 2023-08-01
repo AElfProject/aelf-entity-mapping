@@ -125,7 +125,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
             var indexMarkField = new CollectionMarkField
             {
                 FieldName = property.Name,
-                FieldValueType = property.PropertyType,
+                FieldValueType = property.PropertyType.ToString(),
                 IndexEntityName = type.Name,
             };
             
@@ -147,7 +147,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         }
 
         var cacheName = GetIndexMarkFieldCacheName(type);
-        await _indexMarkFieldCache.SetAsync(cacheName, indexMarkFieldList);
+        await _indexMarkFieldCache.SetAsync(cacheName, indexMarkFieldList,hideErrors:false);
         
         _logger.LogInformation("{cacheName} cached successfully", cacheName);
     }

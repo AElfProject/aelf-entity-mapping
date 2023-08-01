@@ -31,7 +31,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     
     private void InitializeNonShardKeys()
     {
-        if (_nonShardKeys != null)
+        if (_nonShardKeys == null)
         {
             AsyncHelper.RunSync(async () =>
             {
@@ -63,7 +63,8 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 continue;
             }
 
-            var fieldValue = Convert.ChangeType(condition.Value, nonShardKey.FieldValueType);
+            // var fieldValue = Convert.ChangeType(condition.Value, nonShardKey.FieldValueType);
+            var fieldValue = condition.Value;
             var nonShardKeyRouteIndexName =
                 _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
             if (condition.Type == ConditionType.Equal)
@@ -188,12 +189,13 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     {
         var indexMarkFieldsCacheKey = _elasticIndexService.GetIndexMarkFieldCacheName(typeof(TEntity));
         var indexMarkFields = await _indexMarkFieldCache.GetAsync(indexMarkFieldsCacheKey);
-        if (indexMarkFields == null)
+        if (indexMarkFields != null)
         {
-            throw new Exception($"{typeof(TEntity).Name} Index marked field cache not found.");
+            return indexMarkFields.FindAll(f => f.IsRouteKey).ToList();;
+            // throw new Exception($"{typeof(TEntity).Name} Index marked field cache not found.");
         }
 
-        return indexMarkFields.FindAll(f => f.IsRouteKey).ToList();;
+        return new List<CollectionMarkField>();
     }
     
     public async Task<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexAsync(string id,string indexName)
