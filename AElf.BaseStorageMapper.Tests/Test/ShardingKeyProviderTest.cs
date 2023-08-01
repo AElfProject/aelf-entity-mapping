@@ -90,11 +90,11 @@ public class ShardingKeyProviderTest : AElfIndexerTestBase<AElfBaseStorageMapper
     {
         BlockIndex blockIndex = new BlockIndex();
         Assert.True(_blockIndexShardingKeyProvider.IsShardingCollection());
+        Assert.True(_blockIndexShardingKeyProvider.IsShardingCollection());
 
         TransactionIndex transactionIndex = new TransactionIndex();
         Assert.False(_logTransationIndexShardingKeyProvider.IsShardingCollection());
-        
-        LogEventIndex eventIndex = new LogEventIndex();
+        Assert.False(_logTransationIndexShardingKeyProvider.IsShardingCollection());
     }
     
     [Fact]
