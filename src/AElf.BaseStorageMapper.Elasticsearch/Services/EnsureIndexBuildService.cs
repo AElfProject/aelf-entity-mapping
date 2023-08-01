@@ -40,9 +40,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
         foreach (var t in types)
         {
             var indexName = _elasticIndexService.GetDefaultIndexName(t);
-            await _elasticIndexService.CreateIndexAsync(indexName, t, _indexSettingOptions.NumberOfShards,
-                _indexSettingOptions.NumberOfReplicas);
-
+            
             if (_elasticIndexService.IsShardingCollection(t))
             {
                 //if shard index, create index Template
@@ -54,6 +52,11 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
                 await _elasticIndexService.InitializeIndexMarkedFieldAsync(t);
                 //create non shard key route index
                 await _elasticIndexService.CreateNonShardKeyRouteIndexAsync(t, _indexSettingOptions.NumberOfShards,
+                    _indexSettingOptions.NumberOfReplicas);
+            }
+            else
+            {
+                await _elasticIndexService.CreateIndexAsync(indexName, t, _indexSettingOptions.NumberOfShards,
                     _indexSettingOptions.NumberOfReplicas);
             }
             
