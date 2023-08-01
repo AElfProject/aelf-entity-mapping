@@ -287,7 +287,7 @@ namespace AElf.BaseStorageMapper.Elasticsearch.Linq
 
             var conditions = queryModel.GetCollectionNameConditions();
             var indexNames = _collectionNameProvider.GetFullCollectionName(conditions);
-            return string.Join(",", indexNames);
+            return IndexNameHelper.FormatIndexName(indexNames);
         }
     }
 
