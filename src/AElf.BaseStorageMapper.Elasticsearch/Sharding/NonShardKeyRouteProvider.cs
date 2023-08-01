@@ -4,24 +4,27 @@ using AElf.BaseStorageMapper.Elasticsearch.Repositories;
 using AElf.BaseStorageMapper.Elasticsearch.Services;
 using AElf.BaseStorageMapper.Sharding;
 using Volo.Abp.Caching;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Threading;
 
 namespace AElf.BaseStorageMapper.Elasticsearch.Sharding;
 
 public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity> where TEntity : class
 {
+    public IAbpLazyServiceProvider LazyServiceProvider { get; set; }
+    protected IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository => LazyServiceProvider
+        .LazyGetRequiredService<ElasticsearchRepository<NonShardKeyRouteCollection,string>>();
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
-    private readonly IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository;
+    // private readonly IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository;
     private List<CollectionMarkField> _nonShardKeys;
 
     public NonShardKeyRouteProvider(IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache,
-        IElasticIndexService elasticIndexService,
-        IElasticsearchRepository<NonShardKeyRouteCollection, string> nonShardKeyRouteIndexRepository)
+        IElasticIndexService elasticIndexService)
     {
         _indexMarkFieldCache = indexMarkFieldCache;
         _elasticIndexService = elasticIndexService;
-        _nonShardKeyRouteIndexRepository = nonShardKeyRouteIndexRepository;
+        // _nonShardKeyRouteIndexRepository = nonShardKeyRouteIndexRepository;
 
         InitializeNonShardKeys();
     }
@@ -65,19 +68,10 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
             if (condition.Type == ConditionType.Equal)
             {
-                // 定义一个参数表达式，表示要查询的对象
                 ParameterExpression parameter = Expression.Parameter(typeof(NonShardKeyRouteCollection), "x");
-
-                // 定义一个成员访问表达式，表示要查询的字段
                 MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
-
-                // 定义一个常量表达式，表示要查询的字段值
                 ConstantExpression value = Expression.Constant(fieldValue);
-
-                // 定义一个相等比较表达式，表示要查询的条件
                 BinaryExpression equals = Expression.Equal(field, value);
-
-                // 将比较表达式组合成一个 lambda 表达式
                 Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
                 var indexList = await _nonShardKeyRouteIndexRepository.GetListAsync(lambda, nonShardKeyRouteIndexName);
                 var nameList = indexList.Select(x => x.ShardCollectionName).Distinct().ToList();
@@ -93,19 +87,10 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
 
             if (condition.Type == ConditionType.GreaterThan)
             {
-                // 定义一个参数表达式，表示要查询的对象
                 ParameterExpression parameter = Expression.Parameter(typeof(NonShardKeyRouteCollection), "x");
-
-                // 定义一个成员访问表达式，表示要查询的字段
                 MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
-
-                // 定义一个常量表达式，表示要查询的字段值
                 ConstantExpression value = Expression.Constant(fieldValue);
-
-                // 定义一个相等比较表达式，表示要查询的条件
                 BinaryExpression equals = Expression.GreaterThan(field, value);
-
-                // 将比较表达式组合成一个 lambda 表达式
                 Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
                 var indexList = await _nonShardKeyRouteIndexRepository.GetListAsync(lambda, nonShardKeyRouteIndexName);
                 var nameList = indexList.Select(x => x.ShardCollectionName).Distinct().ToList();
@@ -121,19 +106,10 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             
             if (condition.Type == ConditionType.GreaterThanOrEqual)
             {
-                // 定义一个参数表达式，表示要查询的对象
                 ParameterExpression parameter = Expression.Parameter(typeof(NonShardKeyRouteCollection), "x");
-
-                // 定义一个成员访问表达式，表示要查询的字段
                 MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
-
-                // 定义一个常量表达式，表示要查询的字段值
                 ConstantExpression value = Expression.Constant(fieldValue);
-
-                // 定义一个相等比较表达式，表示要查询的条件
                 BinaryExpression equals = Expression.GreaterThanOrEqual(field, value);
-
-                // 将比较表达式组合成一个 lambda 表达式
                 Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
                 var indexList = await _nonShardKeyRouteIndexRepository.GetListAsync(lambda, nonShardKeyRouteIndexName);
                 var nameList = indexList.Select(x => x.ShardCollectionName).Distinct().ToList();
@@ -149,19 +125,10 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             
             if (condition.Type == ConditionType.LessThan)
             {
-                // 定义一个参数表达式，表示要查询的对象
                 ParameterExpression parameter = Expression.Parameter(typeof(NonShardKeyRouteCollection), "x");
-
-                // 定义一个成员访问表达式，表示要查询的字段
                 MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
-
-                // 定义一个常量表达式，表示要查询的字段值
                 ConstantExpression value = Expression.Constant(condition.Value);
-
-                // 定义一个相等比较表达式，表示要查询的条件
                 BinaryExpression equals = Expression.LessThan(field, value);
-
-                // 将比较表达式组合成一个 lambda 表达式
                 Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
                 var indexList = await _nonShardKeyRouteIndexRepository.GetListAsync(lambda, nonShardKeyRouteIndexName);
                 var nameList = indexList.Select(x => x.ShardCollectionName).Distinct().ToList();
@@ -177,19 +144,10 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             
             if (condition.Type == ConditionType.LessThanOrEqual)
             {
-                // 定义一个参数表达式，表示要查询的对象
                 ParameterExpression parameter = Expression.Parameter(typeof(NonShardKeyRouteCollection), "x");
-
-                // 定义一个成员访问表达式，表示要查询的字段
                 MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
-
-                // 定义一个常量表达式，表示要查询的字段值
                 ConstantExpression value = Expression.Constant(fieldValue);
-
-                // 定义一个相等比较表达式，表示要查询的条件
                 BinaryExpression equals = Expression.LessThanOrEqual(field, value);
-
-                // 将比较表达式组合成一个 lambda 表达式
                 Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
                 var indexList = await _nonShardKeyRouteIndexRepository.GetListAsync(lambda, nonShardKeyRouteIndexName);
                 var nameList = indexList.Select(x => x.ShardCollectionName).Distinct().ToList();
