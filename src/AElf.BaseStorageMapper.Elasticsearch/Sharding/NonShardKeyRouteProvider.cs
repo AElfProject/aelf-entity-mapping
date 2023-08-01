@@ -31,7 +31,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     
     private void InitializeNonShardKeys()
     {
-        if (_nonShardKeys == null)
+        if (_nonShardKeys != null)
         {
             AsyncHelper.RunSync(async () =>
             {

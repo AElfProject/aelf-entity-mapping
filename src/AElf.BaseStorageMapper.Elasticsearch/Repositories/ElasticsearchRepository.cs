@@ -46,7 +46,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         {
             return;
         }
-        if (_nonShardKeys == null)
+        if (_nonShardKeys != null)
         {
             AsyncHelper.RunSync(async () =>
             {
