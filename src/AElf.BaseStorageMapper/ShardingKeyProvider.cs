@@ -89,16 +89,41 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         //return _getPropertyFunc.FindAll(a=> a.Func(entity) != null);
     }
 
+    private long GetShardCollectionCache(List<CollectionNameCondition> conditions)
+    { 
+        List<ShardCollectionCacheDto> list =  _indexCollectionCache.Get(typeof(TEntity).Name);
+        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
+        if(entitys is null || entitys.Count == 0)
+        {
+            return 0;
+        }
+        foreach (var condition in conditions)
+        {
+            var entity = entitys.Find(a => a.SharKeyName == condition.Key && a.Step == "");
+            if (entity != null)
+            {
+                ShardCollectionCacheDto cacheDto =  list.Find(a => a.Keys == (condition.Value.ToString().ToLower() + "-"));
+                if (cacheDto != null)
+                {
+                    return cacheDto.MaxShardNo;
+                }
+            }
+        }
+        return 0;
+    }
+
     public List<string> GetCollectionName(List<CollectionNameCondition> conditions)
     {
         var indexName = _indexSettingOptions.IndexPrefix + "." + typeof(TEntity).Name;
-        int min = 0;
-        int max = 0;
+        long min = 0;
+        long max = GetShardCollectionCache(conditions);
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
         if (entitys is null || entitys.Count == 0)
         {
             return new List<string>(){indexName.ToLower()};
         }
+
+        List<ShardCollectionCacheDto> list = _indexCollectionCache.Get(typeof(TEntity).Name);
         
         string groupNo = "";
         foreach (var entity in entitys)
@@ -121,34 +146,44 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                                     (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
                                                throw new InvalidOperationException()) / int.Parse(entity.Step));
                         groupNo = groupNo == "" ? entity.GroupNo : groupNo;
+                        return new List<string>(){indexName.ToLower()};
                     }
 
                     if (conditionType == ConditionType.GreaterThan)
                     {
-                        
+                        min = (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                         throw new InvalidOperationException()) / int.Parse(entity.Step)) + 1;
                     }
                     
                     if (conditionType == ConditionType.GreaterThanOrEqual)
                     {
-                        
+                        min =  (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                          throw new InvalidOperationException()) / int.Parse(entity.Step));
                     }
                     
                     if (conditionType == ConditionType.LessThan)
                     {
-                        
+                        max = (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                         throw new InvalidOperationException()) / int.Parse(entity.Step)) - 1;
                     }
                     
                     if (conditionType == ConditionType.LessThanOrEqual)
                     {
-                        
+                        max = (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
+                                         throw new InvalidOperationException()) / int.Parse(entity.Step));
                     }
                 }
             }
         }
 
-        return new List<string>(){indexName.ToLower()};
-        /*List<ShardCollectionCacheDto> list =  _indexCollectionCache.Get(typeof(TEntity).Name);
-        return null;*/
+        List<string> collectionNames = new List<string>();
+        for(long i = min; i <= max; i++)
+        {
+            //indexName = indexName + "-" + i;
+            collectionNames.Add((indexName + "-" + i).ToLower());
+        }
+
+        return collectionNames;
     }
 
     public string GetCollectionName(TEntity entity)
