@@ -193,9 +193,9 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         return (_indexMarkFieldCachePrefix + type.Name);
     }
 
-    public Task<bool> IsShardingCollection(Type type)
+    public bool IsShardingCollection(Type type)
     {
         var options = _indexShardOptions.ShardInitSettings.Find(a => a.IndexName == type.Name);
-        return Task.FromResult(options != null);
+        return options != null;
     }
 }
