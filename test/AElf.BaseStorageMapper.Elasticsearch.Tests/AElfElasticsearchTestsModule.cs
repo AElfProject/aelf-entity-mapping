@@ -1,3 +1,4 @@
+using AElf.BaseStorageMapper.Options;
 using AElf.BaseStorageMapper.TestBase;
 using Volo.Abp.Modularity;
 
@@ -10,5 +11,9 @@ public class AElfElasticsearchTestsModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        Configure<CollectionCreateOption>(x =>
+        {
+            x.AddModule(typeof(AElfElasticsearchTestsModule));
+        });
     }
 }

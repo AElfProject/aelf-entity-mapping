@@ -1,3 +1,4 @@
+using AElf.BaseStorageMapper.Sharding;
 using Nest;
 
 namespace AElf.BaseStorageMapper.Tests;

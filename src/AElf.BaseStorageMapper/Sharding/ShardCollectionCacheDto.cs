@@ -1,4 +1,4 @@
-namespace AElf.BaseStorageMapper;
+namespace AElf.BaseStorageMapper.Sharding;
 
 public class ShardCollectionCacheDto
 {

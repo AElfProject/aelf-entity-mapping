@@ -1,4 +1,6 @@
-﻿using AElf.BaseStorageMapper.Options;
+﻿using AElf.BaseStorageMapper.Elasticsearch.Options;
+using AElf.BaseStorageMapper.Options;
+using AElf.BaseStorageMapper.Sharding;
 using Elasticsearch.Net;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
@@ -31,8 +33,8 @@ namespace AElf.BaseStorageMapper.TestBase
             {
                 options.Uris = new List<string> { "http://127.0.0.1:9200" };
             });
-
-            context.Services.Configure<IndexSettingOptions>(options =>
+            
+            context.Services.Configure<ElasticsearchOptions>(options =>
             {
                 options.NumberOfReplicas = 1;
                 options.NumberOfShards = 5;

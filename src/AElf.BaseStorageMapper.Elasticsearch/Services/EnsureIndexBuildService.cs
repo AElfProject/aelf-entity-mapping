@@ -1,4 +1,5 @@
 using System.Reflection;
+using AElf.BaseStorageMapper.Elasticsearch.Options;
 using AElf.BaseStorageMapper.Entities;
 using AElf.BaseStorageMapper.Options;
 using Microsoft.Extensions.Options;
@@ -11,11 +12,11 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
 {
     private readonly IElasticIndexService _elasticIndexService;
     private readonly List<Type> _modules;
-    private readonly IndexSettingOptions _indexSettingOptions;
+    private readonly ElasticsearchOptions _indexSettingOptions;
     
     
     public EnsureIndexBuildService(IOptions<CollectionCreateOption> moduleConfiguration,
-        IElasticIndexService elasticIndexService, IOptions<IndexSettingOptions> indexSettingOptions)
+        IElasticIndexService elasticIndexService, IOptions<ElasticsearchOptions> indexSettingOptions)
     {
         _elasticIndexService = elasticIndexService;
         _modules = moduleConfiguration.Value.Modules;
