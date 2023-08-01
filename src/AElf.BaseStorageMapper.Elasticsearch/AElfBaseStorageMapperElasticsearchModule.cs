@@ -4,12 +4,14 @@ using AElf.BaseStorageMapper.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
+using Volo.Abp.Caching;
 using Volo.Abp.Modularity;
 
 namespace AElf.BaseStorageMapper.Elasticsearch;
 
 [DependsOn(
-    typeof(AElfBaseStorageMapperModule)
+    typeof(AElfBaseStorageMapperModule),
+    typeof(AbpCachingModule)
 )]
 public class AElfBaseStorageMapperElasticsearchModule : AbpModule
 {
@@ -22,7 +24,7 @@ public class AElfBaseStorageMapperElasticsearchModule : AbpModule
         var configuration = context.Services.GetConfiguration();
         Configure<ElasticsearchOptions>(configuration.GetSection("Elasticsearch"));
     }
-    
+
     public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
     {
         // var ensureIndexBuildService = context.ServiceProvider.GetService<IEnsureIndexBuildService>();
