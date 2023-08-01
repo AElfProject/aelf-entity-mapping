@@ -1,6 +1,6 @@
 using Elasticsearch.Net;
 
-namespace AElf.BaseStorageMapper.Elasticsearch;
+namespace AElf.BaseStorageMapper.Elasticsearch.Options;
 
 public class ElasticsearchOptions
 {

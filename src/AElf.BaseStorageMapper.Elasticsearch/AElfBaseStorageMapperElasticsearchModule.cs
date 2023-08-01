@@ -1,4 +1,5 @@
-﻿using AElf.BaseStorageMapper.Elasticsearch.Repositories;
+﻿using AElf.BaseStorageMapper.Elasticsearch.Options;
+using AElf.BaseStorageMapper.Elasticsearch.Repositories;
 using AElf.BaseStorageMapper.Elasticsearch.Services;
 using AElf.BaseStorageMapper.Repositories;
 using Microsoft.Extensions.Configuration;

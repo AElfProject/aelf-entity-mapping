@@ -1,9 +1,10 @@
 using System.Transactions;
+using AElf.BaseStorageMapper.Entities;
 using Nest;
 
 namespace AElf.BaseStorageMapper.Tests
 {
-    public class TransactionIndex : AElfIndexerEntity<string>, IIndexBuild, IBlockchainData
+    public class TransactionIndex : AElfIndexerEntity<string>, IAElfEntity, IBlockchainData
     {
         [Keyword]
         public override string Id

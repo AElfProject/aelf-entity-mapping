@@ -1,3 +1,4 @@
+using AElf.BaseStorageMapper.Elasticsearch.Options;
 using Elasticsearch.Net;
 using Microsoft.Extensions.Options;
 using Nest;

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using AElf.BaseStorageMapper.Entities;
 using AElf.BaseStorageMapper.Options;
 using Microsoft.Extensions.Options;
 
@@ -26,7 +27,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     
     private bool CheckCollectionType(Type type)
     {
-        var compareType = typeof(IIndexBuild);
+        var compareType = typeof(IAElfEntity);
         if (compareType.IsAssignableFrom(type) && !compareType.IsAssignableFrom(type.BaseType) &&
             !type.IsAbstract && type.IsClass && compareType != type)
         {
