@@ -168,7 +168,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var response = await client.BulkAsync(bulk, cancellationToken);
         
         //bulk index non shard key to route collection 
-        if (_nonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        if (_nonShardKeys!=null && _nonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
         {
             foreach (var nonShardKey in _nonShardKeys)
             {
@@ -279,7 +279,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var response = await client.BulkAsync(bulk, cancellationToken);
 
         //bulk delete non shard key to route collection
-        if (_nonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        if (_nonShardKeys!=null && _nonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
         {
             foreach (var nonShardKey in _nonShardKeys)
             {
@@ -341,7 +341,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             return;
         }
         
-        if (_nonShardKeys.Any())
+        if (_nonShardKeys!=null && _nonShardKeys.Any())
         {
             foreach (var nonShardKey in _nonShardKeys)
             {
@@ -373,7 +373,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             return;
         }
         
-        if (_nonShardKeys.Any())
+        if (_nonShardKeys!=null && _nonShardKeys.Any())
         {
             foreach (var nonShardKey in _nonShardKeys)
             {
@@ -405,7 +405,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         {
             return;
         }
-        if (_nonShardKeys.Any())
+        if (_nonShardKeys!=null && _nonShardKeys.Any())
         {
             foreach (var nonShardKey in _nonShardKeys)
             {
