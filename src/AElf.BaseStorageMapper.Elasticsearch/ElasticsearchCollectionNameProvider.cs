@@ -37,7 +37,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
 
             AsyncHelper.RunSync(async () =>
             {
-                // shardKeyCollectionNames= await _shardingKeyProvider.GetCollectionName(conditions);
+                shardKeyCollectionNames = _shardingKeyProvider.GetCollectionName(conditions);
                 nonShardKeyCollectionNames =
                     await _nonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync(conditions);
             });
