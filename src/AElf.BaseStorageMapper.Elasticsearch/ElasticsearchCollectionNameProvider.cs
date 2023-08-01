@@ -1,6 +1,7 @@
 using AElf.BaseStorageMapper.Elasticsearch.Services;
 using AElf.BaseStorageMapper.Sharding;
 using Nest;
+using Volo.Abp.Threading;
 
 namespace AElf.BaseStorageMapper.Elasticsearch;
 
@@ -29,14 +30,32 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         if(conditions==null || conditions.Count==0)
             return new List<string>{GetDefaultCollectionName()};
         
-        // TODO: Add sharding support
-        throw new NotImplementedException();
+        var shardKeyCollectionNames= new List<string>();
+        var nonShardKeyCollectionNames= new List<string>();
+
+        AsyncHelper.RunSync(async () =>
+        {
+            // shardKeyCollectionNames= await _shardingKeyProvider.GetCollectionName(conditions);
+            nonShardKeyCollectionNames =
+                await _nonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync(conditions);
+        });
+
+        if (shardKeyCollectionNames.Count > 0 && nonShardKeyCollectionNames.Count > 0)
+        {
+            return shardKeyCollectionNames.Intersect(nonShardKeyCollectionNames).ToList();
+        }
+
+        return shardKeyCollectionNames.Concat(nonShardKeyCollectionNames).ToList();
     }
 
     protected override string GetCollectionNameById<TKey>(TKey id)
     {
-        // TODO: Add sharding support
-        throw new NotImplementedException();
+        string collectionName = string.Empty;
+        AsyncHelper.RunSync(async () =>
+        {
+            collectionName=await _nonShardKeyRouteProvider.GetShardCollectionNameByIdAsync(id.ToString());
+        });
+        return collectionName;
     }
 
     protected override string FormatCollectionName(string name)

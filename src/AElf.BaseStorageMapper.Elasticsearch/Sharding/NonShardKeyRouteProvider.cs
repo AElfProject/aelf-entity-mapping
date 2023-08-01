@@ -207,7 +207,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         return collectionNameList;
     }
 
-    public async Task<string> GetShardCollectionNameListByIdAsync(string id)
+    public async Task<string> GetShardCollectionNameByIdAsync(string id)
     {
         var collectionName=string.Empty;
         if (_nonShardKeys == null || _nonShardKeys.Count == 0)
