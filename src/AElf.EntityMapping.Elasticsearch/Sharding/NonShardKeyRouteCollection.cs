@@ -3,7 +3,6 @@ using Volo.Abp.Domain.Entities;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
-// TODO: move to AElf.EntityMapping.ElasticSearch
 public class NonShardKeyRouteCollection:Entity,IEntity<string>
 {
     [Keyword]public string Id { get; set; }
