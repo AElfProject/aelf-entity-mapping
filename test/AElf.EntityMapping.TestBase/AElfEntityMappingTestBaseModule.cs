@@ -1,4 +1,5 @@
 ﻿using AElf.EntityMapping.Elasticsearch.Options;
+using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Elasticsearch.Net;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,8 +30,13 @@ namespace AElf.EntityMapping.TestBase
             context.Services.AddAlwaysAllowAuthorization();
 
             // TODO: move to AElf.EntityMapping.Tests
-            context.Services.Configure<ShardInitSettingOptions>(options =>
+            /*context.Services.Configure<ShardInitSettingOptions>(options =>
             {
+                options.ShardInitSettings = InitShardInitSettingOptions();
+            });*/
+            context.Services.Configure<AElfEntityMappingOptions>(options =>
+            {
+                options.CollectionPrefix = "aelfindexer";
                 options.ShardInitSettings = InitShardInitSettingOptions();
             });
         }

@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Entities;
+using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Options;
 using Volo.Abp.Caching;
@@ -15,15 +16,18 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 {
     private readonly ElasticsearchOptions _indexSettingOptions;
     private readonly IElasticIndexService _elasticIndexService;
-    private readonly ShardInitSettingOptions _indexShardOptions;
+    //private readonly ShardInitSettingOptions _indexShardOptions;
+    private readonly List<ShardInitSettingDto> _indexShardOptions;
+
     private int _isShardIndex = 0;//0-init ,1-yes,2-no
     public  List<ShardProviderEntity<TEntity>> ShardProviderEntityList = new List<ShardProviderEntity<TEntity>>();
     private readonly IDistributedCache<List<ShardCollectionCacheDto>> _indexCollectionCache;
 
-    public ShardingKeyProvider(IOptions<ElasticsearchOptions> indexSettingOptions, IOptions<ShardInitSettingOptions> indexShardOptions, IDistributedCache<List<ShardCollectionCacheDto>> indexCollectionCache,IElasticIndexService elasticIndexService)
+    public ShardingKeyProvider(IOptions<ElasticsearchOptions> indexSettingOptions, IOptions<AElfEntityMappingOptions> indexShardOptions, IDistributedCache<List<ShardCollectionCacheDto>> indexCollectionCache,IElasticIndexService elasticIndexService)
     {
         _indexSettingOptions = indexSettingOptions.Value;
-        _indexShardOptions = indexShardOptions.Value;
+        //_indexShardOptions = indexShardOptions.Value;
+        _indexShardOptions = indexShardOptions.Value.ShardInitSettings;
         _indexCollectionCache = indexCollectionCache;
         _elasticIndexService = elasticIndexService;
     }
@@ -344,7 +348,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             {
                 var propertyExpression = GetPropertyExpression(type, property.Name);
                 MethodInfo? method = shardProviderType.GetMethod("SetShardingKey");
-                List<ShardChain>? shardChains = _indexShardOptions.ShardInitSettings.Find(a => a.IndexName == type.Name)?.ShardChains;
+                List<ShardChain>? shardChains = _indexShardOptions.Find(a => a.IndexName == type.Name)?.ShardChains;
                 foreach (var shardChain in shardChains)
                 {
                     ShardKey? shardKey = shardChain?.ShardKeys.Find(a => a.Name == property.Name);

@@ -2,6 +2,7 @@ using System.Reflection;
 using AElf.EntityMapping.Elasticsearch.Exceptions;
 using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Entities;
+using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -18,17 +19,19 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     private readonly ElasticsearchOptions _indexSettingOptions;
     private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
-    private readonly ShardInitSettingOptions _indexShardOptions;
+   // private readonly ShardInitSettingOptions _indexShardOptions;
+    private readonly List<ShardInitSettingDto> _indexSettingDtos;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
         ILogger<ElasticIndexService> logger, IOptions<ElasticsearchOptions> indexSettingOptions,
-        IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache, IOptions<ShardInitSettingOptions> indexShardOptions)
+        IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache, IOptions<AElfEntityMappingOptions> indexShardOptions)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
         _indexSettingOptions = indexSettingOptions.Value;
         _indexMarkFieldCache = indexMarkFieldCache;
-        _indexShardOptions = indexShardOptions.Value;
+        //_indexShardOptions = indexShardOptions.Value;
+        _indexSettingDtos = indexShardOptions.Value.ShardInitSettings;
     }
 
     public Task<IElasticClient> GetElasticsearchClientAsync()
@@ -194,7 +197,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
 
     public bool IsShardingCollection(Type type)
     {
-        var options = _indexShardOptions.ShardInitSettings.Find(a => a.IndexName == type.Name);
+        var options = _indexSettingDtos.Find(a => a.IndexName == type.Name);
         return options != null;
     }
 }
