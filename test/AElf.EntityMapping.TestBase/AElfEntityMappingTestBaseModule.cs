@@ -42,9 +42,13 @@ namespace AElf.EntityMapping.TestBase
             });
 
             // TODO: move to AElf.EntityMapping.Tests
-
-            context.Services.Configure<ShardInitSettingOptions>(options =>
+            /*context.Services.Configure<ShardInitSettingOptions>(options =>
             {
+                options.ShardInitSettings = InitShardInitSettingOptions();
+            });*/
+            context.Services.Configure<AElfEntityMappingOptions>(options =>
+            {
+                options.CollectionPrefix = "aelfindexer";
                 options.ShardInitSettings = InitShardInitSettingOptions();
             });
         }

@@ -22,7 +22,7 @@ namespace AElf.EntityMapping
             services.AddTransient(typeof(ICollectionNameProvider<>), typeof(DefaultCollectionNameProvider<>));
             
             // Configure<IndexSettingOptions>(configuration.GetSection("IndexSetting"));
-            Configure<ShardInitSettingOptions>(configuration.GetSection("ShardSetting"));
+            //Configure<ShardInitSettingOptions>(configuration.GetSection("ShardSetting"));
         }
         
         public override void OnPreApplicationInitialization(ApplicationInitializationContext context)

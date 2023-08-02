@@ -128,13 +128,13 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         conditions.Add("ChainId", "AELF");
         conditions.Add("BlockHeight",100000);
         var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-        Assert.True(blockIndexNameMain == "aelfindexer.blockindex-aelf-"+100000/2000);
+        Assert.True(blockIndexNameMain == "aelfentitymappingtest.blockindex-aelf-"+100000/2000);
         
         Dictionary<string, object> conditions2 = new Dictionary<string, object>();
         conditions2.Add("ChainId", "tDVV");
         conditions2.Add("BlockHeight",100000);
         var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionName(conditions2);
-        Assert.True(blockIndexNameSide == "aelfindexer.blockindex-tdvv-"+100000/1000);
+        Assert.True(blockIndexNameSide == "aelfentitymappingtest.blockindex-tdvv-"+100000/1000);
     }
     
     [Fact]
@@ -149,7 +149,7 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
             Confirmed = true
         };
         var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(blockIndex);
-        Assert.True(blockIndexNameMain == "aelfindexer.blockindex-aelf-"+100000/2000);
+        Assert.True(blockIndexNameMain == "aelfentitymappingtest.blockindex-aelf-"+100000/2000);
         
         BlockIndex blockIndex2 = new BlockIndex()
         {
@@ -160,7 +160,7 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
             Confirmed = true
         };
         var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionName(blockIndex2);
-        Assert.True(blockIndexNameSide == "aelfindexer.blockindex-tdvv-"+100000/1000);
+        Assert.True(blockIndexNameSide == "aelfentitymappingtest.blockindex-tdvv-"+100000/1000);
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         conditions.Add(condition1);
         conditions.Add(condition2);
         List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-        Assert.True(indexNames.First() == "aelfindexer.blockindex-aelf-"+100000/2000);
+        Assert.True(indexNames.First() == "aelfentitymappingtest.blockindex-aelf-"+100000/2000);
         
     }
     [Fact]

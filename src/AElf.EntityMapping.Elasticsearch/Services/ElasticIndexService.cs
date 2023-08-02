@@ -20,18 +20,20 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     private readonly ElasticsearchOptions _indexSettingOptions;
     private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
-    private readonly ShardInitSettingOptions _indexShardOptions;
+   // private readonly ShardInitSettingOptions _indexShardOptions;
+    private readonly List<ShardInitSettingDto> _indexSettingDtos;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
         ILogger<ElasticIndexService> logger, IOptions<AElfEntityMappingOptions> entityMappingOptions,IOptions<ElasticsearchOptions> indexSettingOptions,
-        IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache, IOptions<ShardInitSettingOptions> indexShardOptions)
-    {
+        IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache)
+        {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
         _entityMappingOptions = entityMappingOptions.Value;
         _indexSettingOptions = indexSettingOptions.Value;
         _indexMarkFieldCache = indexMarkFieldCache;
-        _indexShardOptions = indexShardOptions.Value;
+        //_indexShardOptions = indexShardOptions.Value;
+        _indexSettingDtos = entityMappingOptions.Value.ShardInitSettings;
     }
 
     public Task<IElasticClient> GetElasticsearchClientAsync()
@@ -197,7 +199,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
 
     public bool IsShardingCollection(Type type)
     {
-        var options = _indexShardOptions.ShardInitSettings.Find(a => a.IndexName == type.Name);
+        var options = _indexSettingDtos.Find(a => a.IndexName == type.Name);
         return options != null;
     }
 }
