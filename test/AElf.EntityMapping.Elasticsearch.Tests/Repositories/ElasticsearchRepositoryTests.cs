@@ -44,7 +44,5 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         var queryable = await _elasticsearchRepository.GetQueryableAsync(indexName);
         var list = queryable.Where(q =>q.BlockHeight >= 1 && q.BlockHeight < 13).OrderByDescending(o=>o.BlockHeight).Take(2).Skip(1)
              .ToList();
-        ;
-
     }
 }

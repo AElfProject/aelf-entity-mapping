@@ -18,12 +18,12 @@ public class AElfEntityMappingTestModule : AbpModule
     {
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AElfEntityMappingTestModule>(); });
 
-        context.Services.Configure<ElasticsearchOptions>(options => { options.Refresh = Refresh.True; });
         Configure<CollectionCreateOption>(x =>
         {
             x.AddModule(typeof(AElfEntityMappingTestModule));
         });
 
+        // TODO: move to AElf.EntityMapping.Elasticsearch.Tests
         context.Services.Configure<ElasticsearchOptions>(options =>
         {
             options.NumberOfReplicas = 1;

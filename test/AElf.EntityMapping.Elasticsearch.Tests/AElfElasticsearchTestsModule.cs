@@ -1,5 +1,7 @@
+using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.TestBase;
+using Elasticsearch.Net;
 using Volo.Abp.Modularity;
 
 namespace AElf.EntityMapping.Elasticsearch;
@@ -14,6 +16,11 @@ public class AElfElasticsearchTestsModule : AbpModule
         Configure<CollectionCreateOption>(x =>
         {
             x.AddModule(typeof(AElfElasticsearchTestsModule));
+        });
+        
+        Configure<ElasticsearchOptions>(options =>
+        {
+            options.Refresh = Refresh.True;
         });
     }
 }

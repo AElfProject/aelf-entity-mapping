@@ -28,11 +28,7 @@ namespace AElf.EntityMapping.TestBase
 
             context.Services.AddAlwaysAllowAuthorization();
 
-            context.Services.Configure<ElasticsearchOptions>(options =>
-            {
-                options.Refresh = Refresh.True;
-            });
-
+            // TODO: move to AElf.EntityMapping.Tests
             context.Services.Configure<ShardInitSettingOptions>(options =>
             {
                 options.ShardInitSettings = InitShardInitSettingOptions();
