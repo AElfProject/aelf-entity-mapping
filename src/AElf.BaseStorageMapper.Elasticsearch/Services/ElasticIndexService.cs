@@ -17,18 +17,20 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
 {
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ElasticIndexService> _logger;
-    private readonly ElasticsearchOptions _indexSettingOptions;
+    private readonly AElfBaseStorageMapperOptions _aelfBaseStorageMapperOptions;
+    private readonly ElasticsearchOptions _elasticsearchOptions;
     private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
     private readonly ShardInitSettingOptions _indexShardOptions;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
-        ILogger<ElasticIndexService> logger, IOptions<ElasticsearchOptions> indexSettingOptions,
+        ILogger<ElasticIndexService> logger, IOptions<AElfBaseStorageMapperOptions> aelfBaseStorageMapperOptions,IOptions<ElasticsearchOptions> elasticsearchOptions,
         IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache, IOptions<ShardInitSettingOptions> indexShardOptions)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
-        _indexSettingOptions = indexSettingOptions.Value;
+        _aelfBaseStorageMapperOptions = aelfBaseStorageMapperOptions.Value;
+        _elasticsearchOptions = elasticsearchOptions.Value;
         _indexMarkFieldCache = indexMarkFieldCache;
         _indexShardOptions = indexShardOptions.Value;
     }
@@ -173,24 +175,24 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
 
     public string GetIndexMarkFieldCacheName(Type type)
     {
-        var cacheName = _indexSettingOptions.IndexPrefix.IsNullOrWhiteSpace()
-            ? $"{_indexMarkFieldCachePrefix}_{type.Name}"
-            : $"{_indexMarkFieldCachePrefix}{_indexSettingOptions.IndexPrefix}_{type.Name}";
+        var cacheName = _aelfBaseStorageMapperOptions.CollectionPrefix.IsNullOrWhiteSpace()
+            ? $"{_indexMarkFieldCachePrefix}_{type.FullName}"
+            : $"{_indexMarkFieldCachePrefix}{_aelfBaseStorageMapperOptions.CollectionPrefix}_{type.FullName}";
         return cacheName;
     }
     
     public string GetDefaultIndexName(Type type)
     {
-        var indexName = _indexSettingOptions.IndexPrefix.IsNullOrWhiteSpace()
+        var indexName = _aelfBaseStorageMapperOptions.CollectionPrefix.IsNullOrWhiteSpace()
             ? type.Name.ToLower()
-            : $"{_indexSettingOptions.IndexPrefix.ToLower()}.{type.Name.ToLower()}";
+            : $"{_aelfBaseStorageMapperOptions.CollectionPrefix.ToLower()}.{type.Name.ToLower()}";
         return indexName;
     }
     public string GetNonShardKeyRouteIndexName(Type type, string fieldName)
     {
-        var routeIndexName= _indexSettingOptions.IndexPrefix.IsNullOrWhiteSpace()
+        var routeIndexName= _aelfBaseStorageMapperOptions.CollectionPrefix.IsNullOrWhiteSpace()
             ? $"{type.Name.ToLower()}.{fieldName.ToLower()}.route"
-            : $"{_indexSettingOptions.IndexPrefix.ToLower()}.{type.Name.ToLower()}.{fieldName.ToLower()}.route";
+            : $"{_aelfBaseStorageMapperOptions.CollectionPrefix.ToLower()}.{type.Name.ToLower()}.{fieldName.ToLower()}.route";
         return routeIndexName;
     }
 
