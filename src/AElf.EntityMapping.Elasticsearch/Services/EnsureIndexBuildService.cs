@@ -39,7 +39,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
         var types = GetTypesAssignableFrom<IAElfEntity>(moduleType.Assembly);
         foreach (var t in types)
         {
-            var indexName = _elasticIndexService.GetDefaultIndexName(t);
+            var indexName = _elasticIndexService.GetDefaultFullIndexName(t);
             
             if (_elasticIndexService.IsShardingCollection(t))
             {
@@ -71,6 +71,6 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
                            !type.IsAbstract && type.IsClass && compareType != type)
             .Cast<Type>().ToList();
     }
-
+    
 
 }

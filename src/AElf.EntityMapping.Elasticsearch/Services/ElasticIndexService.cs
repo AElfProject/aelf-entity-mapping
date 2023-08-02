@@ -189,6 +189,15 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         //     : $"{_entityMappingOptions.CollectionPrefix.ToLower()}.{type.Name.ToLower()}";
         return type.Name.ToLower();
     }
+
+    //TODO: Need to be the same algorithm as the CollectionNameProviderBase.GetFullCollectionName
+    public string GetDefaultFullIndexName(Type type)
+    {
+        var fullIndexName=_entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
+        ? type.Name.ToLower()
+        : $"{_entityMappingOptions.CollectionPrefix.ToLower()}.{type.Name.ToLower()}";
+        return fullIndexName;
+    }
     public string GetNonShardKeyRouteIndexName(Type type, string fieldName)
     {
         var routeIndexName= _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()

@@ -15,7 +15,7 @@ public class AElfElasticsearchTestsModule : AbpModule
     {
         Configure<CollectionCreateOption>(x =>
         {
-            x.AddModule(typeof(AElfElasticsearchTestsModule));
+            x.AddModule(typeof(AElfEntityMappingTestModule));
         });
         
         Configure<ElasticsearchOptions>(options =>

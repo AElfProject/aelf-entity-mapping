@@ -15,6 +15,8 @@ public interface IElasticIndexService
     string GetIndexMarkFieldCacheName(Type indexEntityType);
 
     string GetDefaultIndexName(Type indexEntityType);
+
+    string GetDefaultFullIndexName(Type indexEntityType);
     
     string GetNonShardKeyRouteIndexName(Type indexEntityType, string fieldName);
     

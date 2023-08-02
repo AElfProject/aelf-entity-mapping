@@ -36,10 +36,10 @@ namespace AElf.EntityMapping.TestBase
                 options.Refresh = Refresh.True;
             });
             
-            Configure<AElfEntityMappingOptions>(options =>
-            {
-                options.CollectionPrefix = "AElfEntityMappingTest";
-            });
+            // Configure<AElfEntityMappingOptions>(options =>
+            // {
+            //     options.CollectionPrefix = "AElfEntityMappingTest";
+            // });
 
             // TODO: move to AElf.EntityMapping.Tests
             /*context.Services.Configure<ShardInitSettingOptions>(options =>
@@ -48,7 +48,7 @@ namespace AElf.EntityMapping.TestBase
             });*/
             context.Services.Configure<AElfEntityMappingOptions>(options =>
             {
-                options.CollectionPrefix = "aelfindexer";
+                options.CollectionPrefix = "AElfEntityMappingTest";
                 options.ShardInitSettings = InitShardInitSettingOptions();
             });
         }
