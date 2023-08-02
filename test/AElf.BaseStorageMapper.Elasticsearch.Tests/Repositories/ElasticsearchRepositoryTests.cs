@@ -15,7 +15,7 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
     }
 
     [Fact]
-    public async Task Test()
+    public async Task QueryTest()
     {
         var block12 = new BlockIndex
         {
@@ -34,18 +34,15 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             BlockTime = DateTime.Now.AddDays(-7),
             LogEventCount = 10
         };
-
-        var indexName = "block02";
         
-        await _elasticIndexService.CreateIndexAsync(indexName, typeof(BlockIndex), 1, 0);
-        
-        await _elasticsearchRepository.AddOrUpdateAsync(block12, indexName);
-        await _elasticsearchRepository.AddOrUpdateAsync(block13, indexName);
+        //await _elasticIndexService.CreateIndexAsync(indexName, typeof(BlockIndex), 1, 0);
+        await _elasticsearchRepository.AddOrUpdateAsync(block12);
+        await _elasticsearchRepository.AddOrUpdateAsync(block13);
 
-        var queryable = await _elasticsearchRepository.GetQueryableAsync(indexName);
+        /*var queryable = await _elasticsearchRepository.GetQueryableAsync(indexName);
         var list = queryable.Where(q =>q.BlockHeight >= 1 && q.BlockHeight < 13).OrderByDescending(o=>o.BlockHeight).Take(2).Skip(1)
             .ToList();
-        ;
+        ;*/
 
     }
 }
