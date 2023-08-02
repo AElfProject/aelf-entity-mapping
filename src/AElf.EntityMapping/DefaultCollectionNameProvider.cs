@@ -11,17 +11,10 @@ public class DefaultCollectionNameProvider<TEntity> : CollectionNameProviderBase
     {
         _shardingKeyProvider = shardingKeyProvider;
     }
-
-    private string GetDefaultCollectionName()
-    {
-        return string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix)
-        ? typeof(TEntity).Name
-        : $"{AElfEntityMappingOptions.CollectionPrefix}.{typeof(TEntity).Name}";
-    }
-
+    
     protected override List<string> GetCollectionName(List<CollectionNameCondition> conditions)
     {
-        return new List<string> { GetDefaultCollectionName() };
+        return new List<string> { typeof(TEntity).Name };
     }
 
     protected override string GetCollectionNameById<TKey>(TKey id)
