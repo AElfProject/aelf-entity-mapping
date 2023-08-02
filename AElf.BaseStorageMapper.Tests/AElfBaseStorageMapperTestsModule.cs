@@ -38,7 +38,12 @@ public class AElfBaseStorageMapperTestsModule : AbpModule
             options.NumberOfReplicas = 1;
             options.NumberOfShards = 6;
             options.Refresh = Refresh.True;
-            options.IndexPrefix = "AElfIndexer";
+            // options.IndexPrefix = "AElfIndexer";
+        });
+        
+        Configure<AElfBaseStorageMapperOptions>(options =>
+        {
+            options.CollectionPrefix = "AElfIndexer";
         });
 
     }
