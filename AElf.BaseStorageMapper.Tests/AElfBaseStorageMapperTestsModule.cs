@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using AElf.BaseStorageMapper;
+using AElf.BaseStorageMapper.Elasticsearch;
 using AElf.BaseStorageMapper.Elasticsearch.Options;
 using AElf.BaseStorageMapper.Options;
 using AElf.BaseStorageMapper.TestBase;
@@ -15,7 +16,7 @@ namespace AElf.LinqToElasticSearch;
 
 [DependsOn(typeof(AElfBaseStorageMapperModule),
     typeof(AElfBaseStorageMapperTestBaseModule)
-   //, typeof(AElfIndexingElasticsearchModule)
+   , typeof(AElfBaseStorageMapperElasticsearchModule)
 )]
 public class AElfBaseStorageMapperTestsModule : AbpModule
 {
