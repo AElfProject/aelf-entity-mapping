@@ -9,11 +9,11 @@ public class ShardInitSettingOptions
 public class ShardInitSettingDto
 {
     public string IndexName { get; set; }
-    public List<ShardChain> ShardChains { get; set; }
+    public List<ShardGroup> ShardGroups { get; set; }
 }
 
 // TODO: Rename
-public class ShardChain
+public class ShardGroup
 {
     public List<ShardKey> ShardKeys { get; set; }
 }

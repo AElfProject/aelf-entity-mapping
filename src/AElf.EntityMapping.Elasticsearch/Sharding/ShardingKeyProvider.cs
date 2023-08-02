@@ -348,10 +348,10 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             {
                 var propertyExpression = GetPropertyExpression(type, property.Name);
                 MethodInfo? method = shardProviderType.GetMethod("SetShardingKey");
-                List<ShardChain>? shardChains = _indexShardOptions.Find(a => a.IndexName == type.Name)?.ShardChains;
-                foreach (var shardChain in shardChains)
+                List<ShardGroup>? shardGroups = _indexShardOptions.Find(a => a.IndexName == type.Name)?.ShardGroups;
+                foreach (var shardGroup in shardGroups)
                 {
-                    ShardKey? shardKey = shardChain?.ShardKeys.Find(a => a.Name == property.Name);
+                    ShardKey? shardKey = shardGroup?.ShardKeys.Find(a => a.Name == property.Name);
                     method?.Invoke(providerObj, new object[] {property.Name, shardKey.Step, attribute.Order, shardKey.Value, shardKey.GroupNo, propertyExpression.Body, propertyExpression.Parameters}); 
                 }
 

@@ -57,9 +57,9 @@ namespace AElf.EntityMapping.TestBase
         {
             ShardInitSettingDto blockIndexDto = new ShardInitSettingDto();
             blockIndexDto.IndexName = "BlockIndex";
-            blockIndexDto.ShardChains = new List<ShardChain>()
+            blockIndexDto.ShardGroups = new List<ShardGroup>()
             {
-                new ShardChain()
+                new ShardGroup()
                 {
                     ShardKeys = new List<ShardKey>()
                     {
@@ -81,7 +81,7 @@ namespace AElf.EntityMapping.TestBase
                         }
                     }
                 },
-                new ShardChain()
+                new ShardGroup()
                 {
                     ShardKeys = new List<ShardKey>()
                     {
@@ -107,9 +107,9 @@ namespace AElf.EntityMapping.TestBase
 
             ShardInitSettingDto logEventIndexDto = new ShardInitSettingDto();
             logEventIndexDto.IndexName = "LogEventIndex";
-            logEventIndexDto.ShardChains = new List<ShardChain>()
+            logEventIndexDto.ShardGroups = new List<ShardGroup>()
             {
-                new ShardChain()
+                new ShardGroup()
                 {
                     ShardKeys = new List<ShardKey>()
                     {
@@ -131,7 +131,7 @@ namespace AElf.EntityMapping.TestBase
                         }
                     }
                 },
-                new ShardChain()
+                new ShardGroup()
                 {
                     ShardKeys = new List<ShardKey>()
                     {
