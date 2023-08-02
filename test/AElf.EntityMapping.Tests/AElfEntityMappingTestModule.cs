@@ -18,10 +18,15 @@ public class AElfEntityMappingTestModule : AbpModule
     {
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AElfEntityMappingTestModule>(); });
 
-        context.Services.Configure<ElasticsearchOptions>(options => { options.Refresh = Refresh.True; });
+        // context.Services.Configure<ElasticsearchOptions>(options => { options.Refresh = Refresh.True; });
         Configure<CollectionCreateOption>(x =>
         {
             x.AddModule(typeof(AElfEntityMappingTestModule));
+        });
+        
+        Configure<AElfEntityMappingOptions>(options =>
+        {
+            options.CollectionPrefix = "AElfEntityMappingTest";
         });
 
         context.Services.Configure<ElasticsearchOptions>(options =>
@@ -29,7 +34,7 @@ public class AElfEntityMappingTestModule : AbpModule
             options.NumberOfReplicas = 1;
             options.NumberOfShards = 6;
             options.Refresh = Refresh.True;
-            options.IndexPrefix = "AElfIndexer";
+            // options.IndexPrefix = "AElfIndexer";
         });
 
     }

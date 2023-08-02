@@ -1,4 +1,7 @@
-namespace AElf.EntityMapping.Sharding;
+using AElf.EntityMapping.Sharding;
+using Volo.Abp.Domain.Entities;
+
+namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
 public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
 {

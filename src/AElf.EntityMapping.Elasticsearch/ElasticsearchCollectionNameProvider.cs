@@ -1,4 +1,5 @@
 using AElf.EntityMapping.Elasticsearch.Services;
+using AElf.EntityMapping.Elasticsearch.Sharding;
 using AElf.EntityMapping.Sharding;
 using Volo.Abp.Threading;
 

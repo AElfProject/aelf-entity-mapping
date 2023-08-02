@@ -3,6 +3,7 @@ using AElf.EntityMapping.Elasticsearch.Exceptions;
 using AElf.EntityMapping.Elasticsearch.Linq;
 using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Elasticsearch.Services;
+using AElf.EntityMapping.Elasticsearch.Sharding;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Options;
 using Nest;

@@ -35,11 +35,11 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             LogEventCount = 10
         };
         
-        var indexName = "block";
+        var indexName = "block02";
         
-        //await _elasticIndexService.CreateIndexAsync(indexName, typeof(BlockIndex), 1, 0);
-        // await _elasticsearchRepository.AddOrUpdateAsync(block12);
-        // await _elasticsearchRepository.AddOrUpdateAsync(block13);
+        await _elasticIndexService.CreateIndexAsync(indexName, typeof(BlockIndex), 1, 0);
+         await _elasticsearchRepository.AddOrUpdateAsync(block12);
+         await _elasticsearchRepository.AddOrUpdateAsync(block13);
 
         var queryable = await _elasticsearchRepository.GetQueryableAsync(indexName);
         var list = queryable.Where(q =>q.BlockHeight >= 1 && q.BlockHeight < 13).OrderByDescending(o=>o.BlockHeight).Take(2).Skip(1)

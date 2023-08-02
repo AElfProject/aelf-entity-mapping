@@ -1,7 +1,7 @@
 using Nest;
 using Volo.Abp.Domain.Entities;
 
-namespace AElf.EntityMapping.Sharding;
+namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
 // TODO: move to AElf.EntityMapping.ElasticSearch
 public class NonShardKeyRouteCollection:Entity,IEntity<string>

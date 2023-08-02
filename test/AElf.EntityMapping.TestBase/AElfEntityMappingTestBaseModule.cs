@@ -1,4 +1,5 @@
 ﻿using AElf.EntityMapping.Elasticsearch.Options;
+using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Elasticsearch.Net;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,7 +31,14 @@ namespace AElf.EntityMapping.TestBase
 
             context.Services.Configure<ElasticsearchOptions>(options =>
             {
+                options.NumberOfReplicas = 1;
+                options.NumberOfShards = 6;
                 options.Refresh = Refresh.True;
+            });
+            
+            Configure<AElfEntityMappingOptions>(options =>
+            {
+                options.CollectionPrefix = "AElfEntityMappingTest";
             });
 
             context.Services.Configure<ShardInitSettingOptions>(options =>

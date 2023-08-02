@@ -14,9 +14,7 @@ public class DefaultCollectionNameProvider<TEntity> : CollectionNameProviderBase
 
     private string GetDefaultCollectionName()
     {
-        return string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix)
-        ? typeof(TEntity).Name
-        : $"{AElfEntityMappingOptions.CollectionPrefix}.{typeof(TEntity).Name}";
+        return typeof(TEntity).Name;
     }
 
     protected override List<string> GetCollectionName(List<CollectionNameCondition> conditions)
@@ -26,7 +24,7 @@ public class DefaultCollectionNameProvider<TEntity> : CollectionNameProviderBase
 
     protected override string GetCollectionNameById<TKey>(TKey id)
     {
-        return typeof(TEntity).Name;
+        return GetDefaultCollectionName();
     }
 
     protected override string FormatCollectionName(string name)

@@ -2,6 +2,7 @@ using System.Reflection;
 using AElf.EntityMapping.Elasticsearch.Exceptions;
 using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Entities;
+using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -15,17 +16,19 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
 {
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ElasticIndexService> _logger;
+    private readonly AElfEntityMappingOptions _entityMappingOptions;
     private readonly ElasticsearchOptions _indexSettingOptions;
     private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
     private readonly ShardInitSettingOptions _indexShardOptions;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
-        ILogger<ElasticIndexService> logger, IOptions<ElasticsearchOptions> indexSettingOptions,
+        ILogger<ElasticIndexService> logger, IOptions<AElfEntityMappingOptions> entityMappingOptions,IOptions<ElasticsearchOptions> indexSettingOptions,
         IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache, IOptions<ShardInitSettingOptions> indexShardOptions)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
+        _entityMappingOptions = entityMappingOptions.Value;
         _indexSettingOptions = indexSettingOptions.Value;
         _indexMarkFieldCache = indexMarkFieldCache;
         _indexShardOptions = indexShardOptions.Value;
@@ -171,24 +174,24 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
 
     public string GetIndexMarkFieldCacheName(Type type)
     {
-        var cacheName = _indexSettingOptions.IndexPrefix.IsNullOrWhiteSpace()
-            ? $"{_indexMarkFieldCachePrefix}_{type.Name}"
-            : $"{_indexMarkFieldCachePrefix}{_indexSettingOptions.IndexPrefix}_{type.Name}";
+        var cacheName = _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
+            ? $"{_indexMarkFieldCachePrefix}_{type.FullName}"
+            : $"{_indexMarkFieldCachePrefix}{_entityMappingOptions.CollectionPrefix}_{type.FullName}";
         return cacheName;
     }
     
     public string GetDefaultIndexName(Type type)
     {
-        var indexName = _indexSettingOptions.IndexPrefix.IsNullOrWhiteSpace()
-            ? type.Name.ToLower()
-            : $"{_indexSettingOptions.IndexPrefix.ToLower()}.{type.Name.ToLower()}";
-        return indexName;
+        // var indexName = _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
+        //     ? type.Name.ToLower()
+        //     : $"{_entityMappingOptions.CollectionPrefix.ToLower()}.{type.Name.ToLower()}";
+        return type.Name.ToLower();
     }
     public string GetNonShardKeyRouteIndexName(Type type, string fieldName)
     {
-        var routeIndexName= _indexSettingOptions.IndexPrefix.IsNullOrWhiteSpace()
+        var routeIndexName= _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
             ? $"{type.Name.ToLower()}.{fieldName.ToLower()}.route"
-            : $"{_indexSettingOptions.IndexPrefix.ToLower()}.{type.Name.ToLower()}.{fieldName.ToLower()}.route";
+            : $"{_entityMappingOptions.CollectionPrefix.ToLower()}.{type.Name.ToLower()}.{fieldName.ToLower()}.route";
         return routeIndexName;
     }
 
