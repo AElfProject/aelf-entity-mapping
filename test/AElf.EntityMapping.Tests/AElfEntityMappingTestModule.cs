@@ -1,3 +1,4 @@
+using AElf.EntityMapping.Elasticsearch;
 using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.TestBase;
@@ -10,7 +11,7 @@ namespace AElf.EntityMapping;
 
 [DependsOn(typeof(AElfEntityMappingModule),
     typeof(AElfEntityMappingTestBaseModule)
-   //, typeof(AElfIndexingElasticsearchModule)
+    , typeof(AElfEntityMappingElasticsearchModule)
 )]
 public class AElfEntityMappingTestModule : AbpModule
 {
