@@ -28,7 +28,7 @@ namespace AElf.EntityMapping.TestBase
             Configure<AbpBackgroundJobOptions>(options => { options.IsJobExecutionEnabled = false; });
 
             context.Services.AddAlwaysAllowAuthorization();
-
+            
             context.Services.Configure<ElasticsearchOptions>(options =>
             {
                 options.NumberOfReplicas = 1;
@@ -40,6 +40,8 @@ namespace AElf.EntityMapping.TestBase
             {
                 options.CollectionPrefix = "AElfEntityMappingTest";
             });
+
+            // TODO: move to AElf.EntityMapping.Tests
 
             context.Services.Configure<ShardInitSettingOptions>(options =>
             {

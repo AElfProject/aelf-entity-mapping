@@ -12,6 +12,7 @@
       <ProjectReference Include="..\..\src\AElf.EntityMapping.Elasticsearch\AElf.EntityMapping.Elasticsearch.csproj" />
       <ProjectReference Include="..\..\src\AElf.EntityMapping\AElf.EntityMapping.csproj" />
       <ProjectReference Include="..\AElf.EntityMapping.TestBase\AElf.EntityMapping.TestBase.csproj" />
+      <ProjectReference Include="..\AElf.EntityMapping.Tests\AElf.EntityMapping.Tests.csproj" />
     </ItemGroup>
 
     <ItemGroup>

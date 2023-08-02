@@ -17,8 +17,7 @@ public class AElfEntityMappingTestModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AElfEntityMappingTestModule>(); });
-
-        // context.Services.Configure<ElasticsearchOptions>(options => { options.Refresh = Refresh.True; });
+        
         Configure<CollectionCreateOption>(x =>
         {
             x.AddModule(typeof(AElfEntityMappingTestModule));
@@ -29,6 +28,7 @@ public class AElfEntityMappingTestModule : AbpModule
             options.CollectionPrefix = "AElfEntityMappingTest";
         });
 
+        // TODO: move to AElf.EntityMapping.Elasticsearch.Tests
         context.Services.Configure<ElasticsearchOptions>(options =>
         {
             options.NumberOfReplicas = 1;
