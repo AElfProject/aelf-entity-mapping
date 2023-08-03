@@ -10,13 +10,12 @@
     <ItemGroup>
       <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.3" />
       <PackageReference Include="Shouldly" Version="4.2.1" />
-      <PackageReference Include="Volo.Abp.Authorization" Version="7.3.0" />
-      <PackageReference Include="Volo.Abp.Autofac" Version="7.3.0" />
-      <PackageReference Include="Volo.Abp.AutoMapper" Version="7.3.0" />
-      <PackageReference Include="Volo.Abp.BackgroundJobs" Version="7.3.0" />
-      <PackageReference Include="Volo.Abp.Core" Version="7.3.0" />
-      <PackageReference Include="Volo.Abp.Data" Version="7.3.0" />
-      <PackageReference Include="Volo.Abp.TestBase" Version="7.3.0" />
+      <PackageReference Include="Volo.Abp.Authorization" Version="7.0.0" />
+      <PackageReference Include="Volo.Abp.Autofac" Version="7.0.0" />
+      <PackageReference Include="Volo.Abp.AutoMapper" Version="7.0.0" />
+      <PackageReference Include="Volo.Abp.BackgroundJobs" Version="7.0.0" />
+      <PackageReference Include="Volo.Abp.Data" Version="7.0.0" />
+      <PackageReference Include="Volo.Abp.TestBase" Version="7.0.0" />
       <PackageReference Include="xunit" Version="2.5.0" />
       <PackageReference Include="xunit.runner.console" Version="2.5.0">
         <PrivateAssets>all</PrivateAssets>
