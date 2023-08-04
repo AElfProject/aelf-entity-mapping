@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using AElf.EntityMapping.Elasticsearch.Repositories;
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Sharding;
+using Nest;
 using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Threading;
@@ -17,13 +18,16 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
     // private readonly IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository;
     private List<CollectionMarkField> _nonShardKeys;
+    private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
 
     public NonShardKeyRouteProvider(IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache,
+        IElasticsearchClientProvider elasticsearchClientProvider,
         IElasticIndexService elasticIndexService)
     {
         _indexMarkFieldCache = indexMarkFieldCache;
         _elasticIndexService = elasticIndexService;
         // _nonShardKeyRouteIndexRepository = nonShardKeyRouteIndexRepository;
+        _elasticsearchClientProvider = elasticsearchClientProvider;
 
         InitializeNonShardKeys();
     }
@@ -196,17 +200,17 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
 
         return new List<CollectionMarkField>();
     }
-    public async Task<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexAsync(string id,string indexName)
-    {
-        try
-        {
-            return await _nonShardKeyRouteIndexRepository.GetAsync(id, indexName);
-        }catch(Exception e)
-        {
-            Console.WriteLine(e);
-            throw new Exception(e.Message);
-        }
 
-        return null;
+    public async Task<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexAsync(string id, string indexName, CancellationToken cancellationToken = default)
+    {
+        // return await _nonShardKeyRouteIndexRepository.GetAsync(id, indexName);
+
+        var client = _elasticsearchClientProvider.GetClient();
+        var selector = new Func<GetDescriptor<NonShardKeyRouteCollection>, IGetRequest>(s => s
+            .Index(indexName));
+        var result = new GetResponse<NonShardKeyRouteCollection>();
+        result = await client.GetAsync(new Nest.DocumentPath<NonShardKeyRouteCollection>(new Id(new { id = id.ToString() })),
+            selector, cancellationToken);
+        return result.Found ? result.Source : null;
     }
 }

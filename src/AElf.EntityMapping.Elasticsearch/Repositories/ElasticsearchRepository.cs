@@ -399,8 +399,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 var nonShardKeyRouteIndexName =
                     _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
                 var nonShardKeyRouteIndexId = model.Id.ToString();
-               // var nonShardKeyRouteIndexModel = await _nonShardKeyRouteProvider.GetNonShardKeyRouteIndexAsync(nonShardKeyRouteIndexId, nonShardKeyRouteIndexName);
-                var nonShardKeyRouteIndexModel = GetAsync((TKey)Convert.ChangeType(nonShardKeyRouteIndexId, typeof(TKey)), nonShardKeyRouteIndexName)  as NonShardKeyRouteCollection;
+                var nonShardKeyRouteIndexModel =
+                    await _nonShardKeyRouteProvider.GetNonShardKeyRouteIndexAsync(nonShardKeyRouteIndexId,
+                        nonShardKeyRouteIndexName);
+                // var nonShardKeyRouteIndexModel = GetAsync((TKey)Convert.ChangeType(nonShardKeyRouteIndexId, typeof(TKey)), nonShardKeyRouteIndexName)  as NonShardKeyRouteCollection;
 
                 var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
                 if (nonShardKeyRouteIndexModel != null)
