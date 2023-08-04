@@ -1,3 +1,4 @@
+using AElf.EntityMapping.Elasticsearch.Repositories;
 using AElf.EntityMapping.Sharding;
 using Volo.Abp.Domain.Entities;
 
@@ -18,4 +19,5 @@ public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
     Task<List<CollectionMarkField>> GetNonShardKeysAsync();
 
     Task<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexAsync(string id, string indexName);
+    
 }

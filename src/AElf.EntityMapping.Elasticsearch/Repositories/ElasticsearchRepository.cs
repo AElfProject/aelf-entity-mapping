@@ -7,6 +7,7 @@ using AElf.EntityMapping.Elasticsearch.Sharding;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Options;
 using Nest;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Threading;
 
@@ -22,6 +23,9 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     private readonly INonShardKeyRouteProvider<TEntity> _nonShardKeyRouteProvider;
     private readonly IElasticIndexService _elasticIndexService;
     private List<CollectionMarkField> _nonShardKeys;
+    /*public IAbpLazyServiceProvider LazyServiceProvider { get; set; }
+    public IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository => LazyServiceProvider
+        .LazyGetRequiredService<ElasticsearchRepository<NonShardKeyRouteCollection,string>>();*/
     
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
@@ -60,12 +64,21 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var selector = new Func<GetDescriptor<TEntity>, IGetRequest>(s => s
             .Index(indexName));
-        var result =
-            await client.GetAsync(new Nest.DocumentPath<TEntity>(new Id(new {id = id.ToString()})),
+        var result = new GetResponse<TEntity>();
+        try
+        {
+            result = await client.GetAsync(new Nest.DocumentPath<TEntity>(new Id(new {id = id.ToString()})),
                 selector, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            throw new EntityNotFoundException(id.ToString(), e);
+        }
+
+        
         return result.Found ? result.Source : null;
     }
-
+    
     public async Task<List<TEntity>> GetListAsync(string collectionName = null, CancellationToken cancellationToken = default)
     {
         var queryable = await GetElasticsearchQueryableAsync(collectionName, cancellationToken);
@@ -100,7 +113,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
     public async Task AddAsync(TEntity model, string collectionName = null, CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collectionName);
+        var indexName = GetCollectionName(collectionName, model);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var result = await client.IndexAsync(model, ss => ss.Index(indexName).Refresh(_elasticsearchOptions.Refresh),
             cancellationToken);
@@ -116,7 +129,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public async Task AddOrUpdateAsync(TEntity model, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collectionName);
+        var indexName = GetCollectionName(collectionName, model);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var exits = await client.DocumentExistsAsync(DocumentPath<TEntity>.Id(new Id(model)), dd => dd.Index(indexName),
             cancellationToken);
@@ -326,6 +339,13 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             : IndexNameHelper.FormatIndexName(_collectionNameProvider.GetFullCollectionName(null));
     }
     
+    private string GetCollectionName(string collection, TEntity entity)
+    {
+        return !string.IsNullOrWhiteSpace(collection)
+            ? collection
+            : IndexNameHelper.FormatIndexName(_collectionNameProvider.GetFullCollectionNameByEntity(entity));
+    }
+    
     private string GetCollectionNameById(TKey id, string collection = null)
     {
         return !string.IsNullOrWhiteSpace(collection)
@@ -379,8 +399,9 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 var nonShardKeyRouteIndexName =
                     _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
                 var nonShardKeyRouteIndexId = model.Id.ToString();
-                var nonShardKeyRouteIndexModel = await _nonShardKeyRouteProvider.GetNonShardKeyRouteIndexAsync(nonShardKeyRouteIndexId, nonShardKeyRouteIndexName);
-                    
+               // var nonShardKeyRouteIndexModel = await _nonShardKeyRouteProvider.GetNonShardKeyRouteIndexAsync(nonShardKeyRouteIndexId, nonShardKeyRouteIndexName);
+                var nonShardKeyRouteIndexModel = GetAsync((TKey)Convert.ChangeType(nonShardKeyRouteIndexId, typeof(TKey)), nonShardKeyRouteIndexName)  as NonShardKeyRouteCollection;
+
                 var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
                 if (nonShardKeyRouteIndexModel != null)
                 {

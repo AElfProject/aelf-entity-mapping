@@ -12,7 +12,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
 {
     public IAbpLazyServiceProvider LazyServiceProvider { get; set; }
     protected IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository => LazyServiceProvider
-        .LazyGetRequiredService<ElasticsearchRepository<NonShardKeyRouteCollection,string>>();
+        .LazyGetRequiredService<IElasticsearchRepository<NonShardKeyRouteCollection,string>>();
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
     // private readonly IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository;
@@ -196,9 +196,17 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
 
         return new List<CollectionMarkField>();
     }
-    
     public async Task<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexAsync(string id,string indexName)
     {
-        return await _nonShardKeyRouteIndexRepository.GetAsync(id, indexName);
+        try
+        {
+            return await _nonShardKeyRouteIndexRepository.GetAsync(id, indexName);
+        }catch(Exception e)
+        {
+            Console.WriteLine(e);
+            throw new Exception(e.Message);
+        }
+
+        return null;
     }
 }

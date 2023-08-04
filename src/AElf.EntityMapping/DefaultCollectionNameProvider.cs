@@ -22,6 +22,11 @@ public class DefaultCollectionNameProvider<TEntity> : CollectionNameProviderBase
         return new List<string> { GetDefaultCollectionName() };
     }
 
+    protected override List<string> GetCollectionNameByEntity(TEntity entity)
+    {
+        return new List<string> { GetDefaultCollectionName() };
+    }
+
     protected override string GetCollectionNameById<TKey>(TKey id)
     {
         return GetDefaultCollectionName();

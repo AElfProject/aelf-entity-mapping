@@ -15,11 +15,26 @@ public abstract class CollectionNameProviderBase<TEntity> : ICollectionNameProvi
     public List<string> GetFullCollectionName(List<CollectionNameCondition> conditions)
     {
         var collectionNames = GetCollectionName(conditions);
-        var fullCollectionNames = string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix)
+        /*var fullCollectionNames = string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix)
             ? collectionNames
             : collectionNames.Select(o => $"{AElfEntityMappingOptions.CollectionPrefix}.{o}");
 
-        return fullCollectionNames.Select(FormatCollectionName).ToList();
+        return fullCollectionNames.Select(FormatCollectionName).ToList();*/
+        return collectionNames;
+    }
+    
+    public List<string> GetFullCollectionNameByEntity(TEntity entity)
+    {
+        var collectionNames = GetCollectionNameByEntity(entity);
+        /*var fullCollectionNames = string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix)
+            ? collectionNames
+            : collectionNames.Select(o => $"{AElfEntityMappingOptions.CollectionPrefix}.{o}");*/
+        /*var fullCollectionNames = string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix)
+            ? collectionNames
+            : collectionNames.Select(o => $"{AElfEntityMappingOptions.CollectionPrefix}.{o}");
+
+        return fullCollectionNames.Select(FormatCollectionName).ToList();*/
+        return collectionNames;
     }
 
     public string GetFullCollectionNameById<TKey>(TKey id)
@@ -29,7 +44,9 @@ public abstract class CollectionNameProviderBase<TEntity> : ICollectionNameProvi
     }
     
     protected abstract List<string> GetCollectionName(List<CollectionNameCondition> conditions);
-    
+
+    protected abstract List<string> GetCollectionNameByEntity(TEntity entity);
+
     protected abstract string GetCollectionNameById<TKey>(TKey id);
     
     protected abstract string FormatCollectionName(string name);

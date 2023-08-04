@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using AElf.EntityMapping.Elasticsearch.Services;
 using Xunit;
 
@@ -12,6 +13,28 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
     {
         _elasticsearchRepository = GetRequiredService<IElasticsearchRepository<BlockIndex, string>>();
         _elasticIndexService = GetRequiredService<IElasticIndexService>();
+    }
+
+    [Fact]
+    public async Task AddAsync()
+    {
+        var blockIndex =  new BlockIndex
+        {
+            Id = "block001",
+            BlockHash = "BlockHash001",
+            BlockHeight = 10,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 10,
+            ChainId = "AElf"
+        };
+        await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
+        
+        var queryable = await _elasticsearchRepository.GetQueryableAsync();
+        Expression<Func<BlockIndex, bool>> expression = p =>
+            p.ChainId == blockIndex.ChainId && p.BlockHeight == blockIndex.BlockHeight;
+        var results = queryable.Where(expression).ToList();
+        Assert.True(!results.IsNullOrEmpty());
+        Assert.True(results.First().Id == blockIndex.Id);
     }
 
     [Fact]
