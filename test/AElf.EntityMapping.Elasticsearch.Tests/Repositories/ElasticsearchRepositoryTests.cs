@@ -27,6 +27,29 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             LogEventCount = 10,
             ChainId = "AElf"
         };
+        await _elasticsearchRepository.AddAsync(blockIndex);
+        
+        var queryable = await _elasticsearchRepository.GetQueryableAsync();
+        Expression<Func<BlockIndex, bool>> expression = p =>
+            p.ChainId == blockIndex.ChainId && p.BlockHeight == blockIndex.BlockHeight;
+        var results = queryable.Where(expression).ToList();
+        Assert.True(!results.IsNullOrEmpty());
+        Assert.True(results.First().Id == blockIndex.Id);
+        Assert.True(results.First().BlockHeight == blockIndex.BlockHeight);
+    }
+    
+    [Fact]
+    public async Task AddOrUpdateAsyncTest()
+    {
+        var blockIndex =  new BlockIndex
+        {
+            Id = "block001",
+            BlockHash = "BlockHash001",
+            BlockHeight = 20,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 10,
+            ChainId = "AElf"
+        };
         await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
         
         var queryable = await _elasticsearchRepository.GetQueryableAsync();
@@ -35,6 +58,26 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         var results = queryable.Where(expression).ToList();
         Assert.True(!results.IsNullOrEmpty());
         Assert.True(results.First().Id == blockIndex.Id);
+        Assert.True(results.First().BlockHeight == blockIndex.BlockHeight);
+        
+        var blockIndex2 =  new BlockIndex
+        {
+            Id = "block002",
+            BlockHash = "BlockHash001",
+            BlockHeight = 20,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 10,
+            ChainId = "AElf"
+        };
+        await _elasticsearchRepository.AddOrUpdateAsync(blockIndex2);
+        
+        queryable = await _elasticsearchRepository.GetQueryableAsync();
+        expression = p =>
+            p.ChainId == blockIndex.ChainId && p.BlockHeight == blockIndex.BlockHeight && p.Id == blockIndex2.Id;
+        results = queryable.Where(expression).ToList();
+        Assert.True(!results.IsNullOrEmpty());
+        Assert.True(results.First().Id == blockIndex2.Id);
+        Assert.True(results.First().BlockHeight == blockIndex2.BlockHeight);
     }
 
     [Fact]
