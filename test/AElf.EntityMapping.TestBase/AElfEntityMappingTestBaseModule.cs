@@ -28,24 +28,8 @@ namespace AElf.EntityMapping.TestBase
             Configure<AbpBackgroundJobOptions>(options => { options.IsJobExecutionEnabled = false; });
 
             context.Services.AddAlwaysAllowAuthorization();
-            
-            context.Services.Configure<ElasticsearchOptions>(options =>
-            {
-                options.NumberOfReplicas = 1;
-                options.NumberOfShards = 6;
-                options.Refresh = Refresh.True;
-            });
-            
-            // Configure<AElfEntityMappingOptions>(options =>
-            // {
-            //     options.CollectionPrefix = "AElfEntityMappingTest";
-            // });
 
             // TODO: move to AElf.EntityMapping.Tests
-            /*context.Services.Configure<ShardInitSettingOptions>(options =>
-            {
-                options.ShardInitSettings = InitShardInitSettingOptions();
-            });*/
             context.Services.Configure<AElfEntityMappingOptions>(options =>
             {
                 options.CollectionPrefix = "AElfEntityMappingTest";
