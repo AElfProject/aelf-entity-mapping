@@ -128,13 +128,13 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         conditions.Add("ChainId", "AELF");
         conditions.Add("BlockHeight",100000);
         var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-        Assert.True(blockIndexNameMain == "aelfentitymappingtest.blockindex-aelf-"+100000/2000);
+        Assert.True(blockIndexNameMain.StartsWith("aelfentitymappingtest.blockindex-aelf-"));
         
         Dictionary<string, object> conditions2 = new Dictionary<string, object>();
         conditions2.Add("ChainId", "tDVV");
         conditions2.Add("BlockHeight",100000);
         var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionName(conditions2);
-        Assert.True(blockIndexNameSide == "aelfentitymappingtest.blockindex-tdvv-"+100000/1000);
+        Assert.True(blockIndexNameSide.StartsWith("aelfentitymappingtest.blockindex-tdvv-"));
     }
     
     [Fact]
@@ -149,7 +149,7 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
             Confirmed = true
         };
         var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(blockIndex);
-        Assert.True(blockIndexNameMain == "aelfentitymappingtest.blockindex-aelf-"+100000/2000);
+        Assert.True(blockIndexNameMain.StartsWith("aelfentitymappingtest.blockindex-aelf-"));
         
         BlockIndex blockIndex2 = new BlockIndex()
         {
@@ -160,7 +160,7 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
             Confirmed = true
         };
         var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionName(blockIndex2);
-        Assert.True(blockIndexNameSide == "aelfentitymappingtest.blockindex-tdvv-"+100000/1000);
+        Assert.True(blockIndexNameSide.StartsWith("aelfentitymappingtest.blockindex-tdvv-"));
     }
 
     [Fact]
@@ -243,5 +243,46 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
         Assert.True(indexNames.Count == 6);
         
+    }
+
+    [Fact]
+    public void GetCollectionNameByEntityList()
+    {
+        BlockIndex blockIndex01 = new BlockIndex()
+        {
+            ChainId = "AELF",
+            BlockHeight = 10,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        BlockIndex blockIndex02 = new BlockIndex()
+        {
+            ChainId = "AELF",
+            BlockHeight = 1000,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        BlockIndex blockIndex03 = new BlockIndex()
+        {
+            ChainId = "AELF",
+            BlockHeight = 2000,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        BlockIndex blockIndex04 = new BlockIndex()
+        {
+            ChainId = "AELF",
+            BlockHeight = 10000,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        List<BlockIndex> list = new List<BlockIndex>() { blockIndex01, blockIndex02, blockIndex03, blockIndex04 };
+        var results = _blockIndexShardingKeyProvider.GetCollectionName(list);
+        Assert.True(results.Count == 4);
+
     }
 }

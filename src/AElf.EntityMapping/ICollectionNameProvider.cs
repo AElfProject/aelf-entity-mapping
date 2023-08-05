@@ -6,6 +6,8 @@ public interface ICollectionNameProvider<TEntity>
     List<string> GetFullCollectionName(List<CollectionNameCondition> conditions);
 
     List<string> GetFullCollectionNameByEntity(TEntity entity);
+    
+    List<string> GetFullCollectionNameByEntity(List<TEntity> entitys);
 
     string GetFullCollectionNameById<TKey>(TKey id);
 }

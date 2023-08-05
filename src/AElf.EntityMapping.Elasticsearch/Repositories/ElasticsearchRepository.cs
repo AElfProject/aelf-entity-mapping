@@ -165,8 +165,9 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public async Task AddOrUpdateManyAsync(List<TEntity> list, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collectionName);
-        var client = await GetElasticsearchClientAsync(cancellationToken);
+        //var indexName = GetCollectionName(collectionName);
+        var indexNames = GetCollectionName(collectionName, list);
+        /*var client = await GetElasticsearchClientAsync(cancellationToken);
         var bulk = new BulkRequest(indexName)
         {
             Operations = new List<IBulkOperation>(),
@@ -177,7 +178,14 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             bulk.Operations.Add(new BulkIndexOperation<TEntity>(item));
         }
 
-        var response = await client.BulkAsync(bulk, cancellationToken);
+        var response = await client.BulkAsync(bulk, cancellationToken);*/
+        var client = await GetElasticsearchClientAsync(cancellationToken);
+        var response = new IndexResponse();
+        for(int i=0;i<list.Count;i++)
+        {
+            response = await client.IndexAsync(list[i], ss => ss.Index(indexNames[i]).Refresh(_elasticsearchOptions.Refresh),
+                cancellationToken);
+        }
         
         //bulk index non shard key to route collection 
         if (_nonShardKeys!=null && _nonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
@@ -191,19 +199,20 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                     Operations = new List<IBulkOperation>(),
                     Refresh = _elasticsearchOptions.Refresh
                 };
+                int indexNameCount = 0;
                 foreach (var item in list)
                 {
                     var value = item.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(item);
                     var nonShardKeyRouteIndexModel = new NonShardKeyRouteCollection()
                     {
                         Id = item.Id.ToString(),
-                        ShardCollectionName = indexName,
+                        ShardCollectionName = indexNames[indexNameCount],
                         // SearchKey = Convert.ChangeType(value, nonShardKey.FieldValueType)
                         SearchKey = value?.ToString()
                     };
                     nonShardKeyRouteBulk.Operations.Add(
                         new BulkIndexOperation<NonShardKeyRouteCollection>(nonShardKeyRouteIndexModel));
-
+                    indexNameCount++;
                 }
 
                 var nonShardKeyRouteResponse = await client.BulkAsync(nonShardKeyRouteBulk, cancellationToken);
@@ -213,7 +222,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         if (!response.IsValid)
         {
             throw new ElasticsearchException(
-                $"Bulk InsertOrUpdate Document failed at index {indexName} :{response.ServerError.Error.Reason}");
+                $"Bulk InsertOrUpdate Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
         }
     }
 
@@ -276,8 +285,8 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public async Task DeleteManyAsync(List<TEntity> list, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collectionName);
-        var client = await GetElasticsearchClientAsync(cancellationToken);
+        var indexNames = GetCollectionName(collectionName, list);
+        /*var client = await GetElasticsearchClientAsync(cancellationToken);
         var bulk = new BulkRequest(indexName)
         {
             Operations = new List<IBulkOperation>(),
@@ -288,8 +297,16 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             bulk.Operations.Add(new BulkDeleteOperation<TEntity>(new Id(item)));
         }
 
-        var response = await client.BulkAsync(bulk, cancellationToken);
-
+        var response = await client.BulkAsync(bulk, cancellationToken);*/
+        var client = await GetElasticsearchClientAsync(cancellationToken);
+        var response = new DeleteResponse();
+        for(int i=0;i<list.Count; i++)
+        {
+            response = await client.DeleteAsync(
+                new DeleteRequest(indexNames[i], new Id(list[i])) { Refresh = _elasticsearchOptions.Refresh },
+                    cancellationToken);
+        }
+        
         //bulk delete non shard key to route collection
         if (_nonShardKeys!=null && _nonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
         {
@@ -317,7 +334,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         }
 
         throw new ElasticsearchException(
-            $"Bulk Delete Document at index {indexName} :{response.ServerError.Error.Reason}");
+            $"Bulk Delete Document at index {indexNames} :{response.ServerError.Error.Reason}");
     }
 
     public Task<IElasticClient> GetElasticsearchClientAsync(CancellationToken cancellationToken = default)
@@ -344,6 +361,13 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         return !string.IsNullOrWhiteSpace(collection)
             ? collection
             : IndexNameHelper.FormatIndexName(_collectionNameProvider.GetFullCollectionNameByEntity(entity));
+    }
+    
+    private List<string> GetCollectionName(string collection, List<TEntity> entitys)
+    {
+        return !string.IsNullOrWhiteSpace(collection)
+            ? new List<string>(){collection}
+            : _collectionNameProvider.GetFullCollectionNameByEntity(entitys);
     }
     
     private string GetCollectionNameById(TKey id, string collection = null)
