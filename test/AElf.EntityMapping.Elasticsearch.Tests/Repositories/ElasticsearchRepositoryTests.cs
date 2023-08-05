@@ -36,6 +36,8 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         Assert.True(!results.IsNullOrEmpty());
         Assert.True(results.First().Id == blockIndex.Id);
         Assert.True(results.First().BlockHeight == blockIndex.BlockHeight);
+        await _elasticsearchRepository.DeleteAsync(blockIndex);
+
     }
     
     [Fact]
@@ -54,12 +56,12 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         
         var queryable = await _elasticsearchRepository.GetQueryableAsync();
         Expression<Func<BlockIndex, bool>> expression = p =>
-            p.ChainId == blockIndex.ChainId && p.BlockHeight == blockIndex.BlockHeight;
+            p.ChainId == blockIndex.ChainId && p.BlockHeight == blockIndex.BlockHeight && p.Id == blockIndex.Id;
         var results = queryable.Where(expression).ToList();
         Assert.True(!results.IsNullOrEmpty());
         Assert.True(results.First().Id == blockIndex.Id);
         Assert.True(results.First().BlockHeight == blockIndex.BlockHeight);
-        
+
         var blockIndex2 =  new BlockIndex
         {
             Id = "block002",
@@ -78,8 +80,142 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         Assert.True(!results.IsNullOrEmpty());
         Assert.True(results.First().Id == blockIndex2.Id);
         Assert.True(results.First().BlockHeight == blockIndex2.BlockHeight);
+        
+        expression = p =>
+            p.ChainId == blockIndex.ChainId && p.BlockHeight == blockIndex.BlockHeight;
+        results = queryable.Where(expression).ToList();
+        Assert.True(!results.IsNullOrEmpty());
+        Assert.True(results.Count >= 2);
+        await _elasticsearchRepository.DeleteAsync(blockIndex);
+        await _elasticsearchRepository.DeleteAsync(blockIndex2);
+    }
+    
+    [Fact]
+    public async Task AddOrUpdateManyAsyncTest()
+    {
+        var blockIndex1 =  new BlockIndex
+        {
+            Id = "block001",
+            BlockHash = "BlockHash001",
+            BlockHeight = 10,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 10,
+            ChainId = "AElf"
+        };
+        var blockIndex2 =  new BlockIndex
+        {
+            Id = "block002",
+            BlockHash = "BlockHash002",
+            BlockHeight = 10,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 10,
+            ChainId = "AElf"
+        };
+        var blockIndex3 =  new BlockIndex
+        {
+            Id = "block003",
+            BlockHash = "BlockHash003",
+            BlockHeight = 10,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 10,
+            ChainId = "AElf"
+        };
+        var bulkList = new List<BlockIndex> {blockIndex1, blockIndex2, blockIndex3};
+        await _elasticsearchRepository.AddOrUpdateManyAsync(bulkList);
+        
+        /*var queryable = await _elasticsearchRepository.GetQueryableAsync();
+        Expression<Func<BlockIndex, bool>> expression = p =>
+            p.ChainId == blockIndex.ChainId && p.BlockHeight == blockIndex.BlockHeight;
+        var results = queryable.Where(expression).ToList();
+        Assert.True(!results.IsNullOrEmpty());
+        Assert.True(results.First().Id == blockIndex.Id);
+        Assert.True(results.First().BlockHeight == blockIndex.BlockHeight);
+        await _elasticsearchRepository.DeleteAsync(blockIndex);*/
+
+    }
+    
+    [Fact]
+    public async Task UpdateAsync()
+    {
+        var blockIndex =  new BlockIndex
+        {
+            Id = "block001",
+            BlockHash = "BlockHash001",
+            BlockHeight = 10,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 10,
+            ChainId = "AElf"
+        };
+        blockIndex.BlockHeight = 30;
+        await _elasticsearchRepository.AddAsync(blockIndex);
+        await _elasticsearchRepository.UpdateAsync(blockIndex);
+        
+        var queryable = await _elasticsearchRepository.GetQueryableAsync();
+        Expression<Func<BlockIndex, bool>> expression = p =>
+            p.ChainId == blockIndex.ChainId && p.Id == blockIndex.Id;
+        var results = queryable.Where(expression).ToList();
+        Assert.True(!results.IsNullOrEmpty());
+        Assert.True(results.First().Id == blockIndex.Id);
+        Assert.True(results.First().BlockHeight == blockIndex.BlockHeight);
+        await _elasticsearchRepository.DeleteAsync(blockIndex);
+    }
+    
+    [Fact]
+    public async Task DeleteAsyncByEntityTest()
+    {
+        var blockIndex =  new BlockIndex
+        {
+            Id = "block001",
+            BlockHash = "BlockHash001",
+            BlockHeight = 10,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 10,
+            ChainId = "AElf"
+        };
+        blockIndex.BlockHeight = 30;
+        await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
+        var queryable = await _elasticsearchRepository.GetQueryableAsync();
+        Expression<Func<BlockIndex, bool>> expression = p =>
+            p.ChainId == blockIndex.ChainId && p.Id == blockIndex.Id;
+        var results = queryable.Where(expression).ToList();
+        Assert.True(!results.IsNullOrEmpty());
+        
+        await _elasticsearchRepository.DeleteAsync(blockIndex);
+        
+        queryable = await _elasticsearchRepository.GetQueryableAsync();
+        expression = p =>
+            p.ChainId == blockIndex.ChainId && p.Id == blockIndex.Id;
+        results = queryable.Where(expression).ToList();
+        Assert.True(results.IsNullOrEmpty());
     }
 
+    [Fact]
+    public async Task DeleteAsyncByIdTest()
+    {
+        var blockIndex =  new BlockIndex
+        {
+            Id = "block001",
+            BlockHash = "BlockHash001",
+            BlockHeight = 10,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 10,
+            ChainId = "AElf"
+        };
+        blockIndex.BlockHeight = 30;
+        await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
+        var queryable = await _elasticsearchRepository.GetQueryableAsync();
+        Expression<Func<BlockIndex, bool>> expression = p =>
+            p.ChainId == blockIndex.ChainId && p.Id == blockIndex.Id;
+        var results = queryable.Where(expression).ToList();
+        Assert.True(!results.IsNullOrEmpty());
+        
+        await _elasticsearchRepository.DeleteAsync(blockIndex.Id);
+        queryable = await _elasticsearchRepository.GetQueryableAsync();
+        expression = p =>
+            p.ChainId == blockIndex.ChainId && p.Id == blockIndex.Id;
+        results = queryable.Where(expression).ToList();
+        Assert.True(results.IsNullOrEmpty());
+    }
     [Fact]
     public async Task QueryTest()
     {

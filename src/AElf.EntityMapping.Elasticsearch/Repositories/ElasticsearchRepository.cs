@@ -220,7 +220,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public async Task UpdateAsync(TEntity model, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collectionName);
+        var indexName = GetCollectionName(collectionName,model);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var result = await client.UpdateAsync(DocumentPath<TEntity>.Id(new Id(model)),
             ss => ss.Index(indexName).Doc(model).RetryOnConflict(3).Refresh(_elasticsearchOptions.Refresh),
@@ -236,7 +236,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
     public async Task DeleteAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collectionName);
+        var indexName = GetCollectionNameById(id);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response =
             await client.DeleteAsync(
@@ -256,7 +256,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public async Task DeleteAsync(TEntity model, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collectionName);
+        var indexName = GetCollectionName(collectionName, model);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response =
             await client.DeleteAsync(
