@@ -1,6 +1,7 @@
 using System.Reflection;
 using AElf.EntityMapping.Elasticsearch.Exceptions;
 using AElf.EntityMapping.Elasticsearch.Options;
+using AElf.EntityMapping.Elasticsearch.Sharding;
 using AElf.EntityMapping.Entities;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
@@ -171,7 +172,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
                         $"{type.Name} Attribute Error! NeedShardRouteAttribute only support string type, please check field: {property.Name}");
                 }
                 var indexName = GetNonShardKeyRouteIndexName(type, property.Name);
-                await CreateIndexAsync(indexName, type, shard, numberOfReplicas);
+                await CreateIndexAsync(indexName, typeof(NonShardKeyRouteCollection), shard, numberOfReplicas);
             }
         }
     }

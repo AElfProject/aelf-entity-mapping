@@ -59,7 +59,7 @@ namespace AElf.EntityMapping.TestBase
                         {
                             Name = "BlockHeight",
                             Value = "0",
-                            Step = "2000",
+                            Step = "5",
                             StepType = 1,
                             GroupNo = "0"
                         }
@@ -81,7 +81,7 @@ namespace AElf.EntityMapping.TestBase
                         {
                             Name = "BlockHeight",
                             Value = "0",
-                            Step = "1000",
+                            Step = "10",
                             StepType = 1,
                             GroupNo = "1"
                         }

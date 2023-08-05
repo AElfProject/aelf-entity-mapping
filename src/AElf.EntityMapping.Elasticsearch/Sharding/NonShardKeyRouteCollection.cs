@@ -1,9 +1,10 @@
+using AElf.EntityMapping.Entities;
 using Nest;
 using Volo.Abp.Domain.Entities;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
-public class NonShardKeyRouteCollection:Entity,IEntity<string>
+public class NonShardKeyRouteCollection:Entity,IEntity<string>,IAElfEntity
 {
     [Keyword]public string Id { get; set; }
 

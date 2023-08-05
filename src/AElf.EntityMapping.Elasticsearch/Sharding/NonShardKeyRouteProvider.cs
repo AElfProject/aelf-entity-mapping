@@ -73,7 +73,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             if (condition.Type == ConditionType.Equal)
             {
                 ParameterExpression parameter = Expression.Parameter(typeof(NonShardKeyRouteCollection), "x");
-                MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
+                MemberExpression field = Expression.PropertyOrField(parameter, nameof(NonShardKeyRouteCollection.SearchKey));
                 ConstantExpression value = Expression.Constant(fieldValue);
                 BinaryExpression equals = Expression.Equal(field, value);
                 Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
@@ -92,7 +92,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             if (condition.Type == ConditionType.GreaterThan)
             {
                 ParameterExpression parameter = Expression.Parameter(typeof(NonShardKeyRouteCollection), "x");
-                MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
+                MemberExpression field = Expression.PropertyOrField(parameter, nameof(NonShardKeyRouteCollection.SearchKey));
                 ConstantExpression value = Expression.Constant(fieldValue);
                 BinaryExpression equals = Expression.GreaterThan(field, value);
                 Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
@@ -111,7 +111,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             if (condition.Type == ConditionType.GreaterThanOrEqual)
             {
                 ParameterExpression parameter = Expression.Parameter(typeof(NonShardKeyRouteCollection), "x");
-                MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
+                MemberExpression field = Expression.PropertyOrField(parameter, nameof(NonShardKeyRouteCollection.SearchKey));
                 ConstantExpression value = Expression.Constant(fieldValue);
                 BinaryExpression equals = Expression.GreaterThanOrEqual(field, value);
                 Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
@@ -130,7 +130,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             if (condition.Type == ConditionType.LessThan)
             {
                 ParameterExpression parameter = Expression.Parameter(typeof(NonShardKeyRouteCollection), "x");
-                MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
+                MemberExpression field = Expression.PropertyOrField(parameter, nameof(NonShardKeyRouteCollection.SearchKey));
                 ConstantExpression value = Expression.Constant(condition.Value);
                 BinaryExpression equals = Expression.LessThan(field, value);
                 Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
@@ -149,7 +149,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             if (condition.Type == ConditionType.LessThanOrEqual)
             {
                 ParameterExpression parameter = Expression.Parameter(typeof(NonShardKeyRouteCollection), "x");
-                MemberExpression field = Expression.PropertyOrField(parameter, nonShardKey.FieldName);
+                MemberExpression field = Expression.PropertyOrField(parameter, nameof(NonShardKeyRouteCollection.SearchKey));
                 ConstantExpression value = Expression.Constant(fieldValue);
                 BinaryExpression equals = Expression.LessThanOrEqual(field, value);
                 Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
