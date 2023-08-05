@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
+using Volo.Abp.Threading;
 
 namespace AElf.EntityMapping.Elasticsearch.Linq
 {
@@ -292,7 +293,8 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             }
 
             var conditions = queryModel.GetCollectionNameConditions();
-            var indexNames = _collectionNameProvider.GetFullCollectionName(conditions);
+            var indexNames =
+                AsyncHelper.RunSync(async () => await _collectionNameProvider.GetFullCollectionNameAsync(conditions));
             return IndexNameHelper.FormatIndexName(indexNames);
         }
     }

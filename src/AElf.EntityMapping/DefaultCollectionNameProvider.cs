@@ -12,27 +12,28 @@ public class DefaultCollectionNameProvider<TEntity> : CollectionNameProviderBase
         _shardingKeyProvider = shardingKeyProvider;
     }
 
+    // TODO: He should also depend on shard logic.
     private string GetDefaultCollectionName()
     {
         return typeof(TEntity).Name;
     }
 
-    protected override List<string> GetCollectionName(List<CollectionNameCondition> conditions)
+    protected override async Task<List<string>> GetCollectionName(List<CollectionNameCondition> conditions)
     {
         return new List<string> { GetDefaultCollectionName() };
     }
 
-    protected override List<string> GetCollectionNameByEntity(TEntity entity)
+    protected override async Task<List<string>> GetCollectionNameByEntity(TEntity entity)
     {
         return new List<string> { GetDefaultCollectionName() };
     }
 
-    protected override List<string> GetCollectionNameByEntity(List<TEntity> entity)
+    protected override async Task<List<string>> GetCollectionNameByEntity(List<TEntity> entity)
     {
         return new List<string> { GetDefaultCollectionName() };
     }
 
-    protected override string GetCollectionNameById<TKey>(TKey id)
+    protected override async Task<string> GetCollectionNameById<TKey>(TKey id)
     {
         return GetDefaultCollectionName();
     }

@@ -3,13 +3,13 @@ namespace AElf.EntityMapping;
 public interface ICollectionNameProvider<TEntity>
     where TEntity : class
 {
-    List<string> GetFullCollectionName(List<CollectionNameCondition> conditions);
+    Task<List<string>> GetFullCollectionNameAsync(List<CollectionNameCondition> conditions);
 
-    List<string> GetFullCollectionNameByEntity(TEntity entity);
+    Task<List<string>> GetFullCollectionNameByEntityAsync(TEntity entity);
     
-    List<string> GetFullCollectionNameByEntity(List<TEntity> entitys);
+    Task<List<string>> GetFullCollectionNameByEntityAsync(List<TEntity> entitys);
 
-    string GetFullCollectionNameById<TKey>(TKey id);
+    Task<string> GetFullCollectionNameByIdAsync<TKey>(TKey id);
 }
 
 public class CollectionNameCondition

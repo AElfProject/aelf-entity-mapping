@@ -1,3 +1,4 @@
+using System.Linq.Dynamic.Core;
 using AElf.EntityMapping.Options;
 using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
@@ -12,50 +13,47 @@ public abstract class CollectionNameProviderBase<TEntity> : ICollectionNameProvi
     protected AElfEntityMappingOptions AElfEntityMappingOptions => LazyServiceProvider
         .LazyGetRequiredService<IOptionsSnapshot<AElfEntityMappingOptions>>().Value;
 
-    public List<string> GetFullCollectionName(List<CollectionNameCondition> conditions)
+    public async Task<List<string>> GetFullCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
-        var collectionNames = GetCollectionName(conditions);
-        /*var fullCollectionNames = string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix)
-            ? collectionNames
-            : collectionNames.Select(o => $"{AElfEntityMappingOptions.CollectionPrefix}.{o}");
-
-        return fullCollectionNames.Select(FormatCollectionName).ToList();*/
-        return collectionNames;
+        var collectionNames = await GetCollectionName(conditions);
+        var fullCollectionNames = AddCollectionPrefix(collectionNames);
+        return fullCollectionNames.Select(FormatCollectionName).ToList();
     }
     
-    public List<string> GetFullCollectionNameByEntity(TEntity entity)
+    public async Task<List<string>> GetFullCollectionNameByEntityAsync(TEntity entity)
     {
-        var collectionNames = GetCollectionNameByEntity(entity);
-        /*var fullCollectionNames = string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix)
-            ? collectionNames
-            : collectionNames.Select(o => $"{AElfEntityMappingOptions.CollectionPrefix}.{o}");*/
-        /*var fullCollectionNames = string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix)
-            ? collectionNames
-            : collectionNames.Select(o => $"{AElfEntityMappingOptions.CollectionPrefix}.{o}");
-
-        return fullCollectionNames.Select(FormatCollectionName).ToList();*/
-        return collectionNames;
+        var collectionNames = await GetCollectionNameByEntity(entity);
+        var fullCollectionNames = AddCollectionPrefix(collectionNames);
+        return fullCollectionNames.Select(FormatCollectionName).ToList();
     }
     
-    public List<string> GetFullCollectionNameByEntity(List<TEntity> entitys)
+    public async Task<List<string>> GetFullCollectionNameByEntityAsync(List<TEntity> entitys)
     {
-        var collectionNames = GetCollectionNameByEntity(entitys);
-        return collectionNames;
+        var collectionNames = await GetCollectionNameByEntity(entitys);
+        var fullCollectionNames = AddCollectionPrefix(collectionNames);
+        return fullCollectionNames.Select(FormatCollectionName).ToList();
     }
 
-    public string GetFullCollectionNameById<TKey>(TKey id)
+    public async Task<string> GetFullCollectionNameByIdAsync<TKey>(TKey id)
     {
-        var collectionName = GetCollectionNameById(id);
+        var collectionName = await GetCollectionNameById(id);
         return FormatCollectionName(collectionName);
     }
     
-    protected abstract List<string> GetCollectionName(List<CollectionNameCondition> conditions);
+    protected abstract Task<List<string>> GetCollectionName(List<CollectionNameCondition> conditions);
 
-    protected abstract List<string> GetCollectionNameByEntity(TEntity entity);
+    protected abstract Task<List<string>> GetCollectionNameByEntity(TEntity entity);
 
-    protected abstract List<string> GetCollectionNameByEntity(List<TEntity> entity);
+    protected abstract Task<List<string>> GetCollectionNameByEntity(List<TEntity> entity);
 
-    protected abstract string GetCollectionNameById<TKey>(TKey id);
+    protected abstract Task<string> GetCollectionNameById<TKey>(TKey id);
     
     protected abstract string FormatCollectionName(string name);
+    
+    private List<string> AddCollectionPrefix(List<string> collectionNames)
+    {
+        return string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix)
+            ? collectionNames
+            : collectionNames.Select(o => $"{AElfEntityMappingOptions.CollectionPrefix}.{o}").ToList();
+    }
 }

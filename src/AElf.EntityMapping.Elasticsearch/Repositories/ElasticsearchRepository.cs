@@ -60,7 +60,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
     public async Task<TEntity> GetAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionNameById(id, collectionName);
+        var indexName = await GetCollectionNameByIdAsync(id, collectionName);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var selector = new Func<GetDescriptor<TEntity>, IGetRequest>(s => s
             .Index(indexName));
@@ -113,7 +113,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
     public async Task AddAsync(TEntity model, string collectionName = null, CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collectionName, model);
+        var indexName = await GetCollectionNameAsync(collectionName, model);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var result = await client.IndexAsync(model, ss => ss.Index(indexName).Refresh(_elasticsearchOptions.Refresh),
             cancellationToken);
@@ -129,7 +129,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public async Task AddOrUpdateAsync(TEntity model, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collectionName, model);
+        var indexName = await GetCollectionNameAsync(collectionName, model);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var exits = await client.DocumentExistsAsync(DocumentPath<TEntity>.Id(new Id(model)), dd => dd.Index(indexName),
             cancellationToken);
@@ -165,8 +165,8 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public async Task AddOrUpdateManyAsync(List<TEntity> list, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        //var indexName = GetCollectionName(collectionName);
-        var indexNames = GetCollectionName(collectionName, list);
+        //var indexName = GetCollectionNameAsync(collectionName);
+        var indexNames = await GetCollectionNameAsync(collectionName, list);
         /*var client = await GetElasticsearchClientAsync(cancellationToken);
         var bulk = new BulkRequest(indexName)
         {
@@ -229,7 +229,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public async Task UpdateAsync(TEntity model, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collectionName,model);
+        var indexName = await GetCollectionNameAsync(collectionName,model);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var result = await client.UpdateAsync(DocumentPath<TEntity>.Id(new Id(model)),
             ss => ss.Index(indexName).Doc(model).RetryOnConflict(3).Refresh(_elasticsearchOptions.Refresh),
@@ -245,7 +245,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
     public async Task DeleteAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionNameById(id);
+        var indexName = await GetCollectionNameByIdAsync(id);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response =
             await client.DeleteAsync(
@@ -265,7 +265,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public async Task DeleteAsync(TEntity model, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexName = GetCollectionName(collectionName, model);
+        var indexName = await GetCollectionNameAsync(collectionName, model);
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response =
             await client.DeleteAsync(
@@ -285,7 +285,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public async Task DeleteManyAsync(List<TEntity> list, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
-        var indexNames = GetCollectionName(collectionName, list);
+        var indexNames = await GetCollectionNameAsync(collectionName, list);
         /*var client = await GetElasticsearchClientAsync(cancellationToken);
         var bulk = new BulkRequest(indexName)
         {
@@ -349,32 +349,32 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         return client.AsQueryable<TEntity>(_collectionNameProvider, collectionName);
     }
 
-    private string GetCollectionName(string collection)
+    private async Task<string> GetCollectionNameAsync(string collection)
     {
         return !string.IsNullOrWhiteSpace(collection)
             ? collection
-            : IndexNameHelper.FormatIndexName(_collectionNameProvider.GetFullCollectionName(null));
+            : IndexNameHelper.FormatIndexName( await _collectionNameProvider.GetFullCollectionNameAsync(null));
     }
     
-    private string GetCollectionName(string collection, TEntity entity)
+    private async Task<string> GetCollectionNameAsync(string collection, TEntity entity)
     {
         return !string.IsNullOrWhiteSpace(collection)
             ? collection
-            : IndexNameHelper.FormatIndexName(_collectionNameProvider.GetFullCollectionNameByEntity(entity));
+            : IndexNameHelper.FormatIndexName(await _collectionNameProvider.GetFullCollectionNameByEntityAsync(entity));
     }
     
-    private List<string> GetCollectionName(string collection, List<TEntity> entitys)
+    private async Task<List<string>> GetCollectionNameAsync(string collection, List<TEntity> entitys)
     {
         return !string.IsNullOrWhiteSpace(collection)
             ? new List<string>(){collection}
-            : _collectionNameProvider.GetFullCollectionNameByEntity(entitys);
+            : await _collectionNameProvider.GetFullCollectionNameByEntityAsync(entitys);
     }
     
-    private string GetCollectionNameById(TKey id, string collection = null)
+    private async Task<string> GetCollectionNameByIdAsync(TKey id, string collection = null)
     {
         return !string.IsNullOrWhiteSpace(collection)
             ? collection
-            : _collectionNameProvider.GetFullCollectionNameById(id);
+            : await _collectionNameProvider.GetFullCollectionNameByIdAsync(id);
     }
 
     private async Task AddNonShardKeyRoute(TEntity model, string indexName, IElasticClient client,CancellationToken cancellationToken = default)

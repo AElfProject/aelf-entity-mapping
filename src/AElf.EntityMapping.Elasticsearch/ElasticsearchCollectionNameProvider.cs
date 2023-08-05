@@ -5,7 +5,7 @@ using Volo.Abp.Threading;
 
 namespace AElf.EntityMapping.Elasticsearch;
 
-public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProviderBase<TEntity>
+public class ElasticsearchCollectionNameProvider<TEntity> : ICollectionNameProvider<TEntity>
     where TEntity : class
 {
     private readonly IElasticIndexService _elasticIndexService;
@@ -24,95 +24,52 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
     {
         return _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
     }
-    
-    protected override List<string> GetCollectionName(List<CollectionNameCondition> conditions)
+
+    public async Task<List<string>> GetFullCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
-        if(conditions==null || conditions.Count==0)
-            return new List<string>{GetDefaultCollectionName()};
+        if (conditions == null || conditions.Count == 0)
+            return new List<string> { GetDefaultCollectionName() };
 
-        if (_elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
+            return new List<string> { GetDefaultCollectionName() };
+        
+        var shardKeyCollectionNames = _shardingKeyProvider.GetCollectionName(conditions);
+        var nonShardKeyCollectionNames =
+            await _nonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync(conditions);
+
+        if (shardKeyCollectionNames.Count > 0 && nonShardKeyCollectionNames.Count > 0)
         {
-            var shardKeyCollectionNames= new List<string>();
-            var nonShardKeyCollectionNames= new List<string>();
-
-            AsyncHelper.RunSync(async () =>
-            {
-                shardKeyCollectionNames = _shardingKeyProvider.GetCollectionName(conditions);
-                nonShardKeyCollectionNames =
-                    await _nonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync(conditions);
-            });
-
-            if (shardKeyCollectionNames.Count > 0 && nonShardKeyCollectionNames.Count > 0)
-            {
-                return shardKeyCollectionNames.Intersect(nonShardKeyCollectionNames).ToList();
-            }
-
-            return shardKeyCollectionNames.Concat(nonShardKeyCollectionNames).ToList();
+            return shardKeyCollectionNames.Intersect(nonShardKeyCollectionNames).ToList();
         }
 
-        return new List<string>{GetDefaultCollectionName()};
-
+        return shardKeyCollectionNames.Concat(nonShardKeyCollectionNames).ToList();
     }
 
-    protected override List<string> GetCollectionNameByEntity(TEntity entity)
+    public async Task<List<string>> GetFullCollectionNameByEntityAsync(TEntity entity)
     {
-        if(entity==null)
-            return new List<string>{GetDefaultCollectionName()};
-        
-        if (_elasticIndexService.IsShardingCollection(typeof(TEntity)))
-        {
-            var shardKeyCollectionName = "";
-            var nonShardKeyCollectionNames= new List<string>();
+        if (entity == null)
+            return new List<string> { GetDefaultCollectionName() };
 
-            AsyncHelper.RunSync(async () =>
-            {
-                shardKeyCollectionName = _shardingKeyProvider.GetCollectionName(entity);
-            });
-            
-            return new List<string>(){ shardKeyCollectionName };
-        }
-        
-        return new List<string>{GetDefaultCollectionName()};
-    }
-    
-    protected override List<string> GetCollectionNameByEntity(List<TEntity> entitys)
-    {
-        if(entitys == null || entitys.Count==0)
-            return new List<string>{GetDefaultCollectionName()};
-        
-        if (_elasticIndexService.IsShardingCollection(typeof(TEntity)))
-        {
-            var shardKeyCollectionName = new List<string>();
-            var nonShardKeyCollectionNames= new List<string>();
-
-            AsyncHelper.RunSync(async () =>
-            {
-                shardKeyCollectionName = _shardingKeyProvider.GetCollectionName(entitys);
-            });
-            
-            return shardKeyCollectionName;
-        }
-        
-        return new List<string>{GetDefaultCollectionName()};
+        if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
+            return new List<string> { GetDefaultCollectionName() };
+        var shardKeyCollectionName = _shardingKeyProvider.GetCollectionName(entity);
+        return new List<string>() { shardKeyCollectionName };
     }
 
-    protected override string GetCollectionNameById<TKey>(TKey id)
+    public async Task<List<string>> GetFullCollectionNameByEntityAsync(List<TEntity> entitys)
     {
-        if (_elasticIndexService.IsShardingCollection(typeof(TEntity)))
-        {
-            string collectionName = string.Empty;
-            AsyncHelper.RunSync(async () =>
-            {
-                collectionName=await _nonShardKeyRouteProvider.GetShardCollectionNameByIdAsync(id.ToString());
-            });
-            return collectionName;
-        }
-        
-        return GetDefaultCollectionName();
+        if (entitys == null || entitys.Count == 0)
+            return new List<string> { GetDefaultCollectionName() };
+
+        return _elasticIndexService.IsShardingCollection(typeof(TEntity))
+            ? _shardingKeyProvider.GetCollectionName(entitys)
+            : new List<string> { GetDefaultCollectionName() };
     }
 
-    protected override string FormatCollectionName(string name)
+    public async Task<string> GetFullCollectionNameByIdAsync<TKey>(TKey id)
     {
-        return name.ToLower();
+        if (!_elasticIndexService.IsShardingCollection(typeof(TEntity))) 
+            return GetDefaultCollectionName();
+        return await _nonShardKeyRouteProvider.GetShardCollectionNameByIdAsync(id.ToString());
     }
 }
