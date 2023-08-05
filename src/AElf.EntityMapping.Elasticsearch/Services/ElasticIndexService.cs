@@ -10,7 +10,6 @@ using Microsoft.Extensions.Options;
 using Nest;
 using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.EventBus.Local;
 
 namespace AElf.EntityMapping.Elasticsearch.Services;
 

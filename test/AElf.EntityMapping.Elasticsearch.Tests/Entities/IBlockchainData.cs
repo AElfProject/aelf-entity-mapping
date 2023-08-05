@@ -1,4 +1,4 @@
-namespace AElf.EntityMapping;
+namespace AElf.EntityMapping.Elasticsearch.Entities;
 
 public partial interface IBlockchainData
 {

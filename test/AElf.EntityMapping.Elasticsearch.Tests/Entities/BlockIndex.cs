@@ -1,6 +1,6 @@
 using AElf.EntityMapping.Entities;
 
-namespace AElf.EntityMapping;
+namespace AElf.EntityMapping.Elasticsearch.Entities;
 
 public class BlockIndex:BlockBase,IAElfEntity
 {

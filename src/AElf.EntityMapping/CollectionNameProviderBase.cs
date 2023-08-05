@@ -1,4 +1,3 @@
-using System.Linq.Dynamic.Core;
 using AElf.EntityMapping.Options;
 using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;

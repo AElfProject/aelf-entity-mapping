@@ -1,6 +1,6 @@
 using Volo.Abp.Domain.Entities;
 
-namespace AElf.EntityMapping;
+namespace AElf.EntityMapping.Elasticsearch.Entities;
 
 public class AElfIndexerEntity<TKey>:Entity,IEntity<TKey>
 {

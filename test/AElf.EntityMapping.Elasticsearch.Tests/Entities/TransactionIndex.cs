@@ -2,7 +2,7 @@ using System.Transactions;
 using AElf.EntityMapping.Entities;
 using Nest;
 
-namespace AElf.EntityMapping
+namespace AElf.EntityMapping.Elasticsearch.Entities
 {
     public class TransactionIndex : AElfIndexerEntity<string>, IAElfEntity, IBlockchainData
     {

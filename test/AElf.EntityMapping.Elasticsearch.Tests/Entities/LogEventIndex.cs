@@ -2,7 +2,7 @@ using AElf.EntityMapping.Entities;
 using AElf.EntityMapping.Sharding;
 using Nest;
 
-namespace AElf.EntityMapping;
+namespace AElf.EntityMapping.Elasticsearch.Entities;
 
 public class LogEventIndex:AElfIndexerEntity<string>,IAElfEntity,IBlockchainData
 {

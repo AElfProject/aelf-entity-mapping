@@ -1,11 +1,10 @@
 using AElf.EntityMapping.Elasticsearch.Linq;
 using Nest;
 
-namespace AElf.EntityMapping
+namespace AElf.EntityMapping.Elasticsearch.Entities
 {
 
     [NestedAttributes("LogEvents")]
-
     public class LogEvent : IBlockchainData
     {
         [Keyword] 

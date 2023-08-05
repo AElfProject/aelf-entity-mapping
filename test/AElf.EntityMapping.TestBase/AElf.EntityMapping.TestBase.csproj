@@ -28,8 +28,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\AElf.EntityMapping.Elasticsearch\AElf.EntityMapping.Elasticsearch.csproj" />
-      <ProjectReference Include="..\..\src\AElf.EntityMapping\AElf.EntityMapping.csproj" />
     </ItemGroup>
 
 </Project>

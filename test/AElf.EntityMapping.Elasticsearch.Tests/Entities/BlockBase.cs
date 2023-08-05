@@ -1,7 +1,7 @@
 using AElf.EntityMapping.Sharding;
 using Nest;
 
-namespace AElf.EntityMapping;
+namespace AElf.EntityMapping.Elasticsearch.Entities;
 
 public class BlockBase: AElfIndexerEntity<string>,IBlockchainData
 {

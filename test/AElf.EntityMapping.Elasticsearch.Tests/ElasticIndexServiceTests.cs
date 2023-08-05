@@ -1,4 +1,4 @@
-using AElf.EntityMapping.Elasticsearch.Repositories;
+using AElf.EntityMapping.Elasticsearch.Entities;
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Sharding;
 using Shouldly;

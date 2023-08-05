@@ -7,7 +7,6 @@ using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 using Volo.Abp.Caching;
-using Volo.Abp.EventBus;
 using Volo.Abp.Modularity;
 
 namespace AElf.EntityMapping.Elasticsearch;

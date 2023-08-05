@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using AElf.EntityMapping.Elasticsearch.Entities;
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Options;
 using Microsoft.Extensions.Options;

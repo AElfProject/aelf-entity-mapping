@@ -1,5 +1,4 @@
 ﻿using AElf.EntityMapping.Options;
-using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 using Volo.Abp.Caching;

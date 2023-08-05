@@ -1,6 +1,4 @@
-using AElf.EntityMapping.Elasticsearch.Repositories;
 using AElf.EntityMapping.Sharding;
-using Volo.Abp.Domain.Entities;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding;
 

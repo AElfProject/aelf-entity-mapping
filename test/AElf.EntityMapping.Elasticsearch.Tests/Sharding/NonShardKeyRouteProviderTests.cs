@@ -1,3 +1,4 @@
+using AElf.EntityMapping.Elasticsearch.Entities;
 using AElf.EntityMapping.Elasticsearch.Repositories;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;

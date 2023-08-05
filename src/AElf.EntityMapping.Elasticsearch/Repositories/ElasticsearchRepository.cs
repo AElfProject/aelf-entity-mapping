@@ -7,7 +7,6 @@ using AElf.EntityMapping.Elasticsearch.Sharding;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Options;
 using Nest;
-using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Threading;
 
