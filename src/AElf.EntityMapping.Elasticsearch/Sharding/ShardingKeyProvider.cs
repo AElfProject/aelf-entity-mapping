@@ -229,6 +229,49 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return indexName.ToLower();
     }
 
+    public List<string> GetCollectionName(List<TEntity> entitys)
+    {
+        List<ShardProviderEntity<TEntity>> sahrdEntitys = GetShardingKeyByEntity(typeof(TEntity));
+        if (sahrdEntitys is null || sahrdEntitys.Count == 0)
+        {
+            var collectionName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+            return new List<string>(){collectionName.ToLower()};
+        }
+
+        List<string> collectionNames = new List<string>();
+        foreach (var entity in entitys)
+        {
+            var collectionName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+            string groupNo = "";
+            foreach (var shardEntity in sahrdEntitys)
+            {
+                if (shardEntity.Step == "")
+                {
+                    if ((groupNo == "" || shardEntity.GroupNo == groupNo) && shardEntity.Func(entity).ToString() == shardEntity.Value)
+                    {
+                        collectionName = collectionName + "-" + shardEntity.Func(entity) ?? throw new InvalidOleVariantTypeException();
+                        groupNo = groupNo == "" ? shardEntity.GroupNo : groupNo;
+                    }
+                }
+                else
+                {
+                    if (groupNo == "" || shardEntity.GroupNo == groupNo)
+                    {
+                        var value = shardEntity.Func(entity);
+                        collectionName = collectionName + "-" + int.Parse(value.ToString() ?? string.Empty) / int.Parse(shardEntity.Step);
+                        groupNo = groupNo == "" ? shardEntity.GroupNo : groupNo;
+                    }
+                }
+            }
+            collectionNames.Add(collectionName.ToLower());
+            //addCache
+            SetShardCollectionCache(typeof(TEntity).Name, collectionName.ToLower());
+        }
+       
+        return collectionNames;
+    }
+    
+    
     private void SetShardCollectionCache(string entityName, string collectionName)
     {
         string[] split = collectionName.Split("-");

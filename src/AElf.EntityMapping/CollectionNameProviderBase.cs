@@ -36,6 +36,12 @@ public abstract class CollectionNameProviderBase<TEntity> : ICollectionNameProvi
         return fullCollectionNames.Select(FormatCollectionName).ToList();*/
         return collectionNames;
     }
+    
+    public List<string> GetFullCollectionNameByEntity(List<TEntity> entitys)
+    {
+        var collectionNames = GetCollectionNameByEntity(entitys);
+        return collectionNames;
+    }
 
     public string GetFullCollectionNameById<TKey>(TKey id)
     {
@@ -46,6 +52,8 @@ public abstract class CollectionNameProviderBase<TEntity> : ICollectionNameProvi
     protected abstract List<string> GetCollectionName(List<CollectionNameCondition> conditions);
 
     protected abstract List<string> GetCollectionNameByEntity(TEntity entity);
+
+    protected abstract List<string> GetCollectionNameByEntity(List<TEntity> entity);
 
     protected abstract string GetCollectionNameById<TKey>(TKey id);
     
