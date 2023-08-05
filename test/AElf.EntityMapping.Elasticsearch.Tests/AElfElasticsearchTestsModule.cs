@@ -10,7 +10,8 @@ using Volo.Abp.Modularity;
 namespace AElf.EntityMapping.Elasticsearch;
 
 [DependsOn(typeof(AElfEntityMappingElasticsearchModule),
-    typeof(AElfEntityMappingTestBaseModule)
+    typeof(AElfEntityMappingTestBaseModule),
+    typeof(AElfEntityMappingTestModule)
 )]
 public class AElfElasticsearchTestsModule : AbpModule
 {

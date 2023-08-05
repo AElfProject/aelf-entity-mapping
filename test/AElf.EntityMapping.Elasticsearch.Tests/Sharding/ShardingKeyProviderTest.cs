@@ -6,7 +6,7 @@ using Xunit;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding
 {
-    public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappingTestModule> ,ITransientDependency
+    public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfElasticsearchTestsModule> ,ITransientDependency
     {
         private readonly IShardingKeyProvider<BlockIndex> _blockIndexShardingKeyProvider;
         private readonly IShardingKeyProvider<BlockIndex> _blockIndexShardingKeyProvider2;
