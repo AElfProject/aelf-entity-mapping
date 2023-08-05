@@ -1,3 +1,4 @@
+using AElf.EntityMapping.Elasticsearch.Repositories;
 using AElf.EntityMapping.Sharding;
 using AElf.EntityMapping.TestBase;
 using Nest;
@@ -12,6 +13,8 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
     private readonly IShardingKeyProvider<BlockIndex> _blockIndexShardingKeyProvider2;
     private readonly IShardingKeyProvider<LogEventIndex> _logEventIndexShardingKeyProvider;
     private readonly IShardingKeyProvider<TransactionIndex> _logTransationIndexShardingKeyProvider;
+    private readonly IElasticsearchRepository<BlockIndex, string> _elasticsearchRepository;
+
 
     public ShardingKeyProviderTest()
     {
@@ -22,7 +25,8 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         
         _logTransationIndexShardingKeyProvider = GetRequiredService<IShardingKeyProvider<TransactionIndex>>();
 
-        
+        _logTransationIndexShardingKeyProvider = GetRequiredService<IShardingKeyProvider<TransactionIndex>>();
+        _elasticsearchRepository = GetRequiredService<IElasticsearchRepository<BlockIndex, string>>();
     }
     
     [Fact]
@@ -163,18 +167,20 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         BlockIndex blockIndex = new BlockIndex()
         {
             ChainId = "AELF",
-            BlockHeight = 100000,
+            BlockHeight = 5,
             BlockHash = "0x000000000",
             BlockTime = DateTime.Now,
             Confirmed = true
         };
         var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(blockIndex);
         Assert.True(blockIndexNameMain.StartsWith("aelfentitymappingtest.blockindex-aelf-"));
-        
+        blockIndex.BlockHeight = 10;
+        _blockIndexShardingKeyProvider.GetCollectionName(blockIndex);
+
         BlockIndex blockIndex2 = new BlockIndex()
         {
             ChainId = "tDVV",
-            BlockHeight = 100000,
+            BlockHeight = 5,
             BlockHash = "0x000000000",
             BlockTime = DateTime.Now,
             Confirmed = true
@@ -182,6 +188,54 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionName(blockIndex2);
         Assert.True(blockIndexNameSide.StartsWith("aelfentitymappingtest.blockindex-tdvv-"));
     }
+
+    private void WriteBlockIndex()
+    {
+        var blockIndex =  new BlockIndex
+        {
+            Id = "block001",
+            BlockHash = "BlockHash001",
+            BlockHeight = 1,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 10,
+            ChainId = "AELF"
+        };
+        _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
+        Thread.Sleep(500);
+        blockIndex.BlockHeight = 5;
+        blockIndex.BlockHash = "BlockHash005";
+        blockIndex.Id = "block005";
+        _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
+        Thread.Sleep(500);
+        blockIndex.BlockHeight = 10;
+        blockIndex.BlockHash = "BlockHash010";
+        blockIndex.Id = "block010";
+        _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
+        Thread.Sleep(500);
+    }
+    
+    private void DelBlockIndex()
+    {
+        var blockIndex =  new BlockIndex
+        {
+            Id = "block001",
+            BlockHash = "BlockHash001",
+            BlockHeight = 1,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 10,
+            ChainId = "AELF"
+        };
+        _elasticsearchRepository.DeleteAsync(blockIndex);
+        blockIndex.BlockHeight = 5;
+        blockIndex.BlockHash = "BlockHash005";
+        blockIndex.Id = "block005";
+        _elasticsearchRepository.DeleteAsync(blockIndex);
+        blockIndex.BlockHeight = 10;
+        blockIndex.BlockHash = "BlockHash010";
+        blockIndex.Id = "block010";
+        _elasticsearchRepository.DeleteAsync(blockIndex);
+    }
+
 
     [Fact]
     public void GetCollectionNameEqual()
@@ -199,13 +253,14 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         conditions.Add(condition1);
         conditions.Add(condition2);
         List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-        Assert.True(indexNames.First() == "aelfentitymappingtest.blockindex-aelf-"+100000/2000);
+        Assert.True(indexNames.First() == "aelfentitymappingtest.blockindex-aelf-"+100000/5);
         
     }
     [Fact]
     public void GetCollectionNameGreaterThan()
     {
-        GetCollectionNameForWriteTest();
+        //GetCollectionNameForWriteTest();
+        WriteBlockIndex();
         List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
         CollectionNameCondition condition1 = new CollectionNameCondition();
         condition1.Key = "ChainId";
@@ -213,18 +268,20 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         condition1.Type = ConditionType.Equal;
         CollectionNameCondition condition2 = new CollectionNameCondition();
         condition2.Key = "BlockHeight";
-        condition2.Value = "100";
+        condition2.Value = "1";
         condition2.Type = ConditionType.GreaterThan;
         conditions.Add(condition1);
         conditions.Add(condition2);
         List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-        Assert.True(indexNames.Count == 50);
-        
+        Assert.True(indexNames.Count == 3);
+        DelBlockIndex();
+
     }
     [Fact]
     public void GetCollectionNameGreaterThanOrEqual()
     {
-        GetCollectionNameForWriteTest();
+       // GetCollectionNameForWriteTest();
+        WriteBlockIndex();
         List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
         CollectionNameCondition condition1 = new CollectionNameCondition();
         condition1.Key = "ChainId";
@@ -232,18 +289,19 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         condition1.Type = ConditionType.Equal;
         CollectionNameCondition condition2 = new CollectionNameCondition();
         condition2.Key = "BlockHeight";
-        condition2.Value = "100";
+        condition2.Value = "1";
         condition2.Type = ConditionType.GreaterThanOrEqual;
         conditions.Add(condition1);
         conditions.Add(condition2);
         List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-        Assert.True(indexNames.Count == 51);
+        Assert.True(indexNames.Count == 3);
+        DelBlockIndex();
     }
     
     [Fact]
     public void GetCollectionNameGreaterThanOrEqualAndLessThanOrEqual()
     {
-        GetCollectionNameForWriteTest();
+        WriteBlockIndex();
         List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
         CollectionNameCondition condition1 = new CollectionNameCondition();
         condition1.Key = "ChainId";
@@ -251,18 +309,19 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         condition1.Type = ConditionType.Equal;
         CollectionNameCondition condition2 = new CollectionNameCondition();
         condition2.Key = "BlockHeight";
-        condition2.Value = "100";
+        condition2.Value = "1";
         condition2.Type = ConditionType.GreaterThanOrEqual;
         CollectionNameCondition condition3 = new CollectionNameCondition();
-        condition2.Key = "BlockHeight";
-        condition2.Value = "10000";
-        condition2.Type = ConditionType.LessThanOrEqual;
+        condition3.Key = "BlockHeight";
+        condition3.Value = "11";
+        condition3.Type = ConditionType.LessThanOrEqual;
         conditions.Add(condition1);
         conditions.Add(condition2);
         conditions.Add(condition3);
         List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-        Assert.True(indexNames.Count == 6);
-        
+        Assert.True(indexNames.Count == 3);
+        DelBlockIndex();
+
     }
 
     [Fact]
