@@ -120,7 +120,27 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         var blockHash = _blockIndexShardingKeyProvider.GetShardingKeyByEntityAndFieldName(blockIndex, "BlockHash");
         Assert.True(blockHash == null);
     }
-    
+
+    [Fact]
+    public void GetCollectionNameTest()
+    {
+        List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
+        CollectionNameCondition condition1 = new CollectionNameCondition();
+        condition1.Key = "ChainId";
+        condition1.Value = "AELF";
+        condition1.Type = ConditionType.Equal;
+        CollectionNameCondition condition2 = new CollectionNameCondition();
+        condition2.Key = "BlockHeight";
+        condition2.Value = "10";
+        condition1.Type = ConditionType.Equal;
+        conditions.Add(condition1);
+        conditions.Add(condition2);
+        var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
+        Assert.True(blockIndexNameMain.Count == 1);
+        Assert.True(blockIndexNameMain.First().StartsWith("aelfentitymappingtest.blockindex-aelf-"));
+    }
+
+
     [Fact]
     public void GetCollectionNameForReadTest()
     {

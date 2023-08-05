@@ -108,7 +108,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         foreach (var condition in conditions)
         {
             var entity = entitys.Find(a => a.SharKeyName == condition.Key && a.Step == "");
-            if (entity != null)
+            if (entity != null && list != null)
             {
                 ShardCollectionCacheDto cacheDto =  list.Find(a => a.Keys == (condition.Value.ToString().ToLower() + "-"));
                 if (cacheDto != null)
