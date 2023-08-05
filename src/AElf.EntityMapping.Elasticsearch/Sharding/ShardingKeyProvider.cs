@@ -18,18 +18,21 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly IElasticIndexService _elasticIndexService;
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
     private readonly List<ShardInitSettingDto> _indexShardOptions;
+    private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
 
     private int _isShardIndex = 0;//0-init ,1-yes,2-no
     public  List<ShardProviderEntity<TEntity>> ShardProviderEntityList = new List<ShardProviderEntity<TEntity>>();
     private readonly IDistributedCache<List<ShardCollectionCacheDto>> _indexCollectionCache;
+    private Dictionary<string, string> _existIndexShardDictionary = new Dictionary<string, string>();
 
-    public ShardingKeyProvider(IOptions<ElasticsearchOptions> indexSettingOptions, IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions, IDistributedCache<List<ShardCollectionCacheDto>> indexCollectionCache,IElasticIndexService elasticIndexService)
+    public ShardingKeyProvider(IOptions<ElasticsearchOptions> indexSettingOptions, IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions, IDistributedCache<List<ShardCollectionCacheDto>> indexCollectionCache,IElasticIndexService elasticIndexService,IElasticsearchClientProvider elasticsearchClientProvider)
     {
         _indexSettingOptions = indexSettingOptions.Value;
         _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
         _indexShardOptions = aelfEntityMappingOptions.Value.ShardInitSettings;
         _indexCollectionCache = indexCollectionCache;
         _elasticIndexService = elasticIndexService;
+        _elasticsearchClientProvider = elasticsearchClientProvider;
     }
     public ShardingKeyProvider()
     {
@@ -189,9 +192,26 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         List<string> collectionNames = new List<string>();
         for(long i = min; i <= max; i++)
         {
-            collectionNames.Add((indexName + "-" + i).ToLower());
+            var shardIndexName = (indexName + "-" + i).ToLower();
+            ;
+            var shardIndexNameExist = _existIndexShardDictionary.TryGetValue(shardIndexName, out var value);
+            if (shardIndexNameExist)
+            {
+                collectionNames.Add(shardIndexName);
+            }
+            else
+            {
+                //check ES SDK
+                var client = _elasticsearchClientProvider.GetClient();
+                var exits = client.Indices.ExistsAsync(shardIndexName).Result;
+            
+                if (exits.Exists)
+                {
+                    _existIndexShardDictionary[shardIndexName] = "1";
+                    collectionNames.Add(shardIndexName);
+                }
+            }
         }
-
         return collectionNames;
     }
 
