@@ -231,7 +231,7 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             BlockHeight = 10,
             BlockTime = DateTime.Now.AddDays(-8),
             LogEventCount = 10,
-            ChainId = "AElf"
+            ChainId = "AELF"
         };
         await _elasticsearchRepository.AddAsync(blockIndex);
 
@@ -242,6 +242,22 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         block.BlockHeight.ShouldBe(blockIndex.BlockHeight);
         block.LogEventCount.ShouldBe(blockIndex.LogEventCount);
         block.ChainId.ShouldBe(blockIndex.ChainId);
+        
+        for (int i = 1; i <= 7; i++)
+        {
+            await _elasticsearchRepository.AddAsync(new BlockIndex
+            {
+                Id = "block" + i,
+                BlockHash = "BlockHash" + i,
+                BlockHeight = i,
+                BlockTime = DateTime.Now.AddDays(-10 + i),
+                LogEventCount = i,
+                ChainId = "AELF"
+            });
+        }
+        
+        block = await _elasticsearchRepository.GetAsync("block7");
+        block.Id.ShouldBe("block7");
     }
 
     [Fact]
@@ -255,7 +271,7 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             BlockHeight = 10,
             BlockTime = DateTime.Now.AddDays(-8),
             LogEventCount = 10,
-            ChainId = "AElf"
+            ChainId = "AELF"
         };
         await _elasticsearchRepository.AddAsync(blockIndex, indexName);
 
@@ -280,35 +296,48 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
                 BlockHeight = i,
                 BlockTime = DateTime.Now.AddDays(-10 + i),
                 LogEventCount = i,
-                ChainId = "AElf"
+                ChainId = "AELF"
             };
             await _elasticsearchRepository.AddAsync(blockIndex);
         }
 
-        var list = await _elasticsearchRepository.GetListAsync(o => o.ChainId == "AElf" && o.BlockHeight > 0);
+        var list = await _elasticsearchRepository.GetListAsync(o => o.ChainId == "AELF" && o.BlockHeight >= 0);
         list.Count.ShouldBe(7);
+        var count = await _elasticsearchRepository.GetCountAsync(o => o.ChainId == "AELF" && o.BlockHeight >= 0);
+        count.ShouldBe(7);
 
         list = await _elasticsearchRepository.GetListAsync(o =>
-            o.ChainId == "AElf" && o.BlockHeight > 5 && o.LogEventCount > 6);
+            o.ChainId == "AELF" && o.BlockHeight > 5 && o.LogEventCount > 6);
         list.Count.ShouldBe(1);
+        count = await _elasticsearchRepository.GetCountAsync(o =>
+            o.ChainId == "AELF" && o.BlockHeight > 5 && o.LogEventCount > 6);
+        count.ShouldBe(1);
 
         var queryable = await _elasticsearchRepository.GetQueryableAsync();
-        list = queryable.Where(o => o.ChainId == "AElf" && o.BlockHeight > 0).ToList();
+        list = queryable.Where(o => o.ChainId == "AELF" && o.BlockHeight > 0).ToList();
         list.Count.ShouldBe(7);
+        count = queryable.Count(o => o.ChainId == "AELF" && o.BlockHeight > 0);
+        count.ShouldBe(7);
 
-        list = queryable.Where(o => o.ChainId == "AElf" && o.BlockHeight > 5 && o.LogEventCount > 6).ToList();
+        list = queryable.Where(o => o.ChainId == "AELF" && o.BlockHeight > 5 && o.LogEventCount > 6).ToList();
         list.Count.ShouldBe(1);
+        count = queryable.Count(o => o.ChainId == "AELF" && o.BlockHeight > 5 && o.LogEventCount > 6);
+        count.ShouldBe(1);
 
-        list = queryable.Where(o => o.ChainId == "AElf" && o.BlockHeight > 0).OrderBy(o => o.BlockHeight).Take(5)
+        list = queryable.Where(o => o.ChainId == "AELF" && o.BlockHeight > 0).OrderBy(o => o.BlockHeight).Take(5)
             .Skip(5).ToList();
         list.Count.ShouldBe(2);
-        
-        list = queryable.Where(o => o.ChainId == "AElf" && o.BlockHash == "BlockHash7").ToList();
+        list[0].BlockHeight.ShouldBe(6);
+
+        list = queryable.Where(o => o.ChainId == "AELF" && o.BlockHash == "BlockHash7").ToList();
         list.Count.ShouldBe(1);
+        list[0].Id.ShouldBe("block7");
+        count = queryable.Count(o => o.ChainId == "AELF" && o.BlockHash == "BlockHash7");
+        count.ShouldBe(1);
     }
 
     [Fact]
-    public async Task GetList_SpecificIndexTest()
+    public async Task GetList_SpecificIndex_Test()
     {
         var indexName = $"{_option.CollectionPrefix}.block".ToLower();
         await _elasticIndexService.CreateIndexAsync(indexName, typeof(BlockIndex), 1, 0);
@@ -322,27 +351,75 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
                 BlockHeight = i,
                 BlockTime = DateTime.Now.AddDays(-10 + i),
                 LogEventCount = i,
-                ChainId = "AElf"
+                ChainId = "AELF"
             };
             await _elasticsearchRepository.AddAsync(blockIndex, indexName);
         }
 
-        var list = await _elasticsearchRepository.GetListAsync(o => o.ChainId == "AElf" && o.BlockHeight > 0, indexName);
+        var list = await _elasticsearchRepository.GetListAsync(o => o.ChainId == "AELF" && o.BlockHeight > 0, indexName);
         list.Count.ShouldBe(7);
+        var count = await _elasticsearchRepository.GetCountAsync(o => o.ChainId == "AELF" && o.BlockHeight > 0, indexName);
+        count.ShouldBe(7);
 
         list = await _elasticsearchRepository.GetListAsync(o =>
-            o.ChainId == "AElf" && o.BlockHeight > 5 && o.LogEventCount > 6, indexName);
+            o.ChainId == "AELF" && o.BlockHeight > 5 && o.LogEventCount > 6, indexName);
         list.Count.ShouldBe(1);
+        count = await _elasticsearchRepository.GetCountAsync(o =>
+            o.ChainId == "AELF" && o.BlockHeight > 5 && o.LogEventCount > 6, indexName);
+        count.ShouldBe(1);
 
         var queryable = await _elasticsearchRepository.GetQueryableAsync(indexName);
-        list = queryable.Where(o => o.ChainId == "AElf" && o.BlockHeight > 0).ToList();
+        list = queryable.Where(o => o.ChainId == "AELF" && o.BlockHeight > 0).ToList();
         list.Count.ShouldBe(7);
+        count = queryable.Count(o => o.ChainId == "AELF" && o.BlockHeight > 0);
+        count.ShouldBe(7);
 
-        list = queryable.Where(o => o.ChainId == "AElf" && o.BlockHeight > 5 && o.LogEventCount > 6).ToList();
+        list = queryable.Where(o => o.ChainId == "AELF" && o.BlockHeight > 5 && o.LogEventCount > 6).ToList();
         list.Count.ShouldBe(1);
+        count = queryable.Count(o => o.ChainId == "AELF" && o.BlockHeight > 5 && o.LogEventCount > 6);
+        count.ShouldBe(1);
 
-        list = queryable.Where(o => o.ChainId == "AElf" && o.BlockHeight > 0).OrderBy(o => o.BlockHeight).Take(5)
+        list = queryable.Where(o => o.ChainId == "AELF" && o.BlockHeight > 0).OrderBy(o => o.BlockHeight).Take(5)
             .Skip(5).ToList();
         list.Count.ShouldBe(2);
+        list[0].BlockHeight.ShouldBe(6);
+    }
+
+    [Fact]
+    public async Task GetList_MultipleChain_Test()
+    {
+        for (int i = 1; i <= 7; i++)
+        {
+            var blockIndex = new BlockIndex
+            {
+                Id = "block" + i,
+                BlockHash = "BlockHash" + i,
+                BlockHeight = i,
+                BlockTime = DateTime.Now.AddDays(-10 + i),
+                LogEventCount = i,
+                ChainId = "AELF"
+            };
+            await _elasticsearchRepository.AddAsync(blockIndex);
+        }
+        
+        for (int i = 1; i <= 11; i++)
+        {
+            var blockIndex = new BlockIndex
+            {
+                Id = "block" + i,
+                BlockHash = "BlockHash" + i,
+                BlockHeight = i,
+                BlockTime = DateTime.Now.AddDays(-10 + i),
+                LogEventCount = i,
+                ChainId = "tDVV"
+            };
+            await _elasticsearchRepository.AddAsync(blockIndex);
+        }
+        
+        var list = await _elasticsearchRepository.GetListAsync(o =>o.ChainId =="AELF" && o.BlockHeight >= 0);
+        list.Count.ShouldBe(7);
+        
+        list = await _elasticsearchRepository.GetListAsync(o =>o.ChainId =="tDVV" && o.BlockHeight >= 0);
+        list.Count.ShouldBe(11);
     }
 }
