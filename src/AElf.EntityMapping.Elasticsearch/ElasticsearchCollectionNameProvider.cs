@@ -74,6 +74,27 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         
         return new List<string>{GetDefaultCollectionName()};
     }
+    
+    protected override List<string> GetCollectionNameByEntity(List<TEntity> entitys)
+    {
+        if(entitys == null || entitys.Count==0)
+            return new List<string>{GetDefaultCollectionName()};
+        
+        if (_elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        {
+            var shardKeyCollectionName = new List<string>();
+            var nonShardKeyCollectionNames= new List<string>();
+
+            AsyncHelper.RunSync(async () =>
+            {
+                shardKeyCollectionName = _shardingKeyProvider.GetCollectionName(entitys);
+            });
+            
+            return shardKeyCollectionName;
+        }
+        
+        return new List<string>{GetDefaultCollectionName()};
+    }
 
     protected override string GetCollectionNameById<TKey>(TKey id)
     {

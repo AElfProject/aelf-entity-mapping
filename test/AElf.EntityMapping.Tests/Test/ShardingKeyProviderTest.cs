@@ -244,4 +244,45 @@ public class ShardingKeyProviderTest : AElfEntityMappingTestBase<AElfEntityMappi
         Assert.True(indexNames.Count == 6);
         
     }
+
+    [Fact]
+    public void GetCollectionNameByEntityList()
+    {
+        BlockIndex blockIndex01 = new BlockIndex()
+        {
+            ChainId = "AELF",
+            BlockHeight = 10,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        BlockIndex blockIndex02 = new BlockIndex()
+        {
+            ChainId = "AELF",
+            BlockHeight = 1000,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        BlockIndex blockIndex03 = new BlockIndex()
+        {
+            ChainId = "AELF",
+            BlockHeight = 2000,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        BlockIndex blockIndex04 = new BlockIndex()
+        {
+            ChainId = "AELF",
+            BlockHeight = 10000,
+            BlockHash = "0x000000000",
+            BlockTime = DateTime.Now,
+            Confirmed = true
+        };
+        List<BlockIndex> list = new List<BlockIndex>() { blockIndex01, blockIndex02, blockIndex03, blockIndex04 };
+        var results = _blockIndexShardingKeyProvider.GetCollectionName(list);
+        Assert.True(results.Count == 4);
+
+    }
 }
