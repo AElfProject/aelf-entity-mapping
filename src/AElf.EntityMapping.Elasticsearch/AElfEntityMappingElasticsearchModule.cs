@@ -14,8 +14,7 @@ namespace AElf.EntityMapping.Elasticsearch;
 
 [DependsOn(
     typeof(AElfEntityMappingModule),
-    typeof(AbpCachingModule),
-    typeof(AbpEventBusModule)
+    typeof(AbpCachingModule)
 )]
 public class AElfEntityMappingElasticsearchModule : AbpModule
 {

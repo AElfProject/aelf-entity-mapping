@@ -3,6 +3,7 @@ using AElf.EntityMapping.Options;
 using AElf.EntityMapping.TestBase;
 using Elasticsearch.Net;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Modularity;
 
@@ -28,23 +29,15 @@ public class AElfElasticsearchTestsModule : AbpModule
 
     public override void OnApplicationShutdown(ApplicationShutdownContext context)
     {
-        var clientProvider = context.ServiceProvider.GetRequiredService<IElasticsearchClientProvider>();
-        var indexNameProvider = context.ServiceProvider.GetRequiredService<IIndexNameProvider>();
-
-        var client = clientProvider.GetClient();
-        var indexNames = indexNameProvider.GetIndexNames();
-        foreach (var indexName in indexNames)
-        {
-            client.Indices.Delete(indexName);
-        }
-        indexNameProvider.ClearIndexName();
+        var option = context.ServiceProvider.GetRequiredService<IOptionsSnapshot<AElfEntityMappingOptions>>();
+        if(option.Value.CollectionPrefix.IsNullOrEmpty())
+            return;
         
-        var indexTemplateNames = indexNameProvider.GetIndexTemplates();
-        foreach (var indexTemplateName in indexTemplateNames)
-        {
-            client.Indices.Delete(indexTemplateName.TrimStart('.').Replace("template", "*"));
-            client.Indices.DeleteTemplate(indexTemplateName);
-        }
-        indexNameProvider.ClearIndexTemplate();
+        var clientProvider = context.ServiceProvider.GetRequiredService<IElasticsearchClientProvider>();
+        var client = clientProvider.GetClient();
+        var indexPrefix = option.Value.CollectionPrefix.ToLower();
+        
+        client.Indices.Delete(indexPrefix+"*");
+        client.Indices.DeleteTemplate("." + indexPrefix + "*");
     }
 }

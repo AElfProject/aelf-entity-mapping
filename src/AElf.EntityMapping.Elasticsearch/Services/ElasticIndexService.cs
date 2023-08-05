@@ -23,18 +23,16 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
    // private readonly ShardInitSettingOptions _indexShardOptions;
     private readonly List<ShardInitSettingDto> _indexSettingDtos;
-    private readonly ILocalEventBus _localEventBus;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
         ILogger<ElasticIndexService> logger, IOptions<AElfEntityMappingOptions> entityMappingOptions,IOptions<ElasticsearchOptions> indexSettingOptions,
-        IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache, ILocalEventBus localEventBus)
+        IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache)
         {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
         _entityMappingOptions = entityMappingOptions.Value;
         _indexSettingOptions = indexSettingOptions.Value;
         _indexMarkFieldCache = indexMarkFieldCache;
-        _localEventBus = localEventBus;
         //_indexShardOptions = indexShardOptions.Value;
         _indexSettingDtos = entityMappingOptions.Value.ShardInitSettings;
     }
@@ -72,11 +70,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         if (!result.Acknowledged)
             throw new ElasticsearchException($"Create Index {indexName} failed : " +
                                              result.ServerError.Error.Reason);
-
-        await _localEventBus.PublishAsync(new IndexCreatedEventData
-        {
-            IndexName = indexName
-        });
+        
         //await client.Indices.PutAliasAsync(newName, indexName);
     }
 
@@ -123,10 +117,6 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         }
         else
         {
-            await _localEventBus.PublishAsync(new IndexTemplateCreatedEventData()
-            {
-                TemplateName = indexTemplateName
-            });
             _logger.LogInformation("Index template {indexTemplateName} created successfully", indexTemplateName);
         }
     }
