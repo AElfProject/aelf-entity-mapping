@@ -11,7 +11,6 @@ namespace AElf.EntityMapping;
 
 [DependsOn(typeof(AElfEntityMappingModule),
     typeof(AElfEntityMappingTestBaseModule)
-    , typeof(AElfEntityMappingElasticsearchModule)
 )]
 public class AElfEntityMappingTestModule : AbpModule
 {
@@ -28,15 +27,7 @@ public class AElfEntityMappingTestModule : AbpModule
         {
             options.CollectionPrefix = "AElfEntityMappingTest";
         });
-
-        // TODO: move to AElf.EntityMapping.Elasticsearch.Tests
-        context.Services.Configure<ElasticsearchOptions>(options =>
-        {
-            options.NumberOfReplicas = 1;
-            options.NumberOfShards = 6;
-            options.Refresh = Refresh.True;
-            // options.IndexPrefix = "AElfIndexer";
-        });
+        
 
     }
 }
