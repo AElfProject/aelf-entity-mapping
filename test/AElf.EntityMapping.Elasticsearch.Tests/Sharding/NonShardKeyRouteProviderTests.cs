@@ -37,13 +37,18 @@ public class NonShardKeyRouteProviderTests: AElfElasticsearchTestBase
         await InitBlocksAsync();
 
         var collectionNameCondition = new List<CollectionNameCondition>();
+        var indexes =
+            await _blockIndexNonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync(
+                collectionNameCondition);
+        indexes.Count.ShouldBe(0);
+        
         collectionNameCondition.Add(new CollectionNameCondition
         {
             Key = nameof(BlockIndex.BlockHash),
             Value = "BlockHash7",
             Type = ConditionType.Equal
         });
-        var indexes =
+        indexes =
             await _blockIndexNonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync(
                 collectionNameCondition);
         indexes.Count.ShouldBe(1);
