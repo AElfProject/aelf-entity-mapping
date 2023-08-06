@@ -14,38 +14,50 @@ public abstract class CollectionNameProviderBase<TEntity> : ICollectionNameProvi
 
     public async Task<List<string>> GetFullCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
-        var collectionNames = await GetCollectionName(conditions);
+        var collectionNames = await GetCollectionNameAsync(conditions);
         var fullCollectionNames = AddCollectionPrefix(collectionNames);
         return fullCollectionNames.Select(FormatCollectionName).ToList();
     }
     
     public async Task<List<string>> GetFullCollectionNameByEntityAsync(TEntity entity)
     {
-        var collectionNames = await GetCollectionNameByEntity(entity);
+        var collectionNames = await GetCollectionNameByEntityAsync(entity);
         var fullCollectionNames = AddCollectionPrefix(collectionNames);
         return fullCollectionNames.Select(FormatCollectionName).ToList();
     }
     
     public async Task<List<string>> GetFullCollectionNameByEntityAsync(List<TEntity> entitys)
     {
-        var collectionNames = await GetCollectionNameByEntity(entitys);
+        var collectionNames = await GetCollectionNameByEntityAsync(entitys);
         var fullCollectionNames = AddCollectionPrefix(collectionNames);
         return fullCollectionNames.Select(FormatCollectionName).ToList();
     }
 
     public async Task<string> GetFullCollectionNameByIdAsync<TKey>(TKey id)
     {
-        var collectionName = await GetCollectionNameById(id);
+        var collectionName = await GetCollectionNameByIdAsync(id);
+        collectionName = AddCollectionPrefix(new List<string> {collectionName}).First();
         return FormatCollectionName(collectionName);
     }
     
-    protected abstract Task<List<string>> GetCollectionName(List<CollectionNameCondition> conditions);
+    public virtual async Task<string> RemoveCollectionPrefix(string fullCollectionName)
+    {
+        var collectionName = fullCollectionName;
+        if (!string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix))
+        {
+            collectionName = collectionName.Replace($"{AElfEntityMappingOptions.CollectionPrefix}.", "");
+        }
 
-    protected abstract Task<List<string>> GetCollectionNameByEntity(TEntity entity);
+        return collectionName;
+    }
 
-    protected abstract Task<List<string>> GetCollectionNameByEntity(List<TEntity> entity);
+    protected abstract Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions);
 
-    protected abstract Task<string> GetCollectionNameById<TKey>(TKey id);
+    protected abstract Task<List<string>> GetCollectionNameByEntityAsync(TEntity entity);
+
+    protected abstract Task<List<string>> GetCollectionNameByEntityAsync(List<TEntity> entity);
+
+    protected abstract Task<string> GetCollectionNameByIdAsync<TKey>(TKey id);
     
     protected abstract string FormatCollectionName(string name);
     

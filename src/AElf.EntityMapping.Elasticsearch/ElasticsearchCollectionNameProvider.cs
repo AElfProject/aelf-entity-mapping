@@ -4,7 +4,7 @@ using AElf.EntityMapping.Sharding;
 
 namespace AElf.EntityMapping.Elasticsearch;
 
-public class ElasticsearchCollectionNameProvider<TEntity> : ICollectionNameProvider<TEntity>
+public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProviderBase<TEntity>
     where TEntity : class
 {
     private readonly IElasticIndexService _elasticIndexService;
@@ -24,7 +24,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : ICollectionNameProvi
         return _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
     }
 
-    public async Task<List<string>> GetFullCollectionNameAsync(List<CollectionNameCondition> conditions)
+    protected override async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
         if (conditions == null || conditions.Count == 0)
             return new List<string> { GetDefaultCollectionName() };
@@ -44,7 +44,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : ICollectionNameProvi
         return shardKeyCollectionNames.Concat(nonShardKeyCollectionNames).ToList();
     }
 
-    public async Task<List<string>> GetFullCollectionNameByEntityAsync(TEntity entity)
+    protected override  async Task<List<string>> GetCollectionNameByEntityAsync(TEntity entity)
     {
         if (entity == null)
             return new List<string> { GetDefaultCollectionName() };
@@ -55,7 +55,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : ICollectionNameProvi
         return new List<string>() { shardKeyCollectionName };
     }
 
-    public async Task<List<string>> GetFullCollectionNameByEntityAsync(List<TEntity> entitys)
+    protected override async Task<List<string>> GetCollectionNameByEntityAsync(List<TEntity> entitys)
     {
         if (entitys == null || entitys.Count == 0)
             return new List<string> { GetDefaultCollectionName() };
@@ -65,10 +65,26 @@ public class ElasticsearchCollectionNameProvider<TEntity> : ICollectionNameProvi
             : new List<string> { GetDefaultCollectionName() };
     }
 
-    public async Task<string> GetFullCollectionNameByIdAsync<TKey>(TKey id)
+    protected override async Task<string> GetCollectionNameByIdAsync<TKey>(TKey id)
     {
         if (!_elasticIndexService.IsShardingCollection(typeof(TEntity))) 
             return GetDefaultCollectionName();
         return await _nonShardKeyRouteProvider.GetShardCollectionNameByIdAsync(id.ToString());
+    }
+
+    protected override string FormatCollectionName(string name)
+    {
+        return name.ToLower();
+    }
+
+    public override async Task<string> RemoveCollectionPrefix(string fullCollectionName)
+    {
+        var collectionName = fullCollectionName;
+        if (!string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix))
+        {
+            collectionName = collectionName.Replace($"{AElfEntityMappingOptions.CollectionPrefix}.".ToLower(), "");
+        }
+
+        return collectionName;
     }
 }

@@ -18,22 +18,22 @@ public class DefaultCollectionNameProvider<TEntity> : CollectionNameProviderBase
         return typeof(TEntity).Name;
     }
 
-    protected override async Task<List<string>> GetCollectionName(List<CollectionNameCondition> conditions)
+    protected override async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
         return new List<string> { GetDefaultCollectionName() };
     }
 
-    protected override async Task<List<string>> GetCollectionNameByEntity(TEntity entity)
+    protected override async Task<List<string>> GetCollectionNameByEntityAsync(TEntity entity)
     {
         return new List<string> { GetDefaultCollectionName() };
     }
 
-    protected override async Task<List<string>> GetCollectionNameByEntity(List<TEntity> entity)
+    protected override async Task<List<string>> GetCollectionNameByEntityAsync(List<TEntity> entity)
     {
         return new List<string> { GetDefaultCollectionName() };
     }
 
-    protected override async Task<string> GetCollectionNameById<TKey>(TKey id)
+    protected override async Task<string> GetCollectionNameByIdAsync<TKey>(TKey id)
     {
         return GetDefaultCollectionName();
     }

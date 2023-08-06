@@ -122,7 +122,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public List<string> GetCollectionName(List<CollectionNameCondition> conditions)
     {
-        var indexName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+        // var indexName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
         long min = 0;
         long max = GetShardCollectionCache(conditions);
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
@@ -245,7 +246,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public string GetCollectionName(TEntity entity)
     {
-        var indexName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+        // var indexName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
         List<ShardProviderEntity<TEntity>> sahrdEntitys = GetShardingKeyByEntity(typeof(TEntity));
         if (sahrdEntitys is null || sahrdEntitys.Count == 0)
         {
@@ -282,14 +284,16 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         List<ShardProviderEntity<TEntity>> sahrdEntitys = GetShardingKeyByEntity(typeof(TEntity));
         if (sahrdEntitys is null || sahrdEntitys.Count == 0)
         {
-            var collectionName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+            // var collectionName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+            var collectionName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
             return new List<string>(){collectionName.ToLower()};
         }
 
         List<string> collectionNames = new List<string>();
         foreach (var entity in entitys)
         {
-            var collectionName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+            // var collectionName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+            var collectionName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
             string groupNo = "";
             foreach (var shardEntity in sahrdEntitys)
             {
@@ -390,7 +394,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public string GetCollectionName(Dictionary<string, object> conditions)
     {
-        var indexName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+        // var indexName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + typeof(TEntity).Name.ToLower();
+        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
         if (entitys is null || entitys.Count == 0)
         {
