@@ -268,7 +268,16 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             LogEventCount = 30,
             ChainId = "AELF"
         };
-        var bulkList = new List<BlockIndex> {blockIndex1, blockIndex2, blockIndex3};
+        var blockIndex30 =  new BlockIndex
+        {
+            Id = "block030",
+            BlockHash = "BlockHash030",
+            BlockHeight = 30,
+            BlockTime = DateTime.Now.AddDays(-8),
+            LogEventCount = 30,
+            ChainId = "AELF"
+        };
+        var bulkList = new List<BlockIndex> {blockIndex1, blockIndex2, blockIndex3,blockIndex30};
         await _elasticsearchRepository.AddOrUpdateManyAsync(bulkList);
 
         await _elasticsearchRepository.DeleteManyAsync(bulkList);
@@ -285,8 +294,15 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             p.ChainId == blockIndex2.ChainId && p.Id == blockIndex2.Id;
         results = queryable.Where(expression).ToList();
         Assert.True(results.IsNullOrEmpty());
+        
+        queryable = await _elasticsearchRepository.GetQueryableAsync();
+        expression = p =>
+            p.ChainId == blockIndex30.ChainId && p.Id == blockIndex30.Id;
+        results = queryable.Where(expression).ToList();
+        Assert.True(results.IsNullOrEmpty());
     }
-        [Fact]
+        
+    [Fact]
     public async Task Get_Test()
     {
         var blockIndex =  new BlockIndex
