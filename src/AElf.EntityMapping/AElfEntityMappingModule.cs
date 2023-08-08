@@ -25,8 +25,8 @@ namespace AElf.EntityMapping
         }
         
         public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
-        {
-           // CheckAElfEntityMappingOptions(context);
+        { 
+            CheckAElfEntityMappingOptions(context);
         }
 
         public void CheckAElfEntityMappingOptions(ApplicationInitializationContext context)
