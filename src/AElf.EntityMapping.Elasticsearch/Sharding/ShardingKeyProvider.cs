@@ -7,7 +7,9 @@ using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Entities;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Volo.Abp.Caching;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding;
@@ -19,13 +21,15 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
     private readonly List<ShardInitSettingDto> _indexShardOptions;
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
+    private readonly ILogger<ShardingKeyProvider<TEntity>> _logger;
 
     private int _isShardIndex = 0;//0-init ,1-yes,2-no
     public  List<ShardProviderEntity<TEntity>> ShardProviderEntityList = new List<ShardProviderEntity<TEntity>>();
     private readonly IDistributedCache<List<ShardCollectionCacheDto>> _indexCollectionCache;
     private Dictionary<string, string> _existIndexShardDictionary = new Dictionary<string, string>();
 
-    public ShardingKeyProvider(IOptions<ElasticsearchOptions> indexSettingOptions, IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions, IDistributedCache<List<ShardCollectionCacheDto>> indexCollectionCache,IElasticIndexService elasticIndexService,IElasticsearchClientProvider elasticsearchClientProvider)
+    public ShardingKeyProvider(IOptions<ElasticsearchOptions> indexSettingOptions, IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions, IDistributedCache<List<ShardCollectionCacheDto>> indexCollectionCache,IElasticIndexService elasticIndexService,IElasticsearchClientProvider elasticsearchClientProvider,
+        ILogger<ShardingKeyProvider<TEntity>> logger)
     {
         _indexSettingOptions = indexSettingOptions.Value;
         _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
@@ -33,6 +37,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         _indexCollectionCache = indexCollectionCache;
         _elasticIndexService = elasticIndexService;
         _elasticsearchClientProvider = elasticsearchClientProvider;
+        _logger = logger;
     }
     public ShardingKeyProvider()
     {
@@ -127,6 +132,9 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         long min = 0;
         long max = GetShardCollectionCache(conditions);
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
+        
+        _logger.LogInformation($"GetCollectionName: min: {min} , max: {max}, conditions: {JsonConvert.SerializeObject(conditions)}, entitys: {entitys.Count}");
+
         if (entitys is null || entitys.Count == 0)
         {
             return new List<string>(){indexName.ToLower()};
@@ -140,6 +148,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 if((groupNo == "" || entity.GroupNo == groupNo) && conditions.Find(a=>a.Key == entity.SharKeyName).Value == entity.Value){ 
                     indexName = indexName + "-" + conditions.Find(a=>a.Key == entity.SharKeyName).Value ?? throw new InvalidOleVariantTypeException();
                     groupNo = groupNo == "" ? entity.GroupNo : groupNo;
+                    _logger.LogInformation($"GetCollectionName: Step is null,indexName: {indexName}, groupNo: {groupNo}");
+
                 }
             }
             else
@@ -157,6 +167,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                                         (int.Parse(conditions.Find(a => a.Key == entity.SharKeyName).Value.ToString() ??
                                                    throw new InvalidOperationException()) / int.Parse(entity.Step));
                             groupNo = groupNo == "" ? entity.GroupNo : groupNo;
+                            _logger.LogInformation($"GetCollectionName: conditionType is Equal,indexName: {indexName}, groupNo: {groupNo}");
+
                             return new List<string>(){indexName.ToLower()};
                         }
 
@@ -215,6 +227,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         List<string> collectionNames = new List<string>();
         if (min >= max)
         {
+            _logger.LogInformation($"GetCollectionName: min: {min} , max: {max}, conditions: {JsonConvert.SerializeObject(conditions)}, indexName: {indexName}");
             return new List<string>(){(indexName + "-" + min).ToLower()};
         }
 
@@ -241,6 +254,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 }
             }
         }
+        _logger.LogInformation($"GetCollectionName: min: {min} , max: {max}, conditions: {JsonConvert.SerializeObject(conditions)}, indexName: {JsonConvert.SerializeObject(collectionNames)}");
+
         return collectionNames;
     }
 
