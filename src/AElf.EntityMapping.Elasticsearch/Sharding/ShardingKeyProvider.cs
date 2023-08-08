@@ -151,7 +151,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             if (entity.Step == "")
             {
                 _logger.LogInformation($"GetCollectionName into step==null: entitys info,keyName: {entity.SharKeyName}, value: {entity.Value},order:{entity.Order},step:{entity.Step},groupNo:{entity.GroupNo},globalGroupNo:{groupNo}");
-                if((groupNo == "" || entity.GroupNo == groupNo) && conditions.Find(a=>a.Key == entity.SharKeyName).Value == entity.Value){ 
+                _logger.LogInformation($"GetCollectionName: conditions check: {conditions.Find(a=>a.Key == entity.SharKeyName).Value.ToString()}");
+                if((groupNo == "" || entity.GroupNo == groupNo) && conditions.Find(a=>a.Key == entity.SharKeyName).Value.ToString() == entity.Value){ 
                     indexName = indexName + "-" + conditions.Find(a=>a.Key == entity.SharKeyName).Value ?? throw new InvalidOleVariantTypeException();
                     groupNo = groupNo == "" ? entity.GroupNo : groupNo;
                     _logger.LogInformation($"GetCollectionName: Step is null,indexName: {indexName}, groupNo: {groupNo}");

@@ -141,7 +141,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             conditions.Add(condition2);
             var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
             Assert.True(blockIndexNameMain.Count == 1);
-            Assert.True(blockIndexNameMain.First().StartsWith("aelfentitymappingtest.blockindex-aelf-"));
+            Assert.True(blockIndexNameMain.First().StartsWith("blockindex-aelf-"));
         }
 
 
