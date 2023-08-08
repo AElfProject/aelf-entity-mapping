@@ -139,12 +139,18 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         {
             return new List<string>(){indexName.ToLower()};
         }
+
+        foreach (var entity in entitys)
+        {
+            _logger.LogInformation($"GetCollectionName: entitys info,keyName: {entity.SharKeyName}, value: {entity.Value},order:{entity.Order},step:{entity.Step},groupNo:{entity.GroupNo}");
+        }
         
         string groupNo = "";
         foreach (var entity in entitys)
         {
             if (entity.Step == "")
             {
+                _logger.LogInformation($"GetCollectionName into step==null: entitys info,keyName: {entity.SharKeyName}, value: {entity.Value},order:{entity.Order},step:{entity.Step},groupNo:{entity.GroupNo},globalGroupNo:{groupNo}");
                 if((groupNo == "" || entity.GroupNo == groupNo) && conditions.Find(a=>a.Key == entity.SharKeyName).Value == entity.Value){ 
                     indexName = indexName + "-" + conditions.Find(a=>a.Key == entity.SharKeyName).Value ?? throw new InvalidOleVariantTypeException();
                     groupNo = groupNo == "" ? entity.GroupNo : groupNo;

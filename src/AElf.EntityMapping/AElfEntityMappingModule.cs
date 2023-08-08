@@ -58,7 +58,7 @@ namespace AElf.EntityMapping
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys config cant be null");
                         }
                         var checkStepValue = !shardKeys.Last().Value.IsNullOrEmpty() && !shardKeys.Last().Value.IsNullOrWhiteSpace() && 
-                                             (int.TryParse(shardKeys.Last().Value, out var stepValue) && stepValue > 0);
+                                             (int.TryParse(shardKeys.Last().Step, out var stepValue) && stepValue > 0);
                         if (!checkStepValue)
                         {
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.Step config is not correct, if step>0 need config at the end");
@@ -71,7 +71,7 @@ namespace AElf.EntityMapping
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.GroupNo config is not correct,  GroupNo must be consistent");
                         }
 
-                        var similarShardKeys = shardKeys.FindAll(a=>!a.Value.IsNullOrEmpty() && !a.Value.IsNullOrWhiteSpace() && (int.TryParse(a.Value, out var stepValue) && stepValue > 0));
+                        var similarShardKeys = shardKeys.FindAll(a=>!a.Value.IsNullOrEmpty() && !a.Value.IsNullOrWhiteSpace() && (int.TryParse(a.Step, out var stepValue) && stepValue > 0));
                         if(similarShardKeys.Count == 0)
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.Step config is not correct,  step must greater than 0");
                         
@@ -81,8 +81,8 @@ namespace AElf.EntityMapping
                         foreach (var shardKey in shardKeys)
                         {
                             if (shardKey.Value.IsNullOrEmpty() || shardKey.Value == "0") continue;
-                            var value = shardKeyDic[shardKey.Name];
-                            if (value.IsNullOrEmpty())
+                            
+                            if (!shardKeyDic.TryGetValue(shardKey.Name, out var value))
                             {
                                 shardKeyDic.Add(shardKey.Name, shardKey.Value);
                             }
