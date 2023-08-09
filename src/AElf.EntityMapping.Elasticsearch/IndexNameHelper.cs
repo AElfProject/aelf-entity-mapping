@@ -4,6 +4,6 @@ public static class IndexNameHelper
 {
     public static string FormatIndexName(List<string> indices)
     {
-        return string.Join(',', indices);
+        return indices == null ? string.Empty : string.Join(',', indices);
     }
 }

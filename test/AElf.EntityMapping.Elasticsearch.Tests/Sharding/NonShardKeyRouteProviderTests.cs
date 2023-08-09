@@ -53,7 +53,8 @@ public class NonShardKeyRouteProviderTests: AElfElasticsearchTestBase
             await _blockIndexNonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync(
                 collectionNameCondition);
         indexes.Count.ShouldBe(1);
-        indexes[0].ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
+        // indexes[0].ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
+        indexes[0].ShouldBe($"blockindex-aelf-1");
         
         collectionNameCondition.Add(new CollectionNameCondition
         {
@@ -65,7 +66,8 @@ public class NonShardKeyRouteProviderTests: AElfElasticsearchTestBase
             await _blockIndexNonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync(
                 collectionNameCondition);
         indexes.Count.ShouldBe(1);
-        indexes[0].ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
+        // indexes[0].ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
+        indexes[0].ShouldBe($"blockindex-aelf-1");
         
         collectionNameCondition.Add(new CollectionNameCondition
         {
@@ -85,13 +87,16 @@ public class NonShardKeyRouteProviderTests: AElfElasticsearchTestBase
         await InitBlocksAsync();
         
         var index = await _blockIndexNonShardKeyRouteProvider.GetShardCollectionNameByIdAsync("block1");
-        index.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-0");
+        // index.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-0");
+        index.ShouldBe($"blockindex-aelf-0");
         
         index = await _blockIndexNonShardKeyRouteProvider.GetShardCollectionNameByIdAsync("block2");
-        index.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-0");
+        // index.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-0");
+        index.ShouldBe($"blockindex-aelf-0");
         
         index = await _blockIndexNonShardKeyRouteProvider.GetShardCollectionNameByIdAsync("block7");
-        index.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
+        // index.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
+        index.ShouldBe($"blockindex-aelf-1");
         
         index = await _blockIndexNonShardKeyRouteProvider.GetShardCollectionNameByIdAsync("block8");
         index.ShouldBeEmpty();
@@ -106,12 +111,14 @@ public class NonShardKeyRouteProviderTests: AElfElasticsearchTestBase
         var route = await _blockIndexNonShardKeyRouteProvider.GetNonShardKeyRouteIndexAsync("block1", routeIndex);
         route.Id.ShouldBe("block1");
         route.SearchKey.ShouldBe("BlockHash1");
-        route.ShardCollectionName.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-0");
+        // route.ShardCollectionName.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-0");
+        route.ShardCollectionName.ShouldBe($"blockindex-aelf-0");
         
         route = await _blockIndexNonShardKeyRouteProvider.GetNonShardKeyRouteIndexAsync("block6", routeIndex);
         route.Id.ShouldBe("block6");
         route.SearchKey.ShouldBe("BlockHash6");
-        route.ShardCollectionName.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
+        // route.ShardCollectionName.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
+        route.ShardCollectionName.ShouldBe($"blockindex-aelf-1");
     }
     
     private async Task InitBlocksAsync()

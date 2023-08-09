@@ -47,6 +47,11 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
         public IEnumerable<T> ExecuteCollection<T>(QueryModel queryModel)
         {
             var index = GetIndexName(queryModel);
+            if (index.IsNullOrWhiteSpace())
+            {
+                return new List<T>();
+            }
+
             var queryAggregator = _elasticsearchGeneratorQueryModelVisitor.GenerateElasticQuery<T>(queryModel);
             
             var documents= _elasticClient.Search<IDictionary<string, object>>(descriptor =>
@@ -214,6 +219,11 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
         public T ExecuteScalar<T>(QueryModel queryModel) 
         {
             var index = GetIndexName(queryModel);
+            if (index.IsNullOrWhiteSpace())
+            {
+                return default(T);
+            }
+
             var queryAggregator = _elasticsearchGeneratorQueryModelVisitor.GenerateElasticQuery<T>(queryModel);
 
             foreach (var resultOperator in queryModel.ResultOperators)
