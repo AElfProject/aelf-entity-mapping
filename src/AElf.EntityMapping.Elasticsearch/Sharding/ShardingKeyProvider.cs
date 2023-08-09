@@ -9,6 +9,7 @@ using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nest;
 using Newtonsoft.Json;
 using Volo.Abp.Caching;
 
@@ -378,6 +379,72 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             _indexCollectionCache.Set(entityName, shardCollectionCacheDtos);
             return;
         }
+    }
+
+    private async Task<Tuple<long, List<ShardCollectionSuffix>>> GetCollectionMaxShardIndex(ShardCollectionSuffix searchDto)
+    {
+        var client = _elasticsearchClientProvider.GetClient();
+        var result = await client.GetAsync<ShardCollectionSuffix>(searchDto);
+        var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + searchDto.EntityName).ToLower();
+        Func<SearchDescriptor<TEntity>, ISearchRequest> selector = new Func<SearchDescriptor<TEntity>, ISearchRequest>(s => s
+            .Index(indexName)
+            .Query(filterFunc ?? (q => q.MatchAll()))
+            .Source(includeFieldFunc ?? (i => i.IncludeAll()))
+            .From(skip)
+            .Size(limit));
+    }
+
+    private async Task AddCollectionMaxShardIndex(string entityName, string collectionName)
+    {
+        string[] collectionNameArr = collectionName.Split('-');
+        var suffix = collectionNameArr.Last();
+        var keys = collectionName.Substring(0, collectionNameArr.Length - suffix.Length - 1);
+        
+        ShardCollectionSuffix shardCollectionSuffix = new ShardCollectionSuffix();
+        shardCollectionSuffix.EntityName = entityName;
+        shardCollectionSuffix.Keys = keys;
+        
+        var result = await GetCollectionMaxShardIndex(shardCollectionSuffix);
+
+        List<ShardCollectionCacheDto> shardCollectionCacheDtos = _indexCollectionCache.Get(typeof(TEntity).Name);
+        if (shardCollectionCacheDtos is null)
+        {
+            shardCollectionCacheDtos = new List<ShardCollectionCacheDto>();
+            ShardCollectionCacheDto cacheDto = new ShardCollectionCacheDto();
+            
+            cacheDto.Keys = keys;
+            cacheDto.MaxShardNo = maxShardNo;
+            shardCollectionCacheDtos.Add(cacheDto);
+            _indexCollectionCache.Set(entityName, shardCollectionCacheDtos);
+            return;
+        }
+        
+        ShardCollectionCacheDto shardCollectionCacheDto = shardCollectionCacheDtos.Find(a => a.Keys == keys);
+        if (shardCollectionCacheDto is null)
+        {
+            ShardCollectionCacheDto cacheDto = new ShardCollectionCacheDto();
+            cacheDto.Keys = keys;
+            cacheDto.MaxShardNo = maxShardNo;
+            shardCollectionCacheDtos.Add(cacheDto);
+            _indexCollectionCache.Set(entityName, shardCollectionCacheDtos);
+            return;
+        }
+        else
+        {
+            long oldMaxShardNo = shardCollectionCacheDto.MaxShardNo;
+            if(oldMaxShardNo < maxShardNo)
+            {
+                shardCollectionCacheDtos.Remove(shardCollectionCacheDto);
+                ShardCollectionCacheDto currentCacheDto = new ShardCollectionCacheDto();
+                currentCacheDto.MaxShardNo = maxShardNo;
+                currentCacheDto.Keys = keys;
+                shardCollectionCacheDtos.Add(currentCacheDto);
+            }
+            _indexCollectionCache.Set(entityName, shardCollectionCacheDtos);
+            return;
+        }
+        
+        
     }
 
     public bool IsShardingCollection()
