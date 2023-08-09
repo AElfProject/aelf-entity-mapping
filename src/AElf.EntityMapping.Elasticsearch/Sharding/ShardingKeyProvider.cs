@@ -380,20 +380,27 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             return;
         }
     }
-
-    private async Task<Tuple<long, List<ShardCollectionSuffix>>> GetCollectionMaxShardIndex(ShardCollectionSuffix searchDto)
+    public async Task<Tuple<long, List<ShardCollectionSuffix>>> GetCollectionMaxShardIndex(ShardCollectionSuffix searchDto)
     {
-        var client = _elasticsearchClientProvider.GetClient();
-        var result = await client.GetAsync<ShardCollectionSuffix>(searchDto);
         var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + searchDto.EntityName).ToLower();
-        Func<SearchDescriptor<TEntity>, ISearchRequest> selector = new Func<SearchDescriptor<TEntity>, ISearchRequest>(s => s
-            .Index(indexName)
-            .Query(filterFunc ?? (q => q.MatchAll()))
-            .Source(includeFieldFunc ?? (i => i.IncludeAll()))
-            .From(skip)
-            .Size(limit));
-    }
+        var client = _elasticsearchClientProvider.GetClient();
+        var mustQuery = new List<Func<QueryContainerDescriptor<ShardCollectionSuffix>, QueryContainer>>();
+        mustQuery.Add(q => q.Term(i => i.Field(f => f.EntityName).Value(searchDto.EntityName)));
+        mustQuery.Add(q => q.Term(i => i.Field(f => f.Keys).Value(searchDto.Keys)));
 
+        QueryContainer Filter(QueryContainerDescriptor<ShardCollectionSuffix> f) => f.Bool(b => b.Must(mustQuery));
+        Func<SearchDescriptor<ShardCollectionSuffix>, ISearchRequest> selector = null;
+        selector = new Func<SearchDescriptor<ShardCollectionSuffix>, ISearchRequest>(s => s.Index(indexName).Query(Filter).From(0).Size(1));
+        
+        var result = await client.SearchAsync(selector);
+        if (!result.IsValid)
+        {
+            throw new Exception($"Search document failed at index {indexName} :" + result.ServerError.Error.Reason);
+        }
+        return new Tuple<long, List<ShardCollectionSuffix>>(result.Total, result.Documents.ToList());
+    }
+    
+    
     private async Task AddCollectionMaxShardIndex(string entityName, string collectionName)
     {
         string[] collectionNameArr = collectionName.Split('-');
@@ -405,8 +412,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         shardCollectionSuffix.Keys = keys;
         
         var result = await GetCollectionMaxShardIndex(shardCollectionSuffix);
-
-        List<ShardCollectionCacheDto> shardCollectionCacheDtos = _indexCollectionCache.Get(typeof(TEntity).Name);
+        
+        List<ShardCollectionSuffix> shardCollectionCacheDtos = result.Item2;
         if (shardCollectionCacheDtos is null)
         {
             shardCollectionCacheDtos = new List<ShardCollectionCacheDto>();
