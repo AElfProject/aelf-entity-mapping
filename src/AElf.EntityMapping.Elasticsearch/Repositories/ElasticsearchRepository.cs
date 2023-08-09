@@ -166,6 +166,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     {
         //var indexName = GetCollectionNameAsync(collectionName);
         var indexNames = await GetFullCollectionNameAsync(collectionName, list);
+        var isSharding = _elasticIndexService.IsShardingCollection(typeof(TEntity));
         /*var client = await GetElasticsearchClientAsync(cancellationToken);
         var bulk = new BulkRequest(indexName)
         {
@@ -183,6 +184,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var bulk = new BulkRequest();
         var currentIndexName = string.Empty;
         // List<BulkIndexOperation<TEntity>> operations = new List<BulkIndexOperation<TEntity>>();
+        
         for (int i = 0; i < list.Count; i++)
         {
             // response = await client.IndexAsync(list[i], ss => ss.Index(indexNames[i]).Refresh(_elasticsearchOptions.Refresh),
@@ -190,7 +192,14 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
             if (string.IsNullOrEmpty(currentIndexName))
             {
-                currentIndexName = indexNames[i];
+                if (isSharding)
+                {
+                    currentIndexName = indexNames[i];
+                }
+                else
+                {
+                    currentIndexName = indexNames[0];
+                }
                 
                 bulk = new BulkRequest(currentIndexName)
                 {
@@ -199,7 +208,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 };
             }
             
-            if (currentIndexName != indexNames[i])
+            if (isSharding && (currentIndexName != indexNames[i]))
             {
                 response = await client.BulkAsync(bulk, cancellationToken);
                 if (!response.IsValid)
@@ -291,6 +300,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         CancellationToken cancellationToken = default)
     {
         var indexNames = await GetFullCollectionNameAsync(collectionName, list);
+        var isSharding = _elasticIndexService.IsShardingCollection(typeof(TEntity));
         /*var client = await GetElasticsearchClientAsync(cancellationToken);
         var bulk = new BulkRequest(indexName)
         {
@@ -315,8 +325,15 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             
             if (string.IsNullOrEmpty(currentIndexName))
             {
-                currentIndexName = indexNames[i];
-                
+                if (isSharding)
+                {
+                    currentIndexName = indexNames[i];
+                }
+                else
+                {
+                    currentIndexName = indexNames[0];
+                }
+
                 bulk = new BulkRequest(currentIndexName)
                 {
                     Operations = new List<IBulkOperation>(),
@@ -324,7 +341,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 };
             }
             
-            if (currentIndexName != indexNames[i])
+            if (isSharding && (currentIndexName != indexNames[i]))
             {
                 response = await client.BulkAsync(bulk, cancellationToken);
                 if (!response.IsValid)
