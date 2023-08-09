@@ -226,7 +226,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         {
             var shardIndexName = (indexName + "-" + i).ToLower();
             ;
-            var shardIndexNameExist = _existIndexShardDictionary.TryGetValue(shardIndexName, out var value);
+            var shardIndexNameExist = _existIndexShardDictionary.TryGetValue(_aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + shardIndexName, out var value);
             if (shardIndexNameExist)
             {
                 collectionNames.Add(shardIndexName);
@@ -234,11 +234,11 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             else
             {
                 var client = _elasticsearchClientProvider.GetClient();
-                var exits = client.Indices.ExistsAsync(shardIndexName).Result;
+                var exits = client.Indices.ExistsAsync(_aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + shardIndexName).Result;
             
                 if (exits.Exists)
                 {
-                    _existIndexShardDictionary[shardIndexName] = "1";
+                    _existIndexShardDictionary[_aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + shardIndexName] = "1";
                     collectionNames.Add(shardIndexName);
                 }
             }
