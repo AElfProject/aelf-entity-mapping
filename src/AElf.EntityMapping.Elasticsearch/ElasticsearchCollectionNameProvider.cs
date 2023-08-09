@@ -1,6 +1,8 @@
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Elasticsearch.Sharding;
 using AElf.EntityMapping.Sharding;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace AElf.EntityMapping.Elasticsearch;
 
@@ -10,13 +12,16 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
     private readonly INonShardKeyRouteProvider<TEntity> _nonShardKeyRouteProvider;
+    private readonly ILogger<ElasticsearchCollectionNameProvider<TEntity>> _logger;
 
     public ElasticsearchCollectionNameProvider(IElasticIndexService elasticIndexService,
-        IShardingKeyProvider<TEntity> shardingKeyProvider, INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider)
+        IShardingKeyProvider<TEntity> shardingKeyProvider, INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider,
+        ILogger<ElasticsearchCollectionNameProvider<TEntity>> logger)
     {
         _elasticIndexService = elasticIndexService;
         _shardingKeyProvider = shardingKeyProvider;
         _nonShardKeyRouteProvider = nonShardKeyRouteProvider;
+        _logger = logger;
     }
 
     private string GetDefaultCollectionName()
@@ -26,9 +31,13 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
 
     protected override async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync:  " +
+                               $"conditions: {JsonConvert.SerializeObject(conditions)}");
         if (conditions == null || conditions.Count == 0)
             return new List<string> { GetDefaultCollectionName() };
 
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync:  " +
+                               $"IsShardingCollection: {!_elasticIndexService.IsShardingCollection(typeof(TEntity))}");
         if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
             return new List<string> { GetDefaultCollectionName() };
         
@@ -38,8 +47,17 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
 
         if (shardKeyCollectionNames.Count > 0 && nonShardKeyCollectionNames.Count > 0)
         {
+            _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync1:  " +
+                                   $"conditions: {JsonConvert.SerializeObject(conditions)}, " +
+                                   $"shardKeyCollectionNames: {JsonConvert.SerializeObject(shardKeyCollectionNames)}," +
+                                   $"nonShardKeyCollectionNames:{JsonConvert.SerializeObject(nonShardKeyCollectionNames)}");
+
             return shardKeyCollectionNames.Intersect(nonShardKeyCollectionNames).ToList();
         }
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync2:  " +
+                               $"conditions: {JsonConvert.SerializeObject(conditions)}, " +
+                               $"shardKeyCollectionNames: {JsonConvert.SerializeObject(shardKeyCollectionNames)}," +
+                               $"nonShardKeyCollectionNames:{JsonConvert.SerializeObject(nonShardKeyCollectionNames)}");
 
         return shardKeyCollectionNames.Concat(nonShardKeyCollectionNames).ToList();
     }
