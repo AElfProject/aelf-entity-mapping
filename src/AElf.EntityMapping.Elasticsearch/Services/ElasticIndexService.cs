@@ -104,7 +104,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
                 //         )
                 //     )
                 // )
-            )
+            ).Aliases(a=>a.Alias(indexName))
         );
 
         // Check the creation status of the index template
