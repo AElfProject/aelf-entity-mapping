@@ -16,7 +16,7 @@ public class AElfEntityMappingTestModule : AbpModule
     {
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AElfEntityMappingTestModule>(); });
         
-        Configure<CollectionCreateOption>(x =>
+        Configure<CollectionCreateOptions>(x =>
         {
             x.AddModule(typeof(AElfEntityMappingTestModule));
         });

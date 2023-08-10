@@ -18,4 +18,6 @@ public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
 
     Task<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexAsync(string id, string indexName, CancellationToken cancellationToken = default);
     
+    List<CollectionMarkField> NonShardKeys { get; set; }
+    
 }
