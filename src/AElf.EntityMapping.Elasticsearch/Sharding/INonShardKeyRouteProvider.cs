@@ -10,9 +10,9 @@ public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
     /// <param name="conditions"></param>
     /// <typeparam name="TEntity">ElasticSearch Index Entity</typeparam>
     /// <returns></returns>
-    Task<List<string>> GetShardCollectionNameListByConditionsAsync(List<CollectionNameCondition> conditions);
+    Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions);
 
-    Task<string> GetShardCollectionNameByIdAsync(string id);
+    Task<string> GetCollectionNameAsync(string id);
 
     Task<List<CollectionMarkField>> GetNonShardKeysAsync();
 

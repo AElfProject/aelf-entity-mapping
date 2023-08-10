@@ -43,7 +43,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         
         var shardKeyCollectionNames = _shardingKeyProvider.GetCollectionName(conditions);
         var nonShardKeyCollectionNames =
-            await _nonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync(conditions);
+            await _nonShardKeyRouteProvider.GetCollectionNameAsync(conditions);
 
         if (shardKeyCollectionNames.Count > 0 && nonShardKeyCollectionNames.Count > 0)
         {
@@ -87,7 +87,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
     {
         if (!_elasticIndexService.IsShardingCollection(typeof(TEntity))) 
             return GetDefaultCollectionName();
-        return await _nonShardKeyRouteProvider.GetShardCollectionNameByIdAsync(id.ToString());
+        return await _nonShardKeyRouteProvider.GetCollectionNameAsync(id.ToString());
     }
 
     protected override string FormatCollectionName(string name)
