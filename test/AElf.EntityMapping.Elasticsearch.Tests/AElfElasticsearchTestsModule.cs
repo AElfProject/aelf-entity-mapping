@@ -17,7 +17,7 @@ public class AElfElasticsearchTestsModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        Configure<CollectionCreateOption>(x =>
+        Configure<CollectionCreateOptions>(x =>
         {
             x.AddModule(typeof(AElfElasticsearchTestsModule));
         });

@@ -21,7 +21,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
     private readonly INonShardKeyRouteProvider<TEntity> _nonShardKeyRouteProvider;
     private readonly IElasticIndexService _elasticIndexService;
-    private List<CollectionMarkField> _nonShardKeys;
+    // private List<CollectionMarkField> _nonShardKeys;
     /*public IAbpLazyServiceProvider LazyServiceProvider { get; set; }
     public IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository => LazyServiceProvider
         .LazyGetRequiredService<ElasticsearchRepository<NonShardKeyRouteCollection,string>>();*/
@@ -39,23 +39,23 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         _nonShardKeyRouteProvider = nonShardKeyRouteProvider;
         _elasticIndexService = elasticIndexService;
         
-        InitializeNonShardKeys();
+        // InitializeNonShardKeys();
     }
     
-    private void InitializeNonShardKeys()
-    {
-        if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
-        {
-            return;
-        }
-        if (_nonShardKeys == null)
-        {
-            AsyncHelper.RunSync(async () =>
-            {
-                _nonShardKeys = await _nonShardKeyRouteProvider.GetNonShardKeysAsync();
-            });
-        }
-    }
+    // private void InitializeNonShardKeys()
+    // {
+    //     if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
+    //     {
+    //         return;
+    //     }
+    //     if (_nonShardKeys == null)
+    //     {
+    //         AsyncHelper.RunSync(async () =>
+    //         {
+    //             _nonShardKeys = await _nonShardKeyRouteProvider.GetNonShardKeysAsync();
+    //         });
+    //     }
+    // }
 
     public async Task<TEntity> GetAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default)
     {
@@ -417,9 +417,9 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
     private async Task AddManyNonShardKeyRoute(List<TEntity> modelList,List<string> fullIndexNameList, IElasticClient client,CancellationToken cancellationToken = default)
     {
-        if (_nonShardKeys!=null && _nonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        if (_nonShardKeyRouteProvider.NonShardKeys!=null && _nonShardKeyRouteProvider.NonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
         {
-            foreach (var nonShardKey in _nonShardKeys)
+            foreach (var nonShardKey in _nonShardKeyRouteProvider.NonShardKeys)
             {
                 var nonShardKeyRouteIndexName =
                     _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
@@ -459,9 +459,9 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         
         string indexName = await _collectionNameProvider.RemoveCollectionPrefix(fullIndexName);
         
-        if (_nonShardKeys!=null && _nonShardKeys.Any())
+        if (_nonShardKeyRouteProvider.NonShardKeys!=null && _nonShardKeyRouteProvider.NonShardKeys.Any())
         {
-            foreach (var nonShardKey in _nonShardKeys)
+            foreach (var nonShardKey in _nonShardKeyRouteProvider.NonShardKeys)
             {
                 var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
 
@@ -491,9 +491,9 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             return;
         }
         
-        if (_nonShardKeys!=null && _nonShardKeys.Any())
+        if (_nonShardKeyRouteProvider.NonShardKeys!=null && _nonShardKeyRouteProvider.NonShardKeys.Any())
         {
-            foreach (var nonShardKey in _nonShardKeys)
+            foreach (var nonShardKey in _nonShardKeyRouteProvider.NonShardKeys)
             {
                 var nonShardKeyRouteIndexName =
                     _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
@@ -504,7 +504,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 // var nonShardKeyRouteIndexModel = GetAsync((TKey)Convert.ChangeType(nonShardKeyRouteIndexId, typeof(TKey)), nonShardKeyRouteIndexName)  as NonShardKeyRouteCollection;
 
                 var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
-                if (nonShardKeyRouteIndexModel != null)
+                if (nonShardKeyRouteIndexModel != null && nonShardKeyRouteIndexModel.SearchKey != value?.ToString())
                 {
                     // nonShardKeyRouteIndexModel.SearchKey = Convert.ChangeType(value, nonShardKey.FieldValueType);
                     nonShardKeyRouteIndexModel.SearchKey = value?.ToString();
@@ -521,9 +521,9 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
     private async Task DeleteManyNonShardKeyRoute(List<TEntity> modelList,IElasticClient client,CancellationToken cancellationToken = default)
     {
-        if (_nonShardKeys!=null && _nonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        if (_nonShardKeyRouteProvider.NonShardKeys!=null && _nonShardKeyRouteProvider.NonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
         {
-            foreach (var nonShardKey in _nonShardKeys)
+            foreach (var nonShardKey in _nonShardKeyRouteProvider.NonShardKeys)
             {
                 var nonShardKeyRouteIndexName =
                     _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
@@ -549,9 +549,9 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         {
             return;
         }
-        if (_nonShardKeys!=null && _nonShardKeys.Any())
+        if (_nonShardKeyRouteProvider.NonShardKeys!=null && _nonShardKeyRouteProvider.NonShardKeys.Any())
         {
-            foreach (var nonShardKey in _nonShardKeys)
+            foreach (var nonShardKey in _nonShardKeyRouteProvider.NonShardKeys)
             {
                 var nonShardKeyRouteIndexName =
                     _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);

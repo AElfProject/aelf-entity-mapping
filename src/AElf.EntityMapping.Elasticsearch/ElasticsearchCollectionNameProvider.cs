@@ -82,7 +82,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         var collectionName = fullCollectionName;
         if (!string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix))
         {
-            collectionName = collectionName.Replace($"{AElfEntityMappingOptions.CollectionPrefix}.".ToLower(), "");
+            collectionName = collectionName.RemovePreFix($"{AElfEntityMappingOptions.CollectionPrefix}.".ToLower());
         }
 
         return collectionName;

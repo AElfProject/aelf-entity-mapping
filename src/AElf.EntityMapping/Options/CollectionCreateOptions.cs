@@ -1,6 +1,6 @@
 namespace AElf.EntityMapping.Options;
 
-public class CollectionCreateOption
+public class CollectionCreateOptions
 {
     public List<Type> Modules { get; } = new List<Type>();
 

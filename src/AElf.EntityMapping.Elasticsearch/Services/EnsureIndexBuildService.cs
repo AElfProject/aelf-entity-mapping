@@ -15,7 +15,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
     private readonly ElasticsearchOptions _indexSettingOptions;
     
     
-    public EnsureIndexBuildService(IOptions<CollectionCreateOption> moduleConfiguration,
+    public EnsureIndexBuildService(IOptions<CollectionCreateOptions> moduleConfiguration,
         IElasticIndexService elasticIndexService, IOptions<ElasticsearchOptions> indexSettingOptions)
     {
         _elasticIndexService = elasticIndexService;

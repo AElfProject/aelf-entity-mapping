@@ -17,7 +17,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
     // private readonly IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository;
-    private List<CollectionMarkField> _nonShardKeys;
+    public List<CollectionMarkField> NonShardKeys { get; set; }
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
 
     public NonShardKeyRouteProvider(IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache,
@@ -34,11 +34,11 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     
     private void InitializeNonShardKeys()
     {
-        if (_nonShardKeys == null)
+        if (NonShardKeys == null)
         {
             AsyncHelper.RunSync(async () =>
             {
-                _nonShardKeys = await GetNonShardKeysAsync();
+                NonShardKeys = await GetNonShardKeysAsync();
             });
         }
     }
@@ -47,14 +47,14 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         List<CollectionNameCondition> conditions)
     {
         var collectionNameList = new List<string>();
-        if (_nonShardKeys == null || _nonShardKeys.Count == 0)
+        if (NonShardKeys == null || NonShardKeys.Count == 0)
         {
             return collectionNameList;
         }
 
         foreach (var condition in conditions)
         {
-            var nonShardKey = _nonShardKeys.FirstOrDefault(f => f.FieldName == condition.Key);
+            var nonShardKey = NonShardKeys.FirstOrDefault(f => f.FieldName == condition.Key);
 
             if (nonShardKey == null)
             {
@@ -172,12 +172,12 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     public async Task<string> GetShardCollectionNameByIdAsync(string id)
     {
         var collectionName=string.Empty;
-        if (_nonShardKeys == null || _nonShardKeys.Count == 0)
+        if (NonShardKeys == null || NonShardKeys.Count == 0)
         {
             return collectionName;
         }
         
-        var nonShardKey= _nonShardKeys[0];
+        var nonShardKey= NonShardKeys[0];
         var nonShardKeyRouteIndexName = _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
         var routeIndex=await _nonShardKeyRouteIndexRepository.GetAsync(id, nonShardKeyRouteIndexName);
         if (routeIndex != null)
