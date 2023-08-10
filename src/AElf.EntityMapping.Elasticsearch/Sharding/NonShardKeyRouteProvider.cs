@@ -2,7 +2,9 @@ using System.Linq.Expressions;
 using AElf.EntityMapping.Elasticsearch.Repositories;
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Sharding;
+using Microsoft.Extensions.Logging;
 using Nest;
+using Newtonsoft.Json;
 using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Threading;
@@ -19,15 +21,18 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     // private readonly IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository;
     private List<CollectionMarkField> _nonShardKeys;
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
+    private readonly ILogger<NonShardKeyRouteProvider<TEntity>> _logger;
 
     public NonShardKeyRouteProvider(IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache,
         IElasticsearchClientProvider elasticsearchClientProvider,
+        ILogger<NonShardKeyRouteProvider<TEntity>> logger,
         IElasticIndexService elasticIndexService)
     {
         _indexMarkFieldCache = indexMarkFieldCache;
         _elasticIndexService = elasticIndexService;
         // _nonShardKeyRouteIndexRepository = nonShardKeyRouteIndexRepository;
         _elasticsearchClientProvider = elasticsearchClientProvider;
+        _logger = logger;
 
         InitializeNonShardKeys();
     }
@@ -39,6 +44,8 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             AsyncHelper.RunSync(async () =>
             {
                 _nonShardKeys = await GetNonShardKeysAsync();
+                _logger.LogInformation($"NonShardKeyRouteProvider.InitializeNonShardKeys:  " +
+                                       $"_nonShardKeys: {JsonConvert.SerializeObject(_nonShardKeys)}");
             });
         }
     }
@@ -55,7 +62,8 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         foreach (var condition in conditions)
         {
             var nonShardKey = _nonShardKeys.FirstOrDefault(f => f.FieldName == condition.Key);
-
+            _logger.LogInformation($"NonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync:  " +
+                                   $"nonShardKey: {JsonConvert.SerializeObject(nonShardKey)}");
             if (nonShardKey == null)
             {
                 continue;
@@ -70,6 +78,8 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             var fieldValue = condition.Value;
             var nonShardKeyRouteIndexName =
                 _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+            _logger.LogInformation($"NonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync:  " +
+                                   $"nonShardKeyRouteIndexName: {nonShardKeyRouteIndexName}");
             if (condition.Type == ConditionType.Equal)
             {
                 ParameterExpression parameter = Expression.Parameter(typeof(NonShardKeyRouteCollection), "x");
@@ -78,6 +88,8 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 BinaryExpression equals = Expression.Equal(field, value);
                 Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
                 var indexList = await _nonShardKeyRouteIndexRepository.GetListAsync(lambda, nonShardKeyRouteIndexName);
+                _logger.LogInformation($"NonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync:  " +
+                                       $"indexList: {JsonConvert.SerializeObject(indexList)}");
                 var nameList = indexList.Select(x => x.ShardCollectionName).Distinct().ToList();
                 if(collectionNameList.Count == 0)
                 {
