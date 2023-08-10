@@ -211,6 +211,8 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
 
     public bool IsShardingCollection(Type type)
     {
+        if (_indexSettingDtos == null)
+            return false;
         var options = _indexSettingDtos.Find(a => a.IndexName == type.Name);
         return options != null;
     }

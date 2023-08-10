@@ -281,7 +281,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return collectionNames;
     }
 
-    public string GetCollectionName(TEntity entity)
+    public async Task<string> GetCollectionName(TEntity entity)
     {
         var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
         List<ShardProviderEntity<TEntity>> sahrdEntitys = GetShardingKeyByEntity(typeof(TEntity));
@@ -311,11 +311,11 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             }
         }
         //addCache
-        AddCollectionMaxShardIndex(typeof(TEntity).Name, indexName.ToLower());
+        await AddCollectionMaxShardIndex(typeof(TEntity).Name, indexName.ToLower());
         return indexName.ToLower();
     }
 
-    public List<string> GetCollectionName(List<TEntity> entitys)
+    public async Task<List<string>> GetCollectionName(List<TEntity> entitys)
     {
         List<ShardProviderEntity<TEntity>> sahrdEntitys = GetShardingKeyByEntity(typeof(TEntity));
         if (sahrdEntitys is null || sahrdEntitys.Count == 0)
@@ -359,7 +359,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             collectionNames.Add(collectionName.ToLower());
         }
         //addCache
-        AddCollectionMaxShardIndex(typeof(TEntity).Name, maxCollectionName.ToLower());
+        await AddCollectionMaxShardIndex(typeof(TEntity).Name, maxCollectionName.ToLower());
         return collectionNames;
     }
     
@@ -460,7 +460,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         QueryContainer Filter(QueryContainerDescriptor<ShardCollectionSuffix> f) => f.Bool(b => b.Must(mustQuery));
         Func<SearchDescriptor<ShardCollectionSuffix>, ISearchRequest> selector = null;
         Expression<Func<ShardCollectionSuffix, object>> sortExp = k => k.MaxShardNo;
-        selector = new Func<SearchDescriptor<ShardCollectionSuffix>, ISearchRequest>(s => s.Index(indexName).Query(Filter).Sort(st=>st.Field(sortExp,SortOrder.Descending)).From(0).Size(1));
+        selector = new Func<SearchDescriptor<ShardCollectionSuffix>, ISearchRequest>(s => s.Index(indexName).Query(Filter).Sort(st=>st.Field(sortExp,SortOrder.Descending)));
         
         var result = await client.SearchAsync(selector);
         _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionMaxShardIndex:  " +
@@ -523,10 +523,12 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             await AddOrUpdateAsync(cacheDto);
             return;
         }
+
+        ShardCollectionSuffix shardCollectionCacheDto = shardCollectionCacheDtos.Find(a => a.Keys.Contains(keys));
         
-        if(shardCollectionCacheDtos.Last().MaxShardNo < long.Parse(suffix))
+        if(shardCollectionCacheDto != null && shardCollectionCacheDto.MaxShardNo < long.Parse(suffix))
         {
-            ShardCollectionSuffix cacheDto = shardCollectionCacheDtos.Last();
+            ShardCollectionSuffix cacheDto = shardCollectionCacheDto;
             cacheDto.MaxShardNo = long.Parse(suffix);
             await AddOrUpdateAsync(cacheDto);
             return;
