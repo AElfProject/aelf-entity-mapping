@@ -9,6 +9,7 @@ using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nest;
 using Newtonsoft.Json;
 using Volo.Abp.Caching;
 
@@ -102,6 +103,37 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return ShardProviderEntityList;
     }
 
+    private long GetShardCollectionMaxNo(List<CollectionNameCondition> conditions)
+    {
+        ShardCollectionSuffix shardCollectionSuffix = new ShardCollectionSuffix();
+        shardCollectionSuffix.EntityName = typeof(TEntity).Name;
+        var result = GetCollectionMaxShardIndex(shardCollectionSuffix);
+        if (result is null || result.Result.Item1 == 0)
+        {
+            return 0;
+        }
+
+        List<ShardCollectionSuffix> catchList = result.Result.Item2;
+        List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
+        if(entitys is null || entitys.Count == 0)
+        {
+            return 0;
+        }
+        foreach (var condition in conditions)
+        {
+            var entity = entitys.Find(a => a.SharKeyName == condition.Key && a.Step == "");
+            if (entity != null && catchList != null)
+            {
+                ShardCollectionSuffix cacheDto =  catchList.Find(a => a.Keys.StartsWith(condition.Value.ToString().ToLower()));
+                if (cacheDto != null)
+                {
+                    return cacheDto.MaxShardNo;
+                }
+            }
+        }
+        return 0;
+    }
+
     private long GetShardCollectionCache(List<CollectionNameCondition> conditions)
     { 
         List<ShardCollectionCacheDto> list =  _indexCollectionCache.Get(typeof(TEntity).Name);
@@ -129,7 +161,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     {
         var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
         long min = 0;
-        long max = GetShardCollectionCache(conditions);
+       long max = GetShardCollectionMaxNo(conditions);
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
         
         if (entitys is null || entitys.Count == 0)
@@ -215,12 +247,12 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         }
 
         List<string> collectionNames = new List<string>();
-        if (min >= max)
+        if (min > max)
         {
-            return new List<string>(){(indexName + "-" + min).ToLower()};
+            //return new List<string>(){(indexName + "-" + min).ToLower()};
+            return new List<string>(){};
         }
-
-
+        
         for(long i = min; i <= max; i++)
         {
             var shardIndexName = (indexName + "-" + i).ToLower();
@@ -276,7 +308,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             }
         }
         //addCache
-        SetShardCollectionCache(typeof(TEntity).Name, indexName.ToLower());
+        AddCollectionMaxShardIndex(typeof(TEntity).Name, indexName.ToLower());
         return indexName.ToLower();
     }
 
@@ -290,6 +322,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         }
 
         List<string> collectionNames = new List<string>();
+        long maxShardNo = 0;
+        string maxCollectionName = "";
         foreach (var entity in entitys)
         {
             var collectionName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
@@ -311,14 +345,18 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                         var value = shardEntity.Func(entity);
                         collectionName = collectionName + "-" + int.Parse(value.ToString() ?? string.Empty) / int.Parse(shardEntity.Step);
                         groupNo = groupNo == "" ? shardEntity.GroupNo : groupNo;
+                        if (int.Parse(value.ToString() ?? string.Empty) / int.Parse(shardEntity.Step) >= maxShardNo)
+                        {
+                            maxShardNo = int.Parse(value.ToString() ?? string.Empty) / int.Parse(shardEntity.Step);
+                            maxCollectionName = collectionName;
+                        }
                     }
                 }
             }
             collectionNames.Add(collectionName.ToLower());
-            //addCache
-            SetShardCollectionCache(typeof(TEntity).Name, collectionName.ToLower());
         }
-       
+        //addCache
+        AddCollectionMaxShardIndex(typeof(TEntity).Name, maxCollectionName.ToLower());
         return collectionNames;
     }
     
@@ -376,6 +414,105 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 shardCollectionCacheDtos.Add(currentCacheDto);
             }
             _indexCollectionCache.Set(entityName, shardCollectionCacheDtos);
+            return;
+        }
+    }
+
+    public async Task AddOrUpdateAsync(ShardCollectionSuffix model)
+    {
+        var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + typeof(ShardCollectionSuffix).Name).ToLower();
+        var client = _elasticsearchClientProvider.GetClient();
+        await CreateShardCollectionSuffixIndex(client, indexName);
+        var exits = client.DocumentExists(DocumentPath<TEntity>.Id(new Id(model)), dd => dd.Index(indexName));
+
+        if (exits.Exists)
+        {
+            var result = client.UpdateAsync(DocumentPath<ShardCollectionSuffix>.Id(new Id(model)),
+                ss => ss.Index(indexName).Doc(model).RetryOnConflict(3).Refresh(_indexSettingOptions.Refresh));
+
+            if (result.Result.IsValid) return;
+            throw new Exception($"Update Document failed at index{indexName} :" +
+                                             result.Result.ServerError.Error.Reason);
+        }
+        else
+        {
+            var result = client.IndexAsync(model, ss => ss.Index(indexName).Refresh(_indexSettingOptions.Refresh));
+            if (result.Result.IsValid) return;
+            throw new Exception($"Insert Docuemnt failed at index {indexName} :" +
+                                             result.Result.ServerError.Error.Reason);
+        }
+    }
+    public async Task<Tuple<long, List<ShardCollectionSuffix>>> GetCollectionMaxShardIndex(ShardCollectionSuffix searchDto)
+    {
+        var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + typeof(ShardCollectionSuffix).Name).ToLower();
+        var client = _elasticsearchClientProvider.GetClient();
+        var mustQuery = new List<Func<QueryContainerDescriptor<ShardCollectionSuffix>, QueryContainer>>();
+        mustQuery.Add(q => q.Term(i => i.Field(f => f.EntityName).Value(searchDto.EntityName)));
+        mustQuery.Add(q => q.Term(i => i.Field(f => f.Keys).Value(searchDto.Keys)));
+        await CreateShardCollectionSuffixIndex(client, indexName);
+        QueryContainer Filter(QueryContainerDescriptor<ShardCollectionSuffix> f) => f.Bool(b => b.Must(mustQuery));
+        Func<SearchDescriptor<ShardCollectionSuffix>, ISearchRequest> selector = null;
+        Expression<Func<ShardCollectionSuffix, object>> sortExp = k => k.MaxShardNo;
+        selector = new Func<SearchDescriptor<ShardCollectionSuffix>, ISearchRequest>(s => s.Index(indexName).Query(Filter).Sort(st=>st.Field(sortExp,SortOrder.Descending)).From(0).Size(1));
+        
+        var result = await client.SearchAsync(selector);
+        if (!result.IsValid)
+        {
+            throw new Exception($"Search document failed at index {indexName} :" + result.ServerError.Error.Reason);
+        }
+        return new Tuple<long, List<ShardCollectionSuffix>>(result.Total, result.Documents.ToList());
+    }
+    
+    private async Task CreateShardCollectionSuffixIndex(IElasticClient client, string indexName)
+    {
+        var exits = await client.Indices.ExistsAsync(indexName);
+        if (exits.Exists)
+        {
+            return;
+        }
+        _logger.LogInformation($"create index , index name: {indexName}");
+        var result = await client
+            .Indices.CreateAsync(indexName,
+                ss =>
+                    ss.Index(indexName)
+                        .Settings(
+                            o => o.NumberOfShards(_indexSettingOptions.NumberOfShards).NumberOfReplicas(_indexSettingOptions.NumberOfReplicas)
+                                .Setting("max_result_window", int.MaxValue))
+                        .Map(m => m.AutoMap(typeof(ShardCollectionSuffix))));
+        if (!result.Acknowledged)
+            throw new Exception($"Create Index {indexName} failed : " +
+                                             result.ServerError.Error.Reason);
+    }
+    
+    private async Task AddCollectionMaxShardIndex(string entityName, string collectionName)
+    {
+        string[] collectionNameArr = collectionName.Split('-');
+        var suffix = collectionNameArr.Last();
+        var keys = collectionName.Substring(collectionNameArr[0].Length+1, collectionName.Length - suffix.Length - collectionNameArr[0].Length-1);
+        
+        ShardCollectionSuffix shardCollectionSuffix = new ShardCollectionSuffix();
+        shardCollectionSuffix.EntityName = entityName;
+        shardCollectionSuffix.Keys = keys;
+        
+        var result = GetCollectionMaxShardIndex(shardCollectionSuffix);
+        
+        List<ShardCollectionSuffix> shardCollectionCacheDtos = result.Result.Item2;
+        if (shardCollectionCacheDtos.IsNullOrEmpty())
+        {
+            ShardCollectionSuffix cacheDto = new ShardCollectionSuffix();
+            cacheDto.EntityName = entityName;
+            cacheDto.Keys = keys;
+            cacheDto.MaxShardNo = long.Parse(suffix);
+            cacheDto.Id = Guid.NewGuid().ToString();
+            await AddOrUpdateAsync(cacheDto);
+            return;
+        }
+        
+        if(shardCollectionCacheDtos.Last().MaxShardNo < long.Parse(suffix))
+        {
+            ShardCollectionSuffix cacheDto = shardCollectionCacheDtos.Last();
+            cacheDto.MaxShardNo = long.Parse(suffix);
+            await AddOrUpdateAsync(cacheDto);
             return;
         }
     }
