@@ -424,7 +424,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public async Task AddOrUpdateAsync(ShardCollectionSuffix model)
     {
         var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + typeof(ShardCollectionSuffix).Name).ToLower();
-        await CreateShardCollectionSuffixIndex(indexName);
+        await _elasticIndexService.CreateIndexAsync(indexName, typeof(ShardCollectionSuffix), _indexSettingOptions.NumberOfShards, _indexSettingOptions.NumberOfReplicas);
         var client = _elasticsearchClientProvider.GetClient();
         var exits = client.DocumentExists(DocumentPath<TEntity>.Id(new Id(model)), dd => dd.Index(indexName));
 
@@ -448,9 +448,11 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public async Task<Tuple<long, List<ShardCollectionSuffix>>> GetCollectionMaxShardIndex(ShardCollectionSuffix searchDto)
     {
         var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + typeof(ShardCollectionSuffix).Name).ToLower();
-        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionMaxShardIndex:  " +
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionMaxShardIndex into create:  " +
                                $"searchDto: {JsonConvert.SerializeObject(searchDto)},indexName:{indexName}");
-        CreateShardCollectionSuffixIndex(indexName);
+        await _elasticIndexService.CreateIndexAsync(indexName, typeof(ShardCollectionSuffix), _indexSettingOptions.NumberOfShards, _indexSettingOptions.NumberOfReplicas);
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionMaxShardIndex out create:  " +
+                               $"searchDto: {JsonConvert.SerializeObject(searchDto)},indexName:{indexName}");
         var client = _elasticsearchClientProvider.GetClient();
         var mustQuery = new List<Func<QueryContainerDescriptor<ShardCollectionSuffix>, QueryContainer>>();
         mustQuery.Add(q => q.Term(i => i.Field(f => f.EntityName).Value(searchDto.EntityName)));
