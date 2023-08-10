@@ -424,8 +424,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public async Task AddOrUpdateAsync(ShardCollectionSuffix model)
     {
         var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + typeof(ShardCollectionSuffix).Name).ToLower();
+        await CreateShardCollectionSuffixIndex(indexName);
         var client = _elasticsearchClientProvider.GetClient();
-        await CreateShardCollectionSuffixIndex(client, indexName);
         var exits = client.DocumentExists(DocumentPath<TEntity>.Id(new Id(model)), dd => dd.Index(indexName));
 
         if (exits.Exists)
@@ -450,11 +450,11 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + typeof(ShardCollectionSuffix).Name).ToLower();
         _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionMaxShardIndex:  " +
                                $"searchDto: {JsonConvert.SerializeObject(searchDto)},indexName:{indexName}");
+        CreateShardCollectionSuffixIndex(indexName);
         var client = _elasticsearchClientProvider.GetClient();
         var mustQuery = new List<Func<QueryContainerDescriptor<ShardCollectionSuffix>, QueryContainer>>();
         mustQuery.Add(q => q.Term(i => i.Field(f => f.EntityName).Value(searchDto.EntityName)));
         mustQuery.Add(q => q.Term(i => i.Field(f => f.Keys).Value(searchDto.Keys)));
-        await CreateShardCollectionSuffixIndex(client, indexName);
         QueryContainer Filter(QueryContainerDescriptor<ShardCollectionSuffix> f) => f.Bool(b => b.Must(mustQuery));
         Func<SearchDescriptor<ShardCollectionSuffix>, ISearchRequest> selector = null;
         Expression<Func<ShardCollectionSuffix, object>> sortExp = k => k.MaxShardNo;
@@ -470,8 +470,11 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return new Tuple<long, List<ShardCollectionSuffix>>(result.Total, result.Documents.ToList());
     }
     
-    private async Task CreateShardCollectionSuffixIndex(IElasticClient client, string indexName)
+    private async Task CreateShardCollectionSuffixIndex(string indexName)
     {
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.CreateShardCollectionSuffixIndex into:  " +
+                               $"indexName:{indexName}");
+        var client = _elasticsearchClientProvider.GetClient();
         var exits = await client.Indices.ExistsAsync(indexName);
         _logger.LogInformation($"ElasticsearchCollectionNameProvider.CreateShardCollectionSuffixIndex:  " +
                                $"indexName:{indexName},exits:{exits.Exists}");
