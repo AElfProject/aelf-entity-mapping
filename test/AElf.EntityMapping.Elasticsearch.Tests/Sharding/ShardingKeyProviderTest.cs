@@ -248,12 +248,12 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             condition1.Type = ConditionType.Equal;
             CollectionNameCondition condition2 = new CollectionNameCondition();
             condition2.Key = "BlockHeight";
-            condition2.Value = "100000";
+            condition2.Value = "10";
             condition2.Type = ConditionType.Equal;
             conditions.Add(condition1);
             conditions.Add(condition2);
             List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-            Assert.True(indexNames.First() == "blockindex-aelf-"+100000/5);
+            Assert.True(indexNames.First() == "blockindex-aelf-"+10/5);
         
         }
         [Fact]
@@ -330,7 +330,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             BlockIndex blockIndex01 = new BlockIndex()
             {
                 ChainId = "AELF",
-                BlockHeight = 10,
+                BlockHeight = 0,
                 BlockHash = "0x000000000",
                 BlockTime = DateTime.Now,
                 Confirmed = true
@@ -338,7 +338,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             BlockIndex blockIndex02 = new BlockIndex()
             {
                 ChainId = "AELF",
-                BlockHeight = 1000,
+                BlockHeight = 1,
                 BlockHash = "0x000000000",
                 BlockTime = DateTime.Now,
                 Confirmed = true
@@ -346,7 +346,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             BlockIndex blockIndex03 = new BlockIndex()
             {
                 ChainId = "AELF",
-                BlockHeight = 2000,
+                BlockHeight = 5,
                 BlockHash = "0x000000000",
                 BlockTime = DateTime.Now,
                 Confirmed = true
@@ -354,7 +354,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             BlockIndex blockIndex04 = new BlockIndex()
             {
                 ChainId = "AELF",
-                BlockHeight = 10000,
+                BlockHeight = 10,
                 BlockHash = "0x000000000",
                 BlockTime = DateTime.Now,
                 Confirmed = true
