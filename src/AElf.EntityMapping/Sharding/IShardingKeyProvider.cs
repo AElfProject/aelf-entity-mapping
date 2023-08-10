@@ -13,7 +13,7 @@ public interface IShardingKeyProvider<TEntity> where TEntity : class
     
     public string GetCollectionName(Dictionary<string,object> conditions);
 
-    public List<string> GetCollectionName(List<CollectionNameCondition> conditions);
+    public Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions);
 
     public string GetCollectionName(TEntity entity);
     

@@ -41,7 +41,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
             return new List<string> { GetDefaultCollectionName() };
         
-        var shardKeyCollectionNames = _shardingKeyProvider.GetCollectionName(conditions);
+        var shardKeyCollectionNames = await _shardingKeyProvider.GetCollectionNameAsync(conditions);
         var nonShardKeyCollectionNames =
             await _nonShardKeyRouteProvider.GetCollectionNameAsync(conditions);
 

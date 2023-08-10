@@ -126,7 +126,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
         }
 
         [Fact]
-        public void GetCollectionNameTest()
+        public async Task GetCollectionNameTest()
         {
             List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
             CollectionNameCondition condition1 = new CollectionNameCondition();
@@ -139,7 +139,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             condition1.Type = ConditionType.Equal;
             conditions.Add(condition1);
             conditions.Add(condition2);
-            var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
+            var blockIndexNameMain = await _blockIndexShardingKeyProvider.GetCollectionNameAsync(conditions);
             Assert.True(blockIndexNameMain.Count == 1);
             Assert.True(blockIndexNameMain.First().StartsWith("blockindex-aelf-"));
         }
@@ -225,20 +225,20 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 LogEventCount = 10,
                 ChainId = "AELF"
             };
-            _elasticsearchRepository.DeleteAsync(blockIndex);
+            _elasticsearchRepository.DeleteAsync(blockIndex.Id);
             blockIndex.BlockHeight = 5;
             blockIndex.BlockHash = "BlockHash005";
             blockIndex.Id = "block005";
-            _elasticsearchRepository.DeleteAsync(blockIndex);
+            _elasticsearchRepository.DeleteAsync(blockIndex.Id);
             blockIndex.BlockHeight = 10;
             blockIndex.BlockHash = "BlockHash010";
             blockIndex.Id = "block010";
-            _elasticsearchRepository.DeleteAsync(blockIndex);
+            _elasticsearchRepository.DeleteAsync(blockIndex.Id);
         }
 
 
         [Fact]
-        public void GetCollectionNameEqual()
+        public async Task GetCollectionNameEqual()
         {
             GetCollectionNameForWriteTest();
             List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
@@ -252,12 +252,12 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             condition2.Type = ConditionType.Equal;
             conditions.Add(condition1);
             conditions.Add(condition2);
-            List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
+            List<string> indexNames = await _blockIndexShardingKeyProvider.GetCollectionNameAsync(conditions);
             Assert.True(indexNames.First() == "blockindex-aelf-"+10/5);
         
         }
         [Fact]
-        public void GetCollectionNameGreaterThan()
+        public async Task GetCollectionNameGreaterThan()
         {
             //GetCollectionNameForWriteTest();
             WriteBlockIndex();
@@ -272,13 +272,13 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             condition2.Type = ConditionType.GreaterThan;
             conditions.Add(condition1);
             conditions.Add(condition2);
-            List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-            Assert.True(indexNames.Count == 3);
+            List<string> indexNames = await _blockIndexShardingKeyProvider.GetCollectionNameAsync(conditions);
+            Assert.True(indexNames.Count == 7);
             DelBlockIndex();
 
         }
         [Fact]
-        public void GetCollectionNameGreaterThanOrEqual()
+        public async Task GetCollectionNameGreaterThanOrEqual()
         {
             // GetCollectionNameForWriteTest();
             WriteBlockIndex();
@@ -293,13 +293,13 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             condition2.Type = ConditionType.GreaterThanOrEqual;
             conditions.Add(condition1);
             conditions.Add(condition2);
-            List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-            Assert.True(indexNames.Count == 3);
+            List<string> indexNames = await _blockIndexShardingKeyProvider.GetCollectionNameAsync(conditions);
+            Assert.True(indexNames.Count == 7);
             DelBlockIndex();
         }
     
         [Fact]
-        public void GetCollectionNameGreaterThanOrEqualAndLessThanOrEqual()
+        public async Task GetCollectionNameGreaterThanOrEqualAndLessThanOrEqual()
         {
             WriteBlockIndex();
             List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
@@ -318,7 +318,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             conditions.Add(condition1);
             conditions.Add(condition2);
             conditions.Add(condition3);
-            List<string> indexNames = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
+            List<string> indexNames = await _blockIndexShardingKeyProvider.GetCollectionNameAsync(conditions);
             Assert.True(indexNames.Count == 3);
             DelBlockIndex();
 

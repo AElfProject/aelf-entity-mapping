@@ -103,17 +103,17 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return ShardProviderEntityList;
     }
 
-    private long GetShardCollectionMaxNo(List<CollectionNameCondition> conditions)
+    private async Task<long> GetShardCollectionMaxNoAsync(List<CollectionNameCondition> conditions)
     {
         ShardCollectionSuffix shardCollectionSuffix = new ShardCollectionSuffix();
         shardCollectionSuffix.EntityName = typeof(TEntity).Name;
-        var result = GetCollectionMaxShardIndex(shardCollectionSuffix);
-        if (result is null || result.Result.Item1 == 0)
+        var result = await GetCollectionMaxShardIndexAsync(shardCollectionSuffix);
+        if (result is null || result.Item1 == 0)
         {
             return 0;
         }
 
-        List<ShardCollectionSuffix> catchList = result.Result.Item2;
+        List<ShardCollectionSuffix> catchList = result.Item2;
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
         if(entitys is null || entitys.Count == 0)
         {
@@ -157,11 +157,11 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return 0;
     }
 
-    public List<string> GetCollectionName(List<CollectionNameCondition> conditions)
+    public async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
         var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity)); 
         long min = 0;
-       long max = GetShardCollectionMaxNo(conditions);
+        long max = await GetShardCollectionMaxNoAsync(conditions);
        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionName:  " +
                               $"conditions: {JsonConvert.SerializeObject(conditions)},min:{min},max:{max}");
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
@@ -445,7 +445,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                                              result.Result.ServerError.Error.Reason);
         }
     }
-    public async Task<Tuple<long, List<ShardCollectionSuffix>>> GetCollectionMaxShardIndex(ShardCollectionSuffix searchDto)
+    public async Task<Tuple<long, List<ShardCollectionSuffix>>> GetCollectionMaxShardIndexAsync(ShardCollectionSuffix searchDto)
     {
         var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + typeof(ShardCollectionSuffix).Name).ToLower();
         _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionMaxShardIndex into create:  " +
@@ -510,9 +510,9 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         shardCollectionSuffix.EntityName = entityName;
         shardCollectionSuffix.Keys = keys;
         
-        var result = GetCollectionMaxShardIndex(shardCollectionSuffix);
+        var result = await GetCollectionMaxShardIndexAsync(shardCollectionSuffix);
         
-        List<ShardCollectionSuffix> shardCollectionCacheDtos = result.Result.Item2;
+        List<ShardCollectionSuffix> shardCollectionCacheDtos = result.Item2;
         if (shardCollectionCacheDtos.IsNullOrEmpty())
         {
             ShardCollectionSuffix cacheDto = new ShardCollectionSuffix();
