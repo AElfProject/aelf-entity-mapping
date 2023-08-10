@@ -159,9 +159,11 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public List<string> GetCollectionName(List<CollectionNameCondition> conditions)
     {
-        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
+        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity)); 
         long min = 0;
        long max = GetShardCollectionMaxNo(conditions);
+       _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionName:  " +
+                              $"conditions: {JsonConvert.SerializeObject(conditions)},min:{min},max:{max}");
         List<ShardProviderEntity<TEntity>> entitys = GetShardingKeyByEntity(typeof(TEntity));
         
         if (entitys is null || entitys.Count == 0)
@@ -245,7 +247,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 }
             }
         }
-
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionName jump:  " +
+                               $"conditions: {JsonConvert.SerializeObject(conditions)},min:{min},max:{max}");
         List<string> collectionNames = new List<string>();
         if (min > max)
         {
@@ -445,6 +448,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public async Task<Tuple<long, List<ShardCollectionSuffix>>> GetCollectionMaxShardIndex(ShardCollectionSuffix searchDto)
     {
         var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + typeof(ShardCollectionSuffix).Name).ToLower();
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionMaxShardIndex:  " +
+                               $"searchDto: {JsonConvert.SerializeObject(searchDto)},indexName:{indexName}");
         var client = _elasticsearchClientProvider.GetClient();
         var mustQuery = new List<Func<QueryContainerDescriptor<ShardCollectionSuffix>, QueryContainer>>();
         mustQuery.Add(q => q.Term(i => i.Field(f => f.EntityName).Value(searchDto.EntityName)));
@@ -456,6 +461,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         selector = new Func<SearchDescriptor<ShardCollectionSuffix>, ISearchRequest>(s => s.Index(indexName).Query(Filter).Sort(st=>st.Field(sortExp,SortOrder.Descending)).From(0).Size(1));
         
         var result = await client.SearchAsync(selector);
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionMaxShardIndex:  " +
+                               $"searchDto: {JsonConvert.SerializeObject(searchDto)},indexName:{indexName},result:{JsonConvert.SerializeObject(result)}");
         if (!result.IsValid)
         {
             throw new Exception($"Search document failed at index {indexName} :" + result.ServerError.Error.Reason);
@@ -466,6 +473,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private async Task CreateShardCollectionSuffixIndex(IElasticClient client, string indexName)
     {
         var exits = await client.Indices.ExistsAsync(indexName);
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.CreateShardCollectionSuffixIndex:  " +
+                               $"indexName:{indexName},exits:{exits.Exists}");
         if (exits.Exists)
         {
             return;
@@ -479,6 +488,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                             o => o.NumberOfShards(_indexSettingOptions.NumberOfShards).NumberOfReplicas(_indexSettingOptions.NumberOfReplicas)
                                 .Setting("max_result_window", int.MaxValue))
                         .Map(m => m.AutoMap(typeof(ShardCollectionSuffix))));
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.CreateShardCollectionSuffixIndex:  " +
+                               $"indexName:{indexName},result:{result.Acknowledged}");
         if (!result.Acknowledged)
             throw new Exception($"Create Index {indexName} failed : " +
                                              result.ServerError.Error.Reason);
