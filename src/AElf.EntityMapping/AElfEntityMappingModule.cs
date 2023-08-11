@@ -21,7 +21,6 @@ namespace AElf.EntityMapping
             
             var services = context.Services;
             services.AddTransient(typeof(ICollectionNameProvider<>), typeof(DefaultCollectionNameProvider<>));
-            configuration.GetSection("");
         }
         
         public override void OnPreApplicationInitialization(ApplicationInitializationContext context)

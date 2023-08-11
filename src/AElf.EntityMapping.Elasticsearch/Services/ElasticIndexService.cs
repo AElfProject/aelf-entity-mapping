@@ -21,8 +21,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     private readonly ElasticsearchOptions _indexSettingOptions;
     private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
-   // private readonly ShardInitSettingOptions _indexShardOptions;
-    private readonly List<ShardInitSettingDto> _indexSettingDtos;
+    private readonly List<ShardInitSetting> _indexSettingDtos;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
         ILogger<ElasticIndexService> logger, IOptions<AElfEntityMappingOptions> entityMappingOptions,IOptions<ElasticsearchOptions> indexSettingOptions,
