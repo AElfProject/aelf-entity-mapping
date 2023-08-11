@@ -2,7 +2,7 @@ namespace AElf.EntityMapping.Sharding;
 
 public class ShardInitSetting
 {
-    public string IndexName { get; set; }
+    public string CollectionName { get; set; }
     public List<ShardGroup> ShardGroups { get; set; }
 }
 

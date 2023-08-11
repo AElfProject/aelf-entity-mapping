@@ -203,22 +203,22 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             };
             await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
             Thread.Sleep(500);
+            
             blockIndex.BlockHeight = 5;
             blockIndex.BlockHash = "BlockHash005";
             blockIndex.Id = "block005";
             await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
-            Thread.Sleep(500);
+            
             blockIndex.BlockHeight = 10;
             blockIndex.BlockHash = "BlockHash010";
             blockIndex.Id = "block010";
+            
             await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
-            Thread.Sleep(500);
             blockIndex.BlockHeight = 15;
             blockIndex.BlockHash = "BlockHash010";
             blockIndex.Id = "block010";
             await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
             Thread.Sleep(500);
-
         }
     
         private void DelBlockIndex()
@@ -247,7 +247,8 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
         [Fact]
         public async Task GetCollectionNameEqual()
         {
-            GetCollectionNameForWriteTest();
+            await WriteBlockIndex();
+            
             List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
             CollectionNameCondition condition1 = new CollectionNameCondition();
             condition1.Key = "ChainId";
@@ -301,7 +302,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             conditions.Add(condition1);
             conditions.Add(condition2);
             List<string> indexNames = await _blockIndexShardingKeyProvider.GetCollectionNameAsync(conditions);
-            Assert.True(indexNames.Count == 7);
+            Assert.True(indexNames.Count == 4);
             DelBlockIndex();
         }
     

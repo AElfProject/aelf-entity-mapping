@@ -31,7 +31,7 @@ public class AElfEntityMappingTestModule : AbpModule
     private List<ShardInitSetting> InitShardInitSettingOptions()
         {
             ShardInitSetting blockIndexDto = new ShardInitSetting();
-            blockIndexDto.IndexName = "BlockIndex";
+            blockIndexDto.CollectionName = "BlockIndex";
             blockIndexDto.ShardGroups = new List<ShardGroup>()
             {
                 new ShardGroup()
@@ -81,7 +81,7 @@ public class AElfEntityMappingTestModule : AbpModule
             };
 
             ShardInitSetting logEventIndexDto = new ShardInitSetting();
-            logEventIndexDto.IndexName = "LogEventIndex";
+            logEventIndexDto.CollectionName = "LogEventIndex";
             logEventIndexDto.ShardGroups = new List<ShardGroup>()
             {
                 new ShardGroup()

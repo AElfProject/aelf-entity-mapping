@@ -507,7 +507,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             {
                 var propertyExpression = GetPropertyExpression(type, property.Name);
                 MethodInfo? method = shardProviderType.GetMethod("SetShardingKey");
-                List<ShardGroup>? shardGroups = _indexShardOptions.Find(a => a.IndexName == type.Name)?.ShardGroups;
+                List<ShardGroup>? shardGroups = _indexShardOptions.Find(a => a.CollectionName == type.Name)?.ShardGroups;
                 foreach (var shardGroup in shardGroups)
                 {
                     ShardKey? shardKey = shardGroup?.ShardKeys.Find(a => a.Name == property.Name);
