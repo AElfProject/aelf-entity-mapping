@@ -2,7 +2,7 @@ namespace AElf.EntityMapping.Sharding;
 
 public class ShardProviderEntity<TEntity> where TEntity : class
 {
-    public string SharKeyName { get; set; }
+    public string ShardKeyName { get; set; }
     public string Step { get; set; }
     
     public int Order { get; set; }
@@ -14,7 +14,7 @@ public class ShardProviderEntity<TEntity> where TEntity : class
     
     public ShardProviderEntity(string keyName, string step, int order, string value, string groupNo, Func<TEntity, object> func)
     {
-        SharKeyName = keyName;
+        ShardKeyName = keyName;
         Func = func;
         Step = step;
         Order = order;

@@ -28,10 +28,10 @@ public class AElfEntityMappingTestModule : AbpModule
         });
     }
     
-    private List<ShardInitSettingDto> InitShardInitSettingOptions()
+    private List<ShardInitSetting> InitShardInitSettingOptions()
         {
-            ShardInitSettingDto blockIndexDto = new ShardInitSettingDto();
-            blockIndexDto.IndexName = "BlockIndex";
+            ShardInitSetting blockIndexDto = new ShardInitSetting();
+            blockIndexDto.CollectionName = "BlockIndex";
             blockIndexDto.ShardGroups = new List<ShardGroup>()
             {
                 new ShardGroup()
@@ -43,7 +43,7 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "ChainId",
                             Value = "AELF",
                             Step = "",
-                            StepType = 0,
+                            StepType = StepType.None,
                             GroupNo = "0"
                         },
                         new ShardKey()
@@ -51,7 +51,7 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "5",
-                            StepType = 1,
+                            StepType = StepType.Rounding,
                             GroupNo = "0"
                         }
                     }
@@ -65,7 +65,7 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "ChainId",
                             Value = "tDVV",
                             Step = "",
-                            StepType = 0,
+                            StepType = StepType.None,
                             GroupNo = "1"
                         },
                         new ShardKey()
@@ -73,15 +73,15 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "10",
-                            StepType = 1,
+                            StepType = StepType.Rounding,
                             GroupNo = "1"
                         }
                     }
                 }
             };
 
-            ShardInitSettingDto logEventIndexDto = new ShardInitSettingDto();
-            logEventIndexDto.IndexName = "LogEventIndex";
+            ShardInitSetting logEventIndexDto = new ShardInitSetting();
+            logEventIndexDto.CollectionName = "LogEventIndex";
             logEventIndexDto.ShardGroups = new List<ShardGroup>()
             {
                 new ShardGroup()
@@ -93,7 +93,7 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "ChainId",
                             Value = "AELF",
                             Step = "",
-                            StepType = 0,
+                            StepType = StepType.None,
                             GroupNo = "0"
                         },
                         new ShardKey()
@@ -101,7 +101,7 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "2000",
-                            StepType = 1,
+                            StepType = StepType.Rounding,
                             GroupNo = "0"
                         }
                     }
@@ -115,7 +115,7 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "ChainId",
                             Value = "tDVV",
                             Step = "",
-                            StepType = 0,
+                            StepType = StepType.None,
                             GroupNo = "1"
                         },
                         new ShardKey()
@@ -123,14 +123,14 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "1000",
-                            StepType = 1,
+                            StepType = StepType.Rounding,
                             GroupNo = "1"
                         }
                     }
                 }
             };
 
-            return new List<ShardInitSettingDto>()
+            return new List<ShardInitSetting>()
             {
                 blockIndexDto,
                 logEventIndexDto
