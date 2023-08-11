@@ -19,17 +19,31 @@ public static class QueryModelExtensions
         var whereClauses = queryModel.BodyClauses.OfType<WhereClause>().ToList();
         foreach (var predicate in whereClauses.Select(whereClause => (BinaryExpression)whereClause.Predicate))
         {
-            if (predicate.Left is BinaryExpression left)
+            switch (predicate.Left)
             {
-                VisitBinaryExpression(conditions, left);
-            }
-
-            if (predicate.Right is BinaryExpression right)
-            {
-                VisitBinaryExpression(conditions, right);
+                case BinaryExpression left:
+                    VisitBinaryExpression(conditions, left);
+                    break;
+                case SubQueryExpression leftSub:
+                    VisitQueryModel(conditions, leftSub.QueryModel);
+                    break;
             }
             
-            if (predicate.Left is not BinaryExpression && predicate.Right is not BinaryExpression && predicate is BinaryExpression p)
+            switch (predicate.Right)
+            {
+                case BinaryExpression right:
+                    VisitBinaryExpression(conditions, right);
+                    break;
+                case SubQueryExpression rightSub:
+                    VisitQueryModel(conditions, rightSub.QueryModel);
+                    break;
+            }
+
+            if (predicate.Left is not BinaryExpression 
+                && predicate.Left is not SubQueryExpression 
+                && predicate.Right is not BinaryExpression 
+                && predicate.Right is not SubQueryExpression
+                && predicate is BinaryExpression p)
             {
                 VisitBinaryExpression(conditions, p);
             }
@@ -52,22 +66,24 @@ public static class QueryModelExtensions
             return;
         }
         
-        if (expression.Left is SubQueryExpression leftSub)
+        switch (expression.Left)
         {
-            VisitQueryModel(conditions, leftSub.QueryModel);
-        }
-        else if (expression.Left is BinaryExpression left)
-        {
-            VisitBinaryExpression(conditions, left);
+            case SubQueryExpression leftSub:
+                VisitQueryModel(conditions, leftSub.QueryModel);
+                break;
+            case BinaryExpression left:
+                VisitBinaryExpression(conditions, left);
+                break;
         }
 
-        if (expression.Right is SubQueryExpression rightSub)
+        switch (expression.Right)
         {
-            VisitQueryModel(conditions, rightSub.QueryModel);
-        }
-        else if(expression.Right is BinaryExpression right)
-        {
-            VisitBinaryExpression(conditions, right);
+            case SubQueryExpression rightSub:
+                VisitQueryModel(conditions, rightSub.QueryModel);
+                break;
+            case BinaryExpression right:
+                VisitBinaryExpression(conditions, right);
+                break;
         }
     }
 
