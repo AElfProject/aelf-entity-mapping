@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.Expressions;
 
 namespace AElf.EntityMapping.Elasticsearch.Linq;
 
@@ -9,24 +10,33 @@ public static class QueryModelExtensions
     public static List<CollectionNameCondition> GetCollectionNameConditions(this QueryModel queryModel)
     {
         var conditions = new List<CollectionNameCondition>();
+        VisitQueryModel(conditions, queryModel);
+        return conditions;
+    }
+
+    private static void VisitQueryModel(List<CollectionNameCondition> conditions, QueryModel queryModel)
+    {
         var whereClauses = queryModel.BodyClauses.OfType<WhereClause>().ToList();
         foreach (var predicate in whereClauses.Select(whereClause => (BinaryExpression)whereClause.Predicate))
         {
             if (predicate.Left is BinaryExpression left)
             {
-                Visit(conditions, left);
+                VisitBinaryExpression(conditions, left);
             }
 
             if (predicate.Right is BinaryExpression right)
             {
-                Visit(conditions, right);
+                VisitBinaryExpression(conditions, right);
+            }
+            
+            if (predicate.Left is not BinaryExpression && predicate.Right is not BinaryExpression && predicate is BinaryExpression p)
+            {
+                VisitBinaryExpression(conditions, p);
             }
         }
-
-        return conditions;
     }
 
-    private static void Visit(List<CollectionNameCondition> conditions, BinaryExpression expression)
+    private static void VisitBinaryExpression(List<CollectionNameCondition> conditions, BinaryExpression expression)
     {
         if (expression.Left.NodeType is ExpressionType.MemberAccess || expression.Right is ConstantExpression)
         {
@@ -42,14 +52,22 @@ public static class QueryModelExtensions
             return;
         }
         
-        if (expression.Left is BinaryExpression left)
+        if (expression.Left is SubQueryExpression leftSub)
         {
-            Visit(conditions, left);
+            VisitQueryModel(conditions, leftSub.QueryModel);
+        }
+        else if (expression.Left is BinaryExpression left)
+        {
+            VisitBinaryExpression(conditions, left);
         }
 
-        if(expression.Right is BinaryExpression right)
+        if (expression.Right is SubQueryExpression rightSub)
         {
-            Visit(conditions, right);
+            VisitQueryModel(conditions, rightSub.QueryModel);
+        }
+        else if(expression.Right is BinaryExpression right)
+        {
+            VisitBinaryExpression(conditions, right);
         }
     }
 
