@@ -1,14 +1,8 @@
 namespace AElf.EntityMapping.Sharding;
 
-
-public class ShardInitSettingOptions
+public class ShardInitSetting
 {
-    public List<ShardInitSettingDto> ShardInitSettings { get; set; }
-}
-
-public class ShardInitSettingDto
-{
-    public string IndexName { get; set; }
+    public string CollectionName { get; set; }
     public List<ShardGroup> ShardGroups { get; set; }
 }
 
@@ -23,7 +17,13 @@ public class ShardKey
     public string Name { get; set; }
     public string Value { get; set; }
     public string Step { get; set; }
-    public int StepType { get; set; }
+    public StepType StepType { get; set; }
     
     public string GroupNo { get; set; }
+}
+
+public enum StepType
+{
+    None,
+    Rounding
 }

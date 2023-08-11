@@ -5,5 +5,5 @@ namespace AElf.EntityMapping.Options;
 public class AElfEntityMappingOptions
 {
     public string CollectionPrefix { get; set; }
-    public List<ShardInitSettingDto> ShardInitSettings { get; set; }
+    public List<ShardInitSetting> ShardInitSettings { get; set; }
 }
