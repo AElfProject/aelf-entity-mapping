@@ -144,8 +144,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         {
             if (entity.Step == "")
             {
-                if((groupNo == "" || entity.GroupNo == groupNo) && conditions.Find(a=>a.Key == entity.ShardKeyName).Value.ToString() == entity.Value){ 
-                    indexName = indexName + "-" + conditions.Find(a=>a.Key == entity.ShardKeyName).Value ?? throw new InvalidOleVariantTypeException();
+                if((groupNo == "" || entity.GroupNo == groupNo) && conditions.Find(a=>a.Key == entity.ShardKeyName)?.Value.ToString() == entity.Value){ 
+                    indexName = indexName + "-" + conditions.Find(a=>a.Key == entity.ShardKeyName)!.Value ?? throw new InvalidOleVariantTypeException();
                     groupNo = groupNo == "" ? entity.GroupNo : groupNo;
                 }
             }
