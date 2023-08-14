@@ -25,7 +25,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly ILogger<ShardingKeyProvider<TEntity>> _logger;
 
     private InitShardStatus _isShardIndex = InitShardStatus.None;
-    public  List<ShardProviderEntity<TEntity>> ShardProviderEntityList = new List<ShardProviderEntity<TEntity>>();
+    private  List<ShardProviderEntity<TEntity>> ShardProviderEntityList = new List<ShardProviderEntity<TEntity>>();
     private Dictionary<string, bool> _existIndexShardDictionary = new Dictionary<string, bool>();
 
     public ShardingKeyProvider(IOptions<ElasticsearchOptions> indexSettingOptions, IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions, IDistributedCache<List<ShardCollectionCacheDto>> indexCollectionCache,IElasticIndexService elasticIndexService,IElasticsearchClientProvider elasticsearchClientProvider,
@@ -517,7 +517,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 isShard = true;
             }
         }
-        object? getPropertyFunc = providerObj.GetType().GetField("ShardProviderEntityList").GetValue(providerObj);
+        object? getPropertyFunc = providerObj.GetType().GetField("ShardProviderEntityList", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(providerObj);
         ShardProviderEntityList = (List<ShardProviderEntity<TEntity>>)getPropertyFunc;
         ShardProviderEntityList.Sort(new ShardProviderEntityComparer<TEntity>());
         _isShardIndex = isShard ? InitShardStatus.IsShard : InitShardStatus.NotShard;
