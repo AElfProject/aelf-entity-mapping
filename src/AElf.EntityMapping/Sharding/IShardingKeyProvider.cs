@@ -5,11 +5,9 @@ namespace AElf.EntityMapping.Sharding;
 
 public interface IShardingKeyProvider<TEntity> where TEntity : class
 {
-    public void SetShardingKey(string keyName, string step,int order, string value, string groupNo, Expression body, ReadOnlyCollection<ParameterExpression> parameterExpressions);
-
-    public ShardProviderEntity<TEntity> GetShardingKeyByEntityAndFieldName(TEntity entity, string fieldName);
-
-    public List<ShardProviderEntity<TEntity>> GetShardingKeyByEntity(Type type);
+    public void SetShardingKey(string keyName, string step,int order, string value, string groupNo, StepType stepType, Expression body, ReadOnlyCollection<ParameterExpression> parameterExpressions);
+    
+    public List<ShardProviderEntity<TEntity>> GetShardingKeyByEntity();
     
     public string GetCollectionName(Dictionary<string,object> conditions);
 

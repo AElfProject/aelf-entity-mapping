@@ -23,7 +23,7 @@ public class AElfEntityMappingElasticsearchModule : AbpModule
         services.AddTransient(typeof(IAElfRepository<,>), typeof(ElasticsearchRepository<,>));
         services.AddTransient(typeof(IElasticsearchRepository<,>), typeof(ElasticsearchRepository<,>));
         services.AddTransient(typeof(ICollectionNameProvider<>), typeof(ElasticsearchCollectionNameProvider<>));
-        services.AddTransient(typeof (IShardingKeyProvider<>), typeof (ShardingKeyProvider<>));
+        services.AddSingleton(typeof (IShardingKeyProvider<>), typeof (ShardingKeyProvider<>));
         services.AddSingleton(typeof(INonShardKeyRouteProvider<>), typeof(NonShardKeyRouteProvider<>));
         var configuration = context.Services.GetConfiguration();
         Configure<ElasticsearchOptions>(configuration.GetSection("Elasticsearch"));

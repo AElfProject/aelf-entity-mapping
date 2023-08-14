@@ -40,14 +40,14 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 BlockTime = DateTime.Now,
                 Confirmed = true
             };
-            List<ShardProviderEntity<BlockIndex>> blockPropertyFuncs = _blockIndexShardingKeyProvider.GetShardingKeyByEntity(blockIndex.GetType());
+            List<ShardProviderEntity<BlockIndex>> blockPropertyFuncs = _blockIndexShardingKeyProvider.GetShardingKeyByEntity();
             Assert.True(blockPropertyFuncs != null && blockPropertyFuncs.Count == 4);
             Assert.True(blockPropertyFuncs[0].ShardKeyName == "ChainId");
             Assert.True(blockPropertyFuncs[1].ShardKeyName == "ChainId");
             Assert.True(blockPropertyFuncs[2].ShardKeyName == "BlockHeight");
             Assert.True(blockPropertyFuncs[3].ShardKeyName == "BlockHeight");
         
-            List<ShardProviderEntity<BlockIndex>> blockPropertyFuncs2 = _blockIndexShardingKeyProvider2.GetShardingKeyByEntity(blockIndex.GetType());
+            List<ShardProviderEntity<BlockIndex>> blockPropertyFuncs2 = _blockIndexShardingKeyProvider2.GetShardingKeyByEntity();
             Assert.True(blockPropertyFuncs2 != null && blockPropertyFuncs2.Count == 4);
             Assert.True(blockPropertyFuncs2[0].ShardKeyName == "ChainId");
             Assert.True(blockPropertyFuncs2[1].ShardKeyName == "ChainId");
@@ -62,7 +62,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 BlockTime = DateTime.Now,
                 Confirmed = true
             };
-            List<ShardProviderEntity<LogEventIndex>> eventPropertyFuncs = _logEventIndexShardingKeyProvider.GetShardingKeyByEntity(eventIndex.GetType());
+            List<ShardProviderEntity<LogEventIndex>> eventPropertyFuncs = _logEventIndexShardingKeyProvider.GetShardingKeyByEntity();
             Assert.True(eventPropertyFuncs != null && eventPropertyFuncs.Count == 4);
             Assert.True(eventPropertyFuncs[0].ShardKeyName == "ChainId");
             Assert.True(eventPropertyFuncs[1].ShardKeyName == "ChainId");
@@ -82,7 +82,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 BlockTime = DateTime.Now,
                 Confirmed = true
             };
-            List<ShardProviderEntity<LogEventIndex>> propertyFuncs = _logEventIndexShardingKeyProvider.GetShardingKeyByEntity(eventIndex.GetType());
+            List<ShardProviderEntity<LogEventIndex>> propertyFuncs = _logEventIndexShardingKeyProvider.GetShardingKeyByEntity();
             Assert.True(propertyFuncs != null && propertyFuncs.Count == 4);
             Assert.True(propertyFuncs[0].ShardKeyName == "ChainId");
             Assert.True(propertyFuncs[1].ShardKeyName == "ChainId");
@@ -100,29 +100,6 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             TransactionIndex transactionIndex = new TransactionIndex();
             Assert.False(_logTransationIndexShardingKeyProvider.IsShardingCollection());
             Assert.False(_logTransationIndexShardingKeyProvider.IsShardingCollection());
-        }
-    
-        [Fact]
-        public void GetShardingKeyByEntityAndFieldNameTest()
-        {
-            BlockIndex blockIndex = new BlockIndex()
-            {
-                ChainId = "AELF",
-                BlockHeight = 123,
-                BlockHash = "0x000000000",
-                BlockTime = DateTime.Now,
-                Confirmed = true
-            };
-            var blockHeight = _blockIndexShardingKeyProvider.GetShardingKeyByEntityAndFieldName(blockIndex, "BlockHeight");
-            Assert.True(blockHeight.ShardKeyName == "BlockHeight");
-            Assert.True(blockHeight.Func(blockIndex).ToString() == "123");
-        
-            var chainId = _blockIndexShardingKeyProvider.GetShardingKeyByEntityAndFieldName(blockIndex, "ChainId");
-            Assert.True(chainId.ShardKeyName == "ChainId");
-            Assert.True(chainId.Func(blockIndex).ToString() == "AELF");
-        
-            var blockHash = _blockIndexShardingKeyProvider.GetShardingKeyByEntityAndFieldName(blockIndex, "BlockHash");
-            Assert.True(blockHash == null);
         }
 
         [Fact]

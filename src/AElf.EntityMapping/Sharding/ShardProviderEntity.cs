@@ -10,15 +10,18 @@ public class ShardProviderEntity<TEntity> where TEntity : class
     public string Value { get; set; }
     
     public string GroupNo { get; set; }
+    
+    public StepType StepType { get; set; }
     public Func<TEntity, object> Func { get; set; }
     
-    public ShardProviderEntity(string keyName, string step, int order, string value, string groupNo, Func<TEntity, object> func)
+    public ShardProviderEntity(string keyName, string step, int order, string value, string groupNo, StepType stepType,Func<TEntity, object> func)
     {
         ShardKeyName = keyName;
         Func = func;
         Step = step;
         Order = order;
         Value = value;
+        StepType = stepType;
         GroupNo = groupNo;
     }
 
