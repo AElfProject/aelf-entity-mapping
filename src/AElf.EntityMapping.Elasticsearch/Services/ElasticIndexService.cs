@@ -18,19 +18,19 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ElasticIndexService> _logger;
     private readonly AElfEntityMappingOptions _entityMappingOptions;
-    private readonly ElasticsearchOptions _indexSettingOptions;
+    private readonly ElasticsearchOptions _elasticsearchOptions;
     private readonly IDistributedCache<List<CollectionRouteKeyCacheItem>> _collectionRouteKeyCache;
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
     private readonly List<ShardInitSetting> _indexSettingDtos;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
-        ILogger<ElasticIndexService> logger, IOptions<AElfEntityMappingOptions> entityMappingOptions,IOptions<ElasticsearchOptions> indexSettingOptions,
+        ILogger<ElasticIndexService> logger, IOptions<AElfEntityMappingOptions> entityMappingOptions,IOptions<ElasticsearchOptions> elasticsearchOptions,
         IDistributedCache<List<CollectionRouteKeyCacheItem>> collectionRouteKeyCache)
         {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
         _entityMappingOptions = entityMappingOptions.Value;
-        _indexSettingOptions = indexSettingOptions.Value;
+        _elasticsearchOptions = elasticsearchOptions.Value;
         _collectionRouteKeyCache = collectionRouteKeyCache;
         //_indexShardOptions = indexShardOptions.Value;
         _indexSettingDtos = entityMappingOptions.Value.ShardInitSettings;
@@ -64,7 +64,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
                     ss.Index(indexName)
                         .Settings(
                             o => o.NumberOfShards(shard).NumberOfReplicas(numberOfReplicas)
-                                .Setting("max_result_window", int.MaxValue))
+                                .Setting("max_result_window", _elasticsearchOptions.MaxResultWindow))
                         .Map(m => m.AutoMap(type)));
         if (!result.Acknowledged)
             throw new ElasticsearchException($"Create Index {indexName} failed : " +
