@@ -51,7 +51,7 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "5",
-                            StepType = StepType.Rounding,
+                            StepType = StepType.Floor,
                             GroupNo = "0"
                         }
                     }
@@ -73,7 +73,7 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "10",
-                            StepType = StepType.Rounding,
+                            StepType = StepType.Floor,
                             GroupNo = "1"
                         }
                     }
@@ -101,7 +101,7 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "2000",
-                            StepType = StepType.Rounding,
+                            StepType = StepType.Floor,
                             GroupNo = "0"
                         }
                     }
@@ -123,7 +123,7 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "1000",
-                            StepType = StepType.Rounding,
+                            StepType = StepType.Floor,
                             GroupNo = "1"
                         }
                     }

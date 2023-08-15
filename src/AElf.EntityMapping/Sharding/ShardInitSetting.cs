@@ -6,7 +6,6 @@ public class ShardInitSetting
     public List<ShardGroup> ShardGroups { get; set; }
 }
 
-// TODO: Rename
 public class ShardGroup
 {
     public List<ShardKey> ShardKeys { get; set; }
@@ -25,5 +24,5 @@ public class ShardKey
 public enum StepType
 {
     None,
-    Rounding
+    Floor
 }

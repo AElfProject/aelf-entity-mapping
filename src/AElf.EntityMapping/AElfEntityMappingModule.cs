@@ -69,14 +69,14 @@ namespace AElf.EntityMapping
                         {
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.GroupNo config is not correct,  GroupNo must be consistent");
                         }
-
-                        var similarShardKeys = shardKeys.FindAll(a=>!a.Value.IsNullOrEmpty() && !a.Value.IsNullOrWhiteSpace() && (int.TryParse(a.Step, out var stepValue) && stepValue > 0));
+                        //todo:按stepType处理
+                        var similarShardKeys = shardKeys.FindAll(a=>!a.Value.IsNullOrWhiteSpace() && (int.TryParse(a.Step, out var stepValue) && stepValue > 0));
                         if(similarShardKeys.Count == 0)
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.Step config is not correct,  step must greater than 0");
-                        
+                        //todo:按stepType处理                       
                         if(similarShardKeys.Count > 1)
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.Step config is not correct, greater than 0 step config can only one");
-
+                        //todo:按stepType处理,加step == ""校验
                         foreach (var shardKey in shardKeys)
                         {
                             if (shardKey.Value.IsNullOrEmpty() || shardKey.Value == "0") continue;
