@@ -330,6 +330,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 {
                     if (shardInfo.StepType == StepType.None)
                     {
+                        //The field values of entity's sub table must be consistent with the configuration in the sub table configuration file
                         if (shardInfo.Func(entity).ToString() == shardInfo.Value)
                         {
                             collectionName = collectionName + "-" + shardInfo.Func(entity) ??
