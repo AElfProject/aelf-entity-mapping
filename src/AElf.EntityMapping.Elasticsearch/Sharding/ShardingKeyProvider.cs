@@ -43,7 +43,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     
     private bool CheckCollectionType(Type type)
     {
-        var compareType = typeof(IAElfEntity);
+        var compareType = typeof(IEntityMappingEntity);
         if (compareType.IsAssignableFrom(type) && !compareType.IsAssignableFrom(type.BaseType) &&
             !type.IsAbstract && type.IsClass && compareType != type)
         {

@@ -5,7 +5,7 @@ using Volo.Abp.Domain.Entities;
 
 namespace AElf.EntityMapping.Elasticsearch.Repositories;
 
-public interface IElasticsearchRepository<TEntity, TKey> : IAElfRepository<TEntity, TKey>
+public interface IElasticsearchRepository<TEntity, TKey> : IEntityMappingRepository<TEntity, TKey>
     where TEntity : class, IEntity<TKey>
 {
     Task<IElasticClient> GetElasticsearchClientAsync(CancellationToken cancellationToken = default);

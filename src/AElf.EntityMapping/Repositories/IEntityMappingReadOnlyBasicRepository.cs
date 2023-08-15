@@ -2,7 +2,7 @@ using Volo.Abp.Domain.Entities;
 
 namespace AElf.EntityMapping.Repositories
 {
-    public interface IAElfReadOnlyBasicRepository<TEntity, TKey> where TEntity : class, IEntity<TKey>
+    public interface IEntityMappingReadOnlyBasicRepository<TEntity, TKey> where TEntity : class, IEntity<TKey>
     {
         Task<TEntity> GetAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default);
 

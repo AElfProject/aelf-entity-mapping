@@ -1,6 +1,6 @@
 namespace AElf.EntityMapping.Entities
 {
-    public interface IAElfEntity
+    public interface IEntityMappingEntity
     {
         
     }

@@ -4,7 +4,7 @@ using Nest;
 
 namespace AElf.EntityMapping.Elasticsearch.Entities
 {
-    public class TransactionIndex : AElfIndexerEntity<string>, IAElfEntity, IBlockchainData
+    public class TransactionIndex : AElfIndexerEntity<string>, IEntityMappingEntity, IBlockchainData
     {
         [Keyword]
         public override string Id

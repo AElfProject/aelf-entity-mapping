@@ -4,7 +4,7 @@ using Nest;
 
 namespace AElf.EntityMapping.Elasticsearch.Entities;
 
-public class LogEventIndex:AElfIndexerEntity<string>,IAElfEntity,IBlockchainData
+public class LogEventIndex:AElfIndexerEntity<string>,IEntityMappingEntity,IBlockchainData
 {
     [Keyword]
     public override string Id

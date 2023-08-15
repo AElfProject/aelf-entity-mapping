@@ -4,7 +4,7 @@ using Volo.Abp.Domain.Entities;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
-public class ShardCollectionSuffix:Entity,IEntity<string>,IAElfEntity
+public class ShardCollectionSuffix:Entity,IEntity<string>,IEntityMappingEntity
 {
     [Keyword]public string Id { get; set; }
     

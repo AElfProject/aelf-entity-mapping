@@ -36,7 +36,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
     
     private async Task HandleModuleAsync(Type moduleType)
     {
-        var types = GetTypesAssignableFrom<IAElfEntity>(moduleType.Assembly);
+        var types = GetTypesAssignableFrom<IEntityMappingEntity>(moduleType.Assembly);
         foreach (var t in types)
         {
             var indexName = _elasticIndexService.GetDefaultFullIndexName(t);

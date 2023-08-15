@@ -21,16 +21,17 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
     private readonly INonShardKeyRouteProvider<TEntity> _nonShardKeyRouteProvider;
     private readonly IElasticIndexService _elasticIndexService;
+    private readonly IElasticsearchQueryableFactory<TEntity> _elasticsearchQueryableFactory;
     // private List<CollectionMarkField> _nonShardKeys;
     /*public IAbpLazyServiceProvider LazyServiceProvider { get; set; }
     public IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository => LazyServiceProvider
         .LazyGetRequiredService<ElasticsearchRepository<NonShardKeyRouteCollection,string>>();*/
-    
+
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
         IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider,
         IShardingKeyProvider<TEntity> shardingKeyProvider, INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider,
-        IElasticIndexService elasticIndexService)
+        IElasticIndexService elasticIndexService, IElasticsearchQueryableFactory<TEntity> elasticsearchQueryableFactory)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _collectionNameProvider = collectionNameProvider;
@@ -38,10 +39,11 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         _shardingKeyProvider = shardingKeyProvider;
         _nonShardKeyRouteProvider = nonShardKeyRouteProvider;
         _elasticIndexService = elasticIndexService;
-        
+        _elasticsearchQueryableFactory = elasticsearchQueryableFactory;
+
         // InitializeNonShardKeys();
     }
-    
+
     // private void InitializeNonShardKeys()
     // {
     //     if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
@@ -384,7 +386,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         CancellationToken cancellationToken = default)
     {
         var client = await GetElasticsearchClientAsync(cancellationToken);
-        return client.AsQueryable<TEntity>(_collectionNameProvider, collectionName);
+        return _elasticsearchQueryableFactory.Create(client, collectionName);
     }
 
     private async Task<string> GetFullCollectionNameAsync(string collection)
