@@ -21,6 +21,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     private readonly ElasticsearchOptions _elasticsearchOptions;
     private readonly IDistributedCache<List<CollectionRouteKeyCacheItem>> _collectionRouteKeyCache;
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
+    private const string CollectionRouteKeyCacheNameFormat = "RouteKeyCache_{0}";
     private readonly List<ShardInitSetting> _indexSettingDtos;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
@@ -178,9 +179,13 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
 
     public string GetCollectionRouteKeyCacheName(Type type)
     {
-        var cacheName = _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
-            ? $"{_indexMarkFieldCachePrefix}_{type.FullName}"
-            : $"{_indexMarkFieldCachePrefix}{_entityMappingOptions.CollectionPrefix}_{type.FullName}";
+        // var cacheName = _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
+        //     ? $"{_indexMarkFieldCachePrefix}_{type.FullName}"
+        //     : $"{_indexMarkFieldCachePrefix}{_entityMappingOptions.CollectionPrefix}_{type.FullName}";
+        var cacheName = string.Format(CollectionRouteKeyCacheNameFormat,
+            _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
+                ? type.FullName
+                : $"{_entityMappingOptions.CollectionPrefix}_{type.FullName}");
         return cacheName;
     }
     
