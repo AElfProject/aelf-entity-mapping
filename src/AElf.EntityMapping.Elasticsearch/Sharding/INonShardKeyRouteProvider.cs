@@ -14,10 +14,10 @@ public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
 
     Task<string> GetCollectionNameAsync(string id);
 
-    Task<List<CollectionMarkField>> GetNonShardKeysAsync();
+    Task<List<CollectionRouteKeyCacheItem>> GetNonShardKeysAsync();
 
     Task<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexAsync(string id, string indexName, CancellationToken cancellationToken = default);
     
-    List<CollectionMarkField> NonShardKeys { get; set; }
+    List<CollectionRouteKeyCacheItem> NonShardKeys { get; set; }
     
 }

@@ -10,9 +10,9 @@ public interface IElasticIndexService
     Task CreateNonShardKeyRouteIndexAsync(Type indexEntityType, int numberOfShards,
         int numberOfReplicas);
     
-    Task InitializeIndexMarkedFieldAsync(Type indexEntityType);
+    Task InitializeCollectionRouteKeyCacheAsync(Type indexEntityType);
     
-    string GetIndexMarkFieldCacheName(Type indexEntityType);
+    string GetCollectionRouteKeyCacheName(Type indexEntityType);
 
     string GetDefaultIndexName(Type indexEntityType);
 

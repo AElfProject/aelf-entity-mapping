@@ -10,12 +10,12 @@ namespace AElf.EntityMapping.Elasticsearch;
 public class ElasticIndexServiceTests: AElfElasticsearchTestBase
 {
     private readonly IElasticIndexService _elasticIndexService;
-    private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
+    private readonly IDistributedCache<List<CollectionRouteKeyCacheItem>> _indexMarkFieldCache;
 
     public ElasticIndexServiceTests()
     {
         _elasticIndexService = GetRequiredService<IElasticIndexService>();
-        _indexMarkFieldCache= GetRequiredService<IDistributedCache<List<CollectionMarkField>>>();
+        _indexMarkFieldCache= GetRequiredService<IDistributedCache<List<CollectionRouteKeyCacheItem>>>();
     }
 
     [Fact]

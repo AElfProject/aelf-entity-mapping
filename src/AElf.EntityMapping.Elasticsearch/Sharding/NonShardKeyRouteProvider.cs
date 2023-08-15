@@ -17,18 +17,18 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     protected IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository => LazyServiceProvider
         .LazyGetRequiredService<IElasticsearchRepository<NonShardKeyRouteCollection,string>>();
     private readonly IElasticIndexService _elasticIndexService;
-    private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
+    private readonly IDistributedCache<List<CollectionRouteKeyCacheItem>> _collectionRouteKeyCache;
     // private readonly IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository;
-    public List<CollectionMarkField> NonShardKeys { get; set; }
+    public List<CollectionRouteKeyCacheItem> NonShardKeys { get; set; }
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<NonShardKeyRouteProvider<TEntity>> _logger;
 
-    public NonShardKeyRouteProvider(IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache,
+    public NonShardKeyRouteProvider(IDistributedCache<List<CollectionRouteKeyCacheItem>> collectionRouteKeyCache,
         IElasticsearchClientProvider elasticsearchClientProvider,
         ILogger<NonShardKeyRouteProvider<TEntity>> logger,
         IElasticIndexService elasticIndexService)
     {
-        _indexMarkFieldCache = indexMarkFieldCache;
+        _collectionRouteKeyCache = collectionRouteKeyCache;
         _elasticIndexService = elasticIndexService;
         // _nonShardKeyRouteIndexRepository = nonShardKeyRouteIndexRepository;
         _elasticsearchClientProvider = elasticsearchClientProvider;
@@ -201,17 +201,18 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         return collectionName;
     }
 
-    public async Task<List<CollectionMarkField>> GetNonShardKeysAsync()
+    public async Task<List<CollectionRouteKeyCacheItem>> GetNonShardKeysAsync()
     {
-        var indexMarkFieldsCacheKey = _elasticIndexService.GetIndexMarkFieldCacheName(typeof(TEntity));
-        var indexMarkFields = await _indexMarkFieldCache.GetAsync(indexMarkFieldsCacheKey);
-        if (indexMarkFields != null)
+        var collectionRouteKeyCacheKey = _elasticIndexService.GetCollectionRouteKeyCacheName(typeof(TEntity));
+        var collectionRouteKeyCacheItems = await _collectionRouteKeyCache.GetAsync(collectionRouteKeyCacheKey);
+        if (collectionRouteKeyCacheItems != null)
         {
-            return indexMarkFields.FindAll(f => f.IsRouteKey).ToList();;
+            return collectionRouteKeyCacheItems;
+            // return indexMarkFields.FindAll(f => f.IsRouteKey).ToList();
             // throw new Exception($"{typeof(TEntity).Name} Index marked field cache not found.");
         }
 
-        return new List<CollectionMarkField>();
+        return new List<CollectionRouteKeyCacheItem>();
     }
 
     public async Task<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexAsync(string id, string indexName, CancellationToken cancellationToken = default)

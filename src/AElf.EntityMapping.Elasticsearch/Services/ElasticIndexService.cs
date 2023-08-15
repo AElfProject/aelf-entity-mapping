@@ -19,19 +19,19 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     private readonly ILogger<ElasticIndexService> _logger;
     private readonly AElfEntityMappingOptions _entityMappingOptions;
     private readonly ElasticsearchOptions _indexSettingOptions;
-    private readonly IDistributedCache<List<CollectionMarkField>> _indexMarkFieldCache;
+    private readonly IDistributedCache<List<CollectionRouteKeyCacheItem>> _collectionRouteKeyCache;
     private readonly string _indexMarkFieldCachePrefix = "MarkField_";
     private readonly List<ShardInitSetting> _indexSettingDtos;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
         ILogger<ElasticIndexService> logger, IOptions<AElfEntityMappingOptions> entityMappingOptions,IOptions<ElasticsearchOptions> indexSettingOptions,
-        IDistributedCache<List<CollectionMarkField>> indexMarkFieldCache)
+        IDistributedCache<List<CollectionRouteKeyCacheItem>> collectionRouteKeyCache)
         {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
         _entityMappingOptions = entityMappingOptions.Value;
         _indexSettingOptions = indexSettingOptions.Value;
-        _indexMarkFieldCache = indexMarkFieldCache;
+        _collectionRouteKeyCache = collectionRouteKeyCache;
         //_indexShardOptions = indexShardOptions.Value;
         _indexSettingDtos = entityMappingOptions.Value.ShardInitSettings;
     }
@@ -120,38 +120,39 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         }
     }
 
-    public async Task InitializeIndexMarkedFieldAsync(Type type)
+    public async Task InitializeCollectionRouteKeyCacheAsync(Type type)
     {
-        var indexMarkFieldList = new List<CollectionMarkField>();
+        var collectionRouteKeyCacheItems = new List<CollectionRouteKeyCacheItem>();
         var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         foreach (var property in properties)
         {
-            var indexMarkField = new CollectionMarkField
+            var indexMarkField = new CollectionRouteKeyCacheItem
             {
                 FieldName = property.Name,
-                FieldValueType = property.PropertyType.ToString(),
-                IndexEntityName = type.Name,
+                // FieldValueType = property.PropertyType.ToString(),
+                CollectionName = type.Name,
             };
             
             //Find the field with the ShardPropertyAttributes annotation set
-            ShardPropertyAttributes shardAttribute = (ShardPropertyAttributes)Attribute.GetCustomAttribute(property, typeof(ShardPropertyAttributes));
-            if (shardAttribute != null)
-            {
-                indexMarkField.IsShardKey = true;
-            }
+            // ShardPropertyAttributes shardAttribute = (ShardPropertyAttributes)Attribute.GetCustomAttribute(property, typeof(ShardPropertyAttributes));
+            // if (shardAttribute != null)
+            // {
+            //     indexMarkField.IsShardKey = true;
+            // }
 
             //Find the field with the ShardRoutePropertyAttributes annotation set
             NeedShardRouteAttribute shardRouteAttribute = (NeedShardRouteAttribute)Attribute.GetCustomAttribute(property, typeof(NeedShardRouteAttribute));
             if (shardRouteAttribute != null)
             {
-                indexMarkField.IsRouteKey = true;
+                // indexMarkField.IsRouteKey = true;
+                collectionRouteKeyCacheItems.Add(indexMarkField);
             }
             
-            indexMarkFieldList.Add(indexMarkField);
+            // indexMarkFieldList.Add(indexMarkField);
         }
 
-        var cacheName = GetIndexMarkFieldCacheName(type);
-        await _indexMarkFieldCache.SetAsync(cacheName, indexMarkFieldList,hideErrors:false);
+        var cacheName = GetCollectionRouteKeyCacheName(type);
+        await _collectionRouteKeyCache.SetAsync(cacheName, collectionRouteKeyCacheItems, hideErrors: false);
         
         _logger.LogInformation("{cacheName} cached successfully", cacheName);
     }
@@ -175,7 +176,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         }
     }
 
-    public string GetIndexMarkFieldCacheName(Type type)
+    public string GetCollectionRouteKeyCacheName(Type type)
     {
         var cacheName = _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
             ? $"{_indexMarkFieldCachePrefix}_{type.FullName}"
