@@ -43,16 +43,14 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "ChainId",
                             Value = "AELF",
                             Step = "",
-                            StepType = StepType.None,
-                            GroupNo = "0"
+                            StepType = StepType.None
                         },
                         new ShardKey()
                         {
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "5",
-                            StepType = StepType.Floor,
-                            GroupNo = "0"
+                            StepType = StepType.Floor
                         }
                     }
                 },
@@ -65,16 +63,14 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "ChainId",
                             Value = "tDVV",
                             Step = "",
-                            StepType = StepType.None,
-                            GroupNo = "1"
+                            StepType = StepType.None
                         },
                         new ShardKey()
                         {
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "10",
-                            StepType = StepType.Floor,
-                            GroupNo = "1"
+                            StepType = StepType.Floor
                         }
                     }
                 }
@@ -93,16 +89,14 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "ChainId",
                             Value = "AELF",
                             Step = "",
-                            StepType = StepType.None,
-                            GroupNo = "0"
+                            StepType = StepType.None
                         },
                         new ShardKey()
                         {
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "2000",
-                            StepType = StepType.Floor,
-                            GroupNo = "0"
+                            StepType = StepType.Floor
                         }
                     }
                 },
@@ -115,16 +109,14 @@ public class AElfEntityMappingTestModule : AbpModule
                             Name = "ChainId",
                             Value = "tDVV",
                             Step = "",
-                            StepType = StepType.None,
-                            GroupNo = "1"
+                            StepType = StepType.None
                         },
                         new ShardKey()
                         {
                             Name = "BlockHeight",
                             Value = "0",
                             Step = "1000",
-                            StepType = StepType.Floor,
-                            GroupNo = "1"
+                            StepType = StepType.Floor
                         }
                     }
                 }

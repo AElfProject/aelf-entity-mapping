@@ -18,7 +18,6 @@ public class ShardKey
     public string Step { get; set; }
     public StepType StepType { get; set; }
     
-    public string GroupNo { get; set; }
 }
 
 public enum StepType
