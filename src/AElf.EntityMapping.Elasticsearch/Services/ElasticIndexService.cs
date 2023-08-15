@@ -204,8 +204,8 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     public string GetNonShardKeyRouteIndexName(Type type, string fieldName)
     {
         var routeIndexName= _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
-            ? $"{type.Name.ToLower()}.{fieldName.ToLower()}.route"
-            : $"{_entityMappingOptions.CollectionPrefix.ToLower()}.{type.Name.ToLower()}.{fieldName.ToLower()}.route";
+            ? $"route.{type.Name.ToLower()}.{fieldName.ToLower()}"
+            : $"{_entityMappingOptions.CollectionPrefix.ToLower()}.route.{type.Name.ToLower()}.{fieldName.ToLower()}";
         return routeIndexName;
     }
 
