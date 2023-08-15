@@ -21,8 +21,8 @@ public class ElasticIndexServiceTests: AElfElasticsearchTestBase
     [Fact]
     public async Task InitializeIndexMarkedField_Test()
     {
-        await _elasticIndexService.InitializeIndexMarkedFieldAsync(typeof(BlockIndex));
-        var cacheName = _elasticIndexService.GetIndexMarkFieldCacheName(typeof(BlockIndex));
+        await _elasticIndexService.InitializeCollectionRouteKeyCacheAsync(typeof(BlockIndex));
+        var cacheName = _elasticIndexService.GetCollectionRouteKeyCacheName(typeof(BlockIndex));
         var collectionMarkFieldList = await _indexMarkFieldCache.GetAsync(cacheName);
         collectionMarkFieldList.ShouldNotBeNull();
         collectionMarkFieldList.Count.ShouldBeGreaterThan(1);

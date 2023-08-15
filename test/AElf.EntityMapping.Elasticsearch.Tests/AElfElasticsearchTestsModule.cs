@@ -39,6 +39,6 @@ public class AElfElasticsearchTestsModule : AbpModule
         var indexPrefix = option.Value.CollectionPrefix.ToLower();
         
         client.Indices.Delete(indexPrefix+"*");
-        client.Indices.DeleteTemplate("." + indexPrefix + "*");
+        client.Indices.DeleteTemplate(indexPrefix + "*");
     }
 }

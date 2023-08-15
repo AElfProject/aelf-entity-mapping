@@ -44,7 +44,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
             if (_elasticIndexService.IsShardingCollection(t))
             {
                 //if shard index, create index Template
-                var indexTemplateName = "." + indexName + "-template";
+                var indexTemplateName = indexName + "-template";
                 await _elasticIndexService.CreateIndexTemplateAsync(indexTemplateName,indexName, t,
                     _indexSettingOptions.NumberOfShards,
                     _indexSettingOptions.NumberOfReplicas);

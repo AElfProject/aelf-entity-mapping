@@ -141,7 +141,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
             // }
 
             //Find the field with the ShardRoutePropertyAttributes annotation set
-            NeedShardRouteAttribute shardRouteAttribute = (NeedShardRouteAttribute)Attribute.GetCustomAttribute(property, typeof(NeedShardRouteAttribute));
+            CollectionRoutekeyAttribute shardRouteAttribute = (CollectionRoutekeyAttribute)Attribute.GetCustomAttribute(property, typeof(CollectionRoutekeyAttribute));
             if (shardRouteAttribute != null)
             {
                 // indexMarkField.IsRouteKey = true;
@@ -162,7 +162,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         foreach (var property in properties)
         {
-            NeedShardRouteAttribute shardRouteAttribute = (NeedShardRouteAttribute)Attribute.GetCustomAttribute(property, typeof(NeedShardRouteAttribute));
+            CollectionRoutekeyAttribute shardRouteAttribute = (CollectionRoutekeyAttribute)Attribute.GetCustomAttribute(property, typeof(CollectionRoutekeyAttribute));
             if (shardRouteAttribute != null)
             {
                 if (property.PropertyType != typeof(string))
