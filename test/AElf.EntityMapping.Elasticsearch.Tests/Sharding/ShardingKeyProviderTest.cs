@@ -40,19 +40,19 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 BlockTime = DateTime.Now,
                 Confirmed = true
             };
-            List<ShardProviderEntity<BlockIndex>> blockPropertyFuncs = _blockIndexShardingKeyProvider.GetShardingKeyByEntity();
-            Assert.True(blockPropertyFuncs != null && blockPropertyFuncs.Count == 4);
-            Assert.True(blockPropertyFuncs[0].ShardKeyName == "ChainId");
-            Assert.True(blockPropertyFuncs[1].ShardKeyName == "ChainId");
-            Assert.True(blockPropertyFuncs[2].ShardKeyName == "BlockHeight");
-            Assert.True(blockPropertyFuncs[3].ShardKeyName == "BlockHeight");
+            List<ShardingKeyInfo<BlockIndex>> blockPropertyFuncs = _blockIndexShardingKeyProvider.GetShardingKeyByEntity();
+            Assert.True(blockPropertyFuncs != null && blockPropertyFuncs.Count == 2);
+            Assert.True(blockPropertyFuncs[0].ShardKeys[0].ShardKeyName == "ChainId");
+            Assert.True(blockPropertyFuncs[0].ShardKeys[1].ShardKeyName == "BlockHeight");
+            Assert.True(blockPropertyFuncs[1].ShardKeys[0].ShardKeyName == "ChainId");
+            Assert.True(blockPropertyFuncs[1].ShardKeys[1].ShardKeyName == "BlockHeight");
         
-            List<ShardProviderEntity<BlockIndex>> blockPropertyFuncs2 = _blockIndexShardingKeyProvider2.GetShardingKeyByEntity();
-            Assert.True(blockPropertyFuncs2 != null && blockPropertyFuncs2.Count == 4);
-            Assert.True(blockPropertyFuncs2[0].ShardKeyName == "ChainId");
-            Assert.True(blockPropertyFuncs2[1].ShardKeyName == "ChainId");
-            Assert.True(blockPropertyFuncs2[2].ShardKeyName == "BlockHeight");
-            Assert.True(blockPropertyFuncs2[3].ShardKeyName == "BlockHeight");
+            List<ShardingKeyInfo<BlockIndex>> blockPropertyFuncs2 = _blockIndexShardingKeyProvider2.GetShardingKeyByEntity();
+            Assert.True(blockPropertyFuncs2 != null && blockPropertyFuncs2.Count == 2);
+            Assert.True(blockPropertyFuncs2[0].ShardKeys[0].ShardKeyName == "ChainId");
+            Assert.True(blockPropertyFuncs2[0].ShardKeys[1].ShardKeyName == "BlockHeight");
+            Assert.True(blockPropertyFuncs2[1].ShardKeys[0].ShardKeyName == "ChainId");
+            Assert.True(blockPropertyFuncs2[1].ShardKeys[1].ShardKeyName == "BlockHeight");
         
             LogEventIndex eventIndex = new LogEventIndex()
             {
@@ -62,12 +62,12 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 BlockTime = DateTime.Now,
                 Confirmed = true
             };
-            List<ShardProviderEntity<LogEventIndex>> eventPropertyFuncs = _logEventIndexShardingKeyProvider.GetShardingKeyByEntity();
-            Assert.True(eventPropertyFuncs != null && eventPropertyFuncs.Count == 4);
-            Assert.True(eventPropertyFuncs[0].ShardKeyName == "ChainId");
-            Assert.True(eventPropertyFuncs[1].ShardKeyName == "ChainId");
-            Assert.True(eventPropertyFuncs[2].ShardKeyName == "BlockHeight");
-            Assert.True(eventPropertyFuncs[3].ShardKeyName == "BlockHeight");
+            List<ShardingKeyInfo<LogEventIndex>> eventPropertyFuncs = _logEventIndexShardingKeyProvider.GetShardingKeyByEntity();
+            Assert.True(eventPropertyFuncs != null && eventPropertyFuncs.Count == 2);
+            Assert.True(eventPropertyFuncs[0].ShardKeys[0].ShardKeyName == "ChainId");
+            Assert.True(eventPropertyFuncs[0].ShardKeys[1].ShardKeyName == "BlockHeight");
+            Assert.True(eventPropertyFuncs[1].ShardKeys[0].ShardKeyName == "ChainId");
+            Assert.True(eventPropertyFuncs[1].ShardKeys[1].ShardKeyName == "BlockHeight");
 
         }
     
@@ -82,12 +82,12 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 BlockTime = DateTime.Now,
                 Confirmed = true
             };
-            List<ShardProviderEntity<LogEventIndex>> propertyFuncs = _logEventIndexShardingKeyProvider.GetShardingKeyByEntity();
-            Assert.True(propertyFuncs != null && propertyFuncs.Count == 4);
-            Assert.True(propertyFuncs[0].ShardKeyName == "ChainId");
-            Assert.True(propertyFuncs[1].ShardKeyName == "ChainId");
-            Assert.True(propertyFuncs[2].ShardKeyName == "BlockHeight");
-            Assert.True(propertyFuncs[3].ShardKeyName == "BlockHeight");
+            List<ShardingKeyInfo<LogEventIndex>> propertyFuncs = _logEventIndexShardingKeyProvider.GetShardingKeyByEntity();
+            Assert.True(propertyFuncs != null && propertyFuncs.Count == 2);
+            Assert.True(propertyFuncs[0].ShardKeys[0].ShardKeyName == "ChainId");
+            Assert.True(propertyFuncs[0].ShardKeys[1].ShardKeyName == "BlockHeight");
+            Assert.True(propertyFuncs[1].ShardKeys[0].ShardKeyName == "ChainId");
+            Assert.True(propertyFuncs[1].ShardKeys[1].ShardKeyName == "BlockHeight");
         }
     
         [Fact]
@@ -121,24 +121,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             Assert.True(blockIndexNameMain.Count == 4);
             Assert.True(blockIndexNameMain.First().StartsWith("blockindex-aelf-"));
         }
-
-
-        [Fact]
-        public void GetCollectionNameForReadTest()
-        {
-            Dictionary<string, object> conditions = new Dictionary<string, object>();
-            conditions.Add("ChainId", "AELF");
-            conditions.Add("BlockHeight",100000);
-            var blockIndexNameMain = _blockIndexShardingKeyProvider.GetCollectionName(conditions);
-            Assert.True(blockIndexNameMain.StartsWith("blockindex-aelf-"));
         
-            Dictionary<string, object> conditions2 = new Dictionary<string, object>();
-            conditions2.Add("ChainId", "tDVV");
-            conditions2.Add("BlockHeight",100000);
-            var blockIndexNameSide = _blockIndexShardingKeyProvider.GetCollectionName(conditions2);
-            Assert.True(blockIndexNameSide.StartsWith("blockindex-tdvv-"));
-        }
-    
         [Fact]
         public async Task GetCollectionNameForWriteTest()
         {

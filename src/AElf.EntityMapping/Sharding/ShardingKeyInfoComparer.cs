@@ -1,8 +1,8 @@
 namespace AElf.EntityMapping.Sharding;
 
-public class ShardProviderEntityComparer<TEntity> : IComparer<ShardProviderEntity<TEntity>> where TEntity : class
+public class ShardingKeyInfoComparer<TEntity> : IComparer<ShardingKey<TEntity>> where TEntity : class
 {
-    public int Compare(ShardProviderEntity<TEntity> x, ShardProviderEntity<TEntity> y)
+    public int Compare(ShardingKey<TEntity> x, ShardingKey<TEntity> y)
     {
         if (x == null && y == null)
         {

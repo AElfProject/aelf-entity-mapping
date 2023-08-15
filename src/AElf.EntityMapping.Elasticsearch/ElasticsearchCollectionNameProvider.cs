@@ -33,8 +33,6 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
     {
         _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync:  " +
                                $"conditions: {JsonConvert.SerializeObject(conditions)}");
-        if (conditions == null || conditions.Count == 0)
-            return new List<string> { GetDefaultCollectionName() };
 
         _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync:  " +
                                $"IsShardingCollection: {!_elasticIndexService.IsShardingCollection(typeof(TEntity))}");

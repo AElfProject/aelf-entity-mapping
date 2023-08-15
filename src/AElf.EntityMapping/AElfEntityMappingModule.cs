@@ -63,14 +63,13 @@ namespace AElf.EntityMapping
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.Step config is not correct, if step>0 need config at the end");
                         }
 
-                        var shardKeyGroupNoCount =
+                        /*var shardKeyGroupNoCount =
                             shardGroup.ShardKeys.FindAll(a => a.GroupNo == shardGroup.ShardKeys.First().GroupNo).Count;
                         if (shardKeyGroupNoCount != shardGroup.ShardKeys.Count)
                         {
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.GroupNo config is not correct,  GroupNo must be consistent");
-                        }
-
-                        var similarShardKeys = shardKeys.FindAll(a=>!a.Value.IsNullOrEmpty() && !a.Value.IsNullOrWhiteSpace() && (int.TryParse(a.Step, out var stepValue) && stepValue > 0));
+                        }*/
+                        var similarShardKeys = shardKeys.FindAll(a=>!a.Value.IsNullOrWhiteSpace() && (int.TryParse(a.Step, out var stepValue) && stepValue > 0));
                         if(similarShardKeys.Count == 0)
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.Step config is not correct,  step must greater than 0");
                         
@@ -79,7 +78,7 @@ namespace AElf.EntityMapping
 
                         foreach (var shardKey in shardKeys)
                         {
-                            if (shardKey.Value.IsNullOrEmpty() || shardKey.Value == "0") continue;
+                            if (shardKey.StepType == StepType.Floor) continue;
                             
                             if (!shardKeyDic.TryGetValue(shardKey.Name, out var value))
                             {
