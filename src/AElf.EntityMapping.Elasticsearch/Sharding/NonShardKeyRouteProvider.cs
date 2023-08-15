@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Elasticsearch.Repositories;
 using AElf.EntityMapping.Elasticsearch.Services;
+using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -14,32 +15,38 @@ using Volo.Abp.Threading;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
-public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity> where TEntity : class, IEntity<object>
+public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity> where TEntity : class, IEntity<string>
 {
     public IAbpLazyServiceProvider LazyServiceProvider { get; set; }
     private IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository => LazyServiceProvider
         .LazyGetRequiredService<IElasticsearchRepository<NonShardKeyRouteCollection,string>>();
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IDistributedCache<List<CollectionRouteKeyCacheItem>> _collectionRouteKeyCache;
-    private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
+    // private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
     // private readonly IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository;
     public List<CollectionRouteKeyCacheItem> NonShardKeys { get; set; }
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
+    // private readonly IElasticsearchQueryableFactory<NonShardKeyRouteCollection> _elasticsearchQueryableFactory;
+    private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
     private readonly ElasticsearchOptions _elasticsearchOptions;
     private readonly ILogger<NonShardKeyRouteProvider<TEntity>> _logger;
 
     public NonShardKeyRouteProvider(IDistributedCache<List<CollectionRouteKeyCacheItem>> collectionRouteKeyCache,
-        ICollectionNameProvider<TEntity> collectionNameProvider,
+        // ICollectionNameProvider<TEntity> collectionNameProvider,
         IElasticsearchClientProvider elasticsearchClientProvider,
+        // IElasticsearchQueryableFactory<NonShardKeyRouteCollection> elasticsearchQueryableFactory, 
+        IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions,
         IOptions<ElasticsearchOptions> elasticsearchOptions,
         ILogger<NonShardKeyRouteProvider<TEntity>> logger,
         IElasticIndexService elasticIndexService)
     {
         _collectionRouteKeyCache = collectionRouteKeyCache;
         _elasticIndexService = elasticIndexService;
-        _collectionNameProvider = collectionNameProvider;
+        // _collectionNameProvider = collectionNameProvider;
+        // _elasticsearchQueryableFactory = elasticsearchQueryableFactory;
         // _nonShardKeyRouteIndexRepository = nonShardKeyRouteIndexRepository;
         _elasticsearchClientProvider = elasticsearchClientProvider;
+        _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
         _elasticsearchOptions = elasticsearchOptions.Value;
         _logger = logger;
 
@@ -100,6 +107,9 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 // var indexList = await _nonShardKeyRouteIndexRepository.GetListAsync(lambda, nonShardKeyRouteIndexName);
                 var indexList = await _nonShardKeyRouteIndexRepository.GetListAsync(x => x.SearchKey == fieldValue,
                     nonShardKeyRouteIndexName);
+                // var indexList =
+                //     GetNonShardKeyRouteIndexListAsync(x => x.SearchKey == fieldValue, nonShardKeyRouteIndexName);
+
                 _logger.LogInformation($"NonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync:  " +
                                        $"indexList: {JsonConvert.SerializeObject(indexList)}");
                 var nameList = indexList.Select(x => x.ShardCollectionName).Distinct().ToList();
@@ -203,7 +213,8 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         
         var nonShardKey= NonShardKeys[0];
         var nonShardKeyRouteIndexName = _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
-        var routeIndex=await _nonShardKeyRouteIndexRepository.GetAsync(id, nonShardKeyRouteIndexName);
+        // var routeIndex=await _nonShardKeyRouteIndexRepository.GetAsync(id, nonShardKeyRouteIndexName);
+        var routeIndex = await GetNonShardKeyRouteIndexAsync(id, nonShardKeyRouteIndexName);
         if (routeIndex != null)
         {
             collectionName = routeIndex.ShardCollectionName;
@@ -238,6 +249,13 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             selector, cancellationToken);
         return result.Found ? result.Source : null;
     }
+
+    // private List<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexListAsync(Expression<Func<NonShardKeyRouteCollection, bool>> predicate,string indexName, CancellationToken cancellationToken = default)
+    // {
+    //     var client = _elasticsearchClientProvider.GetClient();
+    //     var queryable = _elasticsearchQueryableFactory.Create(client, indexName);
+    //     return queryable.Where(predicate).ToList();
+    // }
     
     //TODO: move to non shard key route provider
     public async Task AddManyNonShardKeyRoute(List<TEntity> modelList,List<string> fullIndexNameList, IElasticClient client,CancellationToken cancellationToken = default)
@@ -258,7 +276,8 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 {
                     //TODO: use func to get value
                     var value = item.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(item);
-                    string indexName = await _collectionNameProvider.RemoveCollectionPrefix(fullIndexNameList[indexNameCount]);
+                    string indexName = IndexNameHelper.RemoveCollectionPrefix(fullIndexNameList[indexNameCount],
+                        _aelfEntityMappingOptions.CollectionPrefix);
                     var nonShardKeyRouteIndexModel = new NonShardKeyRouteCollection()
                     {
                         Id = item.Id.ToString(),
@@ -282,8 +301,9 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         {
             return;
         }
-        
-        string indexName = await _collectionNameProvider.RemoveCollectionPrefix(fullIndexName);
+
+        string indexName =
+            IndexNameHelper.RemoveCollectionPrefix(fullIndexName, _aelfEntityMappingOptions.CollectionPrefix);
         
         if (NonShardKeys!=null && NonShardKeys.Any())
         {

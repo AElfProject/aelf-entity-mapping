@@ -6,4 +6,15 @@ public static class IndexNameHelper
     {
         return indices == null ? string.Empty : string.Join(',', indices);
     }
+    
+    public static string RemoveCollectionPrefix(string fullCollectionName,string collectionPrefix)
+    {
+        var collectionName = fullCollectionName;
+        if (!string.IsNullOrWhiteSpace(collectionPrefix))
+        {
+            collectionName = collectionName.RemovePreFix($"{collectionPrefix}.".ToLower());
+        }
+
+        return collectionName;
+    }
 }
