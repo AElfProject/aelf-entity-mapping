@@ -45,7 +45,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
         {
             var indexName = IndexNameHelper.GetDefaultFullIndexName(t,_entityMappingOptions.CollectionPrefix);
             
-            if (_elasticIndexService.IsShardingCollection(t))
+            if (_entityMappingOptions.IsShardingCollection(t))
             {
                 //if shard index, create index Template
                 var indexTemplateName = indexName + "-template";

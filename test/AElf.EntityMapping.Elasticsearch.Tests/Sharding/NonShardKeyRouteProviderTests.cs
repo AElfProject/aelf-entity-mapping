@@ -110,15 +110,15 @@ public class NonShardKeyRouteProviderTests: AElfElasticsearchTestBase
 
         var route = await _blockIndexNonShardKeyRouteProvider.GetNonShardKeyRouteIndexAsync("block1", routeIndex);
         route.Id.ShouldBe("block1");
-        route.SearchKey.ShouldBe("BlockHash1");
+        route.CollectionRouteKey.ShouldBe("BlockHash1");
         // route.ShardCollectionName.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-0");
-        route.ShardCollectionName.ShouldBe($"blockindex-aelf-0");
+        route.CollectionName.ShouldBe($"blockindex-aelf-0");
         
         route = await _blockIndexNonShardKeyRouteProvider.GetNonShardKeyRouteIndexAsync("block6", routeIndex);
         route.Id.ShouldBe("block6");
-        route.SearchKey.ShouldBe("BlockHash6");
+        route.CollectionRouteKey.ShouldBe("BlockHash6");
         // route.ShardCollectionName.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
-        route.ShardCollectionName.ShouldBe($"blockindex-aelf-1");
+        route.CollectionName.ShouldBe($"blockindex-aelf-1");
     }
     
     private async Task InitBlocksAsync()

@@ -1,7 +1,9 @@
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Elasticsearch.Sharding;
+using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 namespace AElf.EntityMapping.Elasticsearch;
@@ -12,16 +14,19 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
     private readonly INonShardKeyRouteProvider<TEntity> _nonShardKeyRouteProvider;
+    private readonly AElfEntityMappingOptions _entityMappingOptions;
     private readonly ILogger<ElasticsearchCollectionNameProvider<TEntity>> _logger;
 
     public ElasticsearchCollectionNameProvider(IShardingKeyProvider<TEntity> shardingKeyProvider,
         IElasticIndexService elasticIndexService,
         INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider,
+        IOptions<AElfEntityMappingOptions> entityMappingOptions,
         ILogger<ElasticsearchCollectionNameProvider<TEntity>> logger)
     {
         _elasticIndexService = elasticIndexService;
         _shardingKeyProvider = shardingKeyProvider;
         _nonShardKeyRouteProvider = nonShardKeyRouteProvider;
+        _entityMappingOptions = entityMappingOptions.Value;
         _logger = logger;
     }
 
@@ -36,8 +41,8 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
                                $"conditions: {JsonConvert.SerializeObject(conditions)}");
 
         _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync:  " +
-                               $"IsShardingCollection: {!_elasticIndexService.IsShardingCollection(typeof(TEntity))}");
-        if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
+                               $"IsShardingCollection: {!_entityMappingOptions.IsShardingCollection(typeof(TEntity))}");
+        if (!_entityMappingOptions.IsShardingCollection(typeof(TEntity)))
             return new List<string> { GetDefaultCollectionName() };
         
         var shardKeyCollectionNames = await _shardingKeyProvider.GetCollectionNameAsync(conditions);
@@ -66,7 +71,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         if (entity == null)
             return new List<string> { GetDefaultCollectionName() };
 
-        if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        if (!_entityMappingOptions.IsShardingCollection(typeof(TEntity)))
             return new List<string> { GetDefaultCollectionName() };
         var shardKeyCollectionName = await _shardingKeyProvider.GetCollectionName(entity);
         return new List<string>() { shardKeyCollectionName };
@@ -77,14 +82,14 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         if (entitys == null || entitys.Count == 0)
             return new List<string> { GetDefaultCollectionName() };
 
-        return _elasticIndexService.IsShardingCollection(typeof(TEntity))
+        return _entityMappingOptions.IsShardingCollection(typeof(TEntity))
             ? await _shardingKeyProvider.GetCollectionName(entitys)
             : new List<string> { GetDefaultCollectionName() };
     }
 
     protected override async Task<string> GetCollectionNameByIdAsync<TKey>(TKey id)
     {
-        if (!_elasticIndexService.IsShardingCollection(typeof(TEntity))) 
+        if (!_entityMappingOptions.IsShardingCollection(typeof(TEntity))) 
             return GetDefaultCollectionName();
         return await _nonShardKeyRouteProvider.GetCollectionNameAsync(id.ToString());
     }

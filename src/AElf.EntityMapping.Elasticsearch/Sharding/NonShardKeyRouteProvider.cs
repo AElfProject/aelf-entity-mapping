@@ -118,14 +118,14 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 // BinaryExpression equals = Expression.Equal(field, value);
                 // Expression<Func<NonShardKeyRouteCollection, bool>> lambda = Expression.Lambda<Func<NonShardKeyRouteCollection, bool>>(equals, parameter);
                 // var indexList = await _nonShardKeyRouteIndexRepository.GetListAsync(lambda, nonShardKeyRouteIndexName);
-                var indexList = await _nonShardKeyRouteIndexRepository.GetListAsync(x => x.SearchKey == fieldValue,
+                var indexList = await _nonShardKeyRouteIndexRepository.GetListAsync(x => x.CollectionRouteKey == fieldValue,
                     nonShardKeyRouteIndexName);
                 // var indexList =
                 //     GetNonShardKeyRouteIndexListAsync(x => x.SearchKey == fieldValue, nonShardKeyRouteIndexName);
 
                 _logger.LogInformation($"NonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync:  " +
                                        $"indexList: {JsonConvert.SerializeObject(indexList)}");
-                var nameList = indexList.Select(x => x.ShardCollectionName).Distinct().ToList();
+                var nameList = indexList.Select(x => x.CollectionName).Distinct().ToList();
                 if(collectionNameList.Count == 0)
                 {
                     collectionNameList.AddRange(nameList);
@@ -230,7 +230,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         var routeIndex = await GetNonShardKeyRouteIndexAsync(id, nonShardKeyRouteIndexName);
         if (routeIndex != null)
         {
-            collectionName = routeIndex.ShardCollectionName;
+            collectionName = routeIndex.CollectionName;
         }
 
         return collectionName;
@@ -274,7 +274,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     //TODO: move to non shard key route provider
     public async Task AddManyNonShardKeyRoute(List<TEntity> modelList,List<string> fullIndexNameList, IElasticClient client,CancellationToken cancellationToken = default)
     {
-        if (NonShardKeys!=null && NonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        if (NonShardKeys!=null && NonShardKeys.Any() && _aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity)))
         {
             foreach (var nonShardKey in NonShardKeys)
             {
@@ -295,9 +295,9 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                     var nonShardKeyRouteIndexModel = new NonShardKeyRouteCollection()
                     {
                         Id = item.Id.ToString(),
-                        ShardCollectionName = indexName,
+                        CollectionName = indexName,
                         // SearchKey = Convert.ChangeType(value, nonShardKey.FieldValueType)
-                        SearchKey = value?.ToString()
+                        CollectionRouteKey = value?.ToString()
                     };
                     nonShardKeyRouteBulk.Operations.Add(
                         new BulkIndexOperation<NonShardKeyRouteCollection>(nonShardKeyRouteIndexModel));
@@ -311,7 +311,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
 
     public async Task AddNonShardKeyRoute(TEntity model,string fullIndexName, IElasticClient client,CancellationToken cancellationToken = default)
     {
-        if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        if (!_aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity)))
         {
             return;
         }
@@ -328,9 +328,9 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 var nonShardKeyRouteIndexModel = new NonShardKeyRouteCollection()
                 {
                     Id = model.Id.ToString(),
-                    ShardCollectionName = indexName,
+                    CollectionName = indexName,
                     // SearchKey = Convert.ChangeType(value, nonShardKey.FieldValueType)
-                    SearchKey = value?.ToString()
+                    CollectionRouteKey = value?.ToString()
                 };
 
                 var nonShardKeyRouteIndexName =
@@ -346,7 +346,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     public async Task UpdateNonShardKeyRoute(TEntity model, IElasticClient client,
         CancellationToken cancellationToken = default)
     {
-        if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        if (!_aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity)))
         {
             return;
         }
@@ -364,10 +364,10 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 // var nonShardKeyRouteIndexModel = GetAsync((TKey)Convert.ChangeType(nonShardKeyRouteIndexId, typeof(TKey)), nonShardKeyRouteIndexName)  as NonShardKeyRouteCollection;
 
                 var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
-                if (nonShardKeyRouteIndexModel != null && nonShardKeyRouteIndexModel.SearchKey != value?.ToString())
+                if (nonShardKeyRouteIndexModel != null && nonShardKeyRouteIndexModel.CollectionRouteKey != value?.ToString())
                 {
                     // nonShardKeyRouteIndexModel.SearchKey = Convert.ChangeType(value, nonShardKey.FieldValueType);
-                    nonShardKeyRouteIndexModel.SearchKey = value?.ToString();
+                    nonShardKeyRouteIndexModel.CollectionRouteKey = value?.ToString();
 
                     var nonShardKeyRouteResult = await client.UpdateAsync(
                         DocumentPath<NonShardKeyRouteCollection>.Id(new Id(nonShardKeyRouteIndexModel)),
@@ -381,7 +381,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
 
     public async Task DeleteManyNonShardKeyRoute(List<TEntity> modelList,IElasticClient client,CancellationToken cancellationToken = default)
     {
-        if (NonShardKeys!=null && NonShardKeys.Any() && _elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        if (NonShardKeys!=null && NonShardKeys.Any() && _aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity)))
         {
             foreach (var nonShardKey in NonShardKeys)
             {
@@ -405,7 +405,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
     public async Task DeleteNonShardKeyRoute(string id, IElasticClient client,
         CancellationToken cancellationToken = default)
     {
-        if (!_elasticIndexService.IsShardingCollection(typeof(TEntity)))
+        if (!_aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity)))
         {
             return;
         }

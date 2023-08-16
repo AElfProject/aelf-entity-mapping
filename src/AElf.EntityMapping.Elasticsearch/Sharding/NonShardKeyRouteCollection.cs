@@ -8,9 +8,9 @@ public class NonShardKeyRouteCollection:Entity,IEntity<string>,IEntityMappingEnt
 {
     [Keyword]public string Id { get; set; }
 
-    [Keyword]public string ShardCollectionName { get; set; }
+    [Keyword]public string CollectionName { get; set; }
     //can only support string type
-    [Keyword]public string SearchKey { get; set; }
+    [Keyword]public string CollectionRouteKey { get; set; }
     
     public override object[] GetKeys()
     {

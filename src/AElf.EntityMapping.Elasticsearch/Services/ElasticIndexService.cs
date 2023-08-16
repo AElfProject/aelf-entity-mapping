@@ -191,11 +191,5 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     //     return cacheName;
     // }
 
-    public bool IsShardingCollection(Type type)
-    {
-        if (_indexSettingDtos == null)
-            return false;
-        var options = _indexSettingDtos.Find(a => a.CollectionName == type.Name);
-        return options != null;
-    }
+    
 }

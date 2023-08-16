@@ -4,6 +4,7 @@ using AElf.EntityMapping.Elasticsearch.Linq;
 using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Elasticsearch.Sharding;
+using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Options;
 using Nest;
@@ -16,6 +17,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     where TEntity : class, IEntity<TKey>
 {
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
+    private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
     private readonly ElasticsearchOptions _elasticsearchOptions;
     private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
@@ -29,12 +31,14 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
+        IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions,
         IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider,
         IShardingKeyProvider<TEntity> shardingKeyProvider, INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider,
         IElasticIndexService elasticIndexService, IElasticsearchQueryableFactory<TEntity> elasticsearchQueryableFactory)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _collectionNameProvider = collectionNameProvider;
+        _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
         _elasticsearchOptions = options.Value;
         _shardingKeyProvider = shardingKeyProvider;
         _nonShardKeyRouteProvider = nonShardKeyRouteProvider;
@@ -168,7 +172,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     {
         //var indexName = GetCollectionNameAsync(collectionName);
         var indexNames = await GetFullCollectionNameAsync(collectionName, list);
-        var isSharding = _elasticIndexService.IsShardingCollection(typeof(TEntity));
+        var isSharding = _aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity));
 
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response = new BulkResponse();
@@ -273,7 +277,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         CancellationToken cancellationToken = default)
     {
         var indexNames = await GetFullCollectionNameAsync(collectionName, list);
-        var isSharding = _elasticIndexService.IsShardingCollection(typeof(TEntity));
+        var isSharding = _aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity));
         
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response = new BulkResponse();
