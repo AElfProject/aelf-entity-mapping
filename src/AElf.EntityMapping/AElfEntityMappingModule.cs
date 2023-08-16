@@ -28,7 +28,7 @@ namespace AElf.EntityMapping
             CheckAElfEntityMappingOptions(context);
         }
 
-        public void CheckAElfEntityMappingOptions(ApplicationInitializationContext context)
+        private void CheckAElfEntityMappingOptions(ApplicationInitializationContext context)
         {
             try
             {
@@ -36,13 +36,13 @@ namespace AElf.EntityMapping
                 if (option.Value == null)
                     throw new Exception("AElfEntityMappingOptions config cant be null");
                 
-                var shardInitSettingDtos =  option.Value.ShardInitSettings;
-                if (shardInitSettingDtos.IsNullOrEmpty())
+                var shardInitSettings =  option.Value.ShardInitSettings;
+                if (shardInitSettings.IsNullOrEmpty())
                     return ;
 
-                foreach (var shardInitSettingDto in shardInitSettingDtos)
+                foreach (var shardInitSetting in shardInitSettings)
                 {
-                    var shardGroups = shardInitSettingDto.ShardGroups;
+                    var shardGroups = shardInitSetting.ShardGroups;
                     if (shardGroups == null || shardGroups.Count == 0)
                     {
                         throw new Exception("AElfEntityMappingOptions.ShardGroups config cant be null");
