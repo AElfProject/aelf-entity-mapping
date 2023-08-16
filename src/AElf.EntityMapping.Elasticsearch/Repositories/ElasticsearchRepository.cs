@@ -21,7 +21,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     private readonly ElasticsearchOptions _elasticsearchOptions;
     private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
-    private readonly INonShardKeyRouteProvider<TEntity> _nonShardKeyRouteProvider;
+    private readonly ICollectionRouteKeyProvider<TEntity> _collectionRouteKeyProvider;
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IElasticsearchQueryableFactory<TEntity> _elasticsearchQueryableFactory;
     // private List<CollectionMarkField> _nonShardKeys;
@@ -33,7 +33,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
         IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions,
         IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider,
-        IShardingKeyProvider<TEntity> shardingKeyProvider, INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider,
+        IShardingKeyProvider<TEntity> shardingKeyProvider, ICollectionRouteKeyProvider<TEntity> collectionRouteKeyProvider,
         IElasticIndexService elasticIndexService, IElasticsearchQueryableFactory<TEntity> elasticsearchQueryableFactory)
     {
         _elasticsearchClientProvider = elasticsearchClientProvider;
@@ -41,7 +41,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
         _elasticsearchOptions = options.Value;
         _shardingKeyProvider = shardingKeyProvider;
-        _nonShardKeyRouteProvider = nonShardKeyRouteProvider;
+        _collectionRouteKeyProvider = collectionRouteKeyProvider;
         _elasticIndexService = elasticIndexService;
         _elasticsearchQueryableFactory = elasticsearchQueryableFactory;
 
@@ -123,7 +123,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var result = await client.IndexAsync(model, ss => ss.Index(indexName).Refresh(_elasticsearchOptions.Refresh),
             cancellationToken);
 
-        await _nonShardKeyRouteProvider.AddNonShardKeyRoute(model, indexName, client, cancellationToken);
+        await _collectionRouteKeyProvider.AddNonShardKeyRoute(model, indexName, client, cancellationToken);
         
         if (result.IsValid)
             return;
@@ -145,7 +145,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 ss => ss.Index(indexName).Doc(model).RetryOnConflict(3).Refresh(_elasticsearchOptions.Refresh),
                 cancellationToken);
 
-            await _nonShardKeyRouteProvider.UpdateNonShardKeyRoute(model, client, cancellationToken);
+            await _collectionRouteKeyProvider.UpdateNonShardKeyRoute(model, client, cancellationToken);
             
             if (result.IsValid)
                 return;
@@ -158,7 +158,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 await client.IndexAsync(model, ss => ss.Index(indexName).Refresh(_elasticsearchOptions.Refresh),
                     cancellationToken);
             
-            await _nonShardKeyRouteProvider.AddNonShardKeyRoute(model, indexName, client, cancellationToken);
+            await _collectionRouteKeyProvider.AddNonShardKeyRoute(model, indexName, client, cancellationToken);
             
             if (result.IsValid)
                 return;
@@ -208,7 +208,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         response = await client.BulkAsync(bulk, cancellationToken);
 
         //bulk index non shard key to route collection 
-        await _nonShardKeyRouteProvider.AddManyNonShardKeyRoute(list, indexNames, client, cancellationToken);
+        await _collectionRouteKeyProvider.AddManyNonShardKeyRoute(list, indexNames, client, cancellationToken);
         
         if (!response.IsValid)
         {
@@ -226,7 +226,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             ss => ss.Index(indexName).Doc(model).RetryOnConflict(3).Refresh(_elasticsearchOptions.Refresh),
             cancellationToken);
         
-        await _nonShardKeyRouteProvider.UpdateNonShardKeyRoute(model, client, cancellationToken);
+        await _collectionRouteKeyProvider.UpdateNonShardKeyRoute(model, client, cancellationToken);
 
         if (result.IsValid)
             return;
@@ -243,7 +243,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 new DeleteRequest(indexName, new Id(new { id = id.ToString() }))
                     { Refresh = _elasticsearchOptions.Refresh }, cancellationToken);
 
-        await _nonShardKeyRouteProvider.DeleteNonShardKeyRoute(id.ToString(), client, cancellationToken);
+        await _collectionRouteKeyProvider.DeleteNonShardKeyRoute(id.ToString(), client, cancellationToken);
 
         if (response.ServerError == null)
         {
@@ -263,7 +263,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 new DeleteRequest(indexName, new Id(model)) { Refresh = _elasticsearchOptions.Refresh },
                 cancellationToken);
         
-        await _nonShardKeyRouteProvider.DeleteNonShardKeyRoute(model.Id.ToString(), client, cancellationToken);
+        await _collectionRouteKeyProvider.DeleteNonShardKeyRoute(model.Id.ToString(), client, cancellationToken);
         
         if (response.ServerError == null)
         {
@@ -313,7 +313,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         response = await client.BulkAsync(bulk, cancellationToken);
 
         //bulk delete non shard key to route collection
-        await _nonShardKeyRouteProvider.DeleteManyNonShardKeyRoute(list, client, cancellationToken);
+        await _collectionRouteKeyProvider.DeleteManyNonShardKeyRoute(list, client, cancellationToken);
 
         if (response.ServerError == null)
         {

@@ -13,19 +13,19 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
 {
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
-    private readonly INonShardKeyRouteProvider<TEntity> _nonShardKeyRouteProvider;
+    private readonly ICollectionRouteKeyProvider<TEntity> _collectionRouteKeyProvider;
     private readonly AElfEntityMappingOptions _entityMappingOptions;
     private readonly ILogger<ElasticsearchCollectionNameProvider<TEntity>> _logger;
 
     public ElasticsearchCollectionNameProvider(IShardingKeyProvider<TEntity> shardingKeyProvider,
         IElasticIndexService elasticIndexService,
-        INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider,
+        ICollectionRouteKeyProvider<TEntity> collectionRouteKeyProvider,
         IOptions<AElfEntityMappingOptions> entityMappingOptions,
         ILogger<ElasticsearchCollectionNameProvider<TEntity>> logger)
     {
         _elasticIndexService = elasticIndexService;
         _shardingKeyProvider = shardingKeyProvider;
-        _nonShardKeyRouteProvider = nonShardKeyRouteProvider;
+        _collectionRouteKeyProvider = collectionRouteKeyProvider;
         _entityMappingOptions = entityMappingOptions.Value;
         _logger = logger;
     }
@@ -47,7 +47,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         
         var shardKeyCollectionNames = await _shardingKeyProvider.GetCollectionNameAsync(conditions);
         var nonShardKeyCollectionNames =
-            await _nonShardKeyRouteProvider.GetCollectionNameAsync(conditions);
+            await _collectionRouteKeyProvider.GetCollectionNameAsync(conditions);
 
         if (shardKeyCollectionNames.Count > 0 && nonShardKeyCollectionNames.Count > 0)
         {
@@ -91,7 +91,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
     {
         if (!_entityMappingOptions.IsShardingCollection(typeof(TEntity))) 
             return GetDefaultCollectionName();
-        return await _nonShardKeyRouteProvider.GetCollectionNameAsync(id.ToString());
+        return await _collectionRouteKeyProvider.GetCollectionNameAsync(id.ToString());
     }
 
     protected override string FormatCollectionName(string name)

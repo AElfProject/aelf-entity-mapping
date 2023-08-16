@@ -16,24 +16,24 @@ using Volo.Abp.Threading;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
-public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity> where TEntity : class, IEntity<string>
+public class CollectionKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEntity> where TEntity : class, IEntity<string>
 {
     public IAbpLazyServiceProvider LazyServiceProvider { get; set; }
-    private IElasticsearchRepository<NonShardKeyRouteCollection,string> _nonShardKeyRouteIndexRepository => LazyServiceProvider
-        .LazyGetRequiredService<IElasticsearchRepository<NonShardKeyRouteCollection,string>>();
+    private IElasticsearchRepository<RouteKeyCollection,string> _nonShardKeyRouteIndexRepository => LazyServiceProvider
+        .LazyGetRequiredService<IElasticsearchRepository<RouteKeyCollection,string>>();
     private readonly IElasticIndexService _elasticIndexService;
     // private readonly IDistributedCache<List<CollectionRouteKeyItem>> _collectionRouteKeyCache;
     public List<CollectionRouteKeyItem<TEntity>> NonShardKeys { get; set; }
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
     private readonly ElasticsearchOptions _elasticsearchOptions;
-    private readonly ILogger<NonShardKeyRouteProvider<TEntity>> _logger;
+    private readonly ILogger<CollectionKeyProvider<TEntity>> _logger;
 
-    public NonShardKeyRouteProvider(IElasticsearchClientProvider elasticsearchClientProvider,
+    public CollectionKeyProvider(IElasticsearchClientProvider elasticsearchClientProvider,
         // IDistributedCache<List<CollectionRouteKeyItem>> collectionRouteKeyCache,
         IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions,
         IOptions<ElasticsearchOptions> elasticsearchOptions,
-        ILogger<NonShardKeyRouteProvider<TEntity>> logger,
+        ILogger<CollectionKeyProvider<TEntity>> logger,
         IElasticIndexService elasticIndexService)
     {
         // _collectionRouteKeyCache = collectionRouteKeyCache;
@@ -66,7 +66,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                     FieldName = property.Name,
                     CollectionName = type.Name
                 };
-                //Find the field with the CollectionRoutekeyAttribute annotation set
+                //Find the field with the CollectionRouteKeyAttribute annotation set
                 CollectionRoutekeyAttribute routeKeyAttribute = (CollectionRoutekeyAttribute)Attribute.GetCustomAttribute(property, typeof(CollectionRoutekeyAttribute));
                 if (routeKeyAttribute != null)
                 {
@@ -256,15 +256,15 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         return NonShardKeys;
     }
 
-    public async Task<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexAsync(string id, string indexName, CancellationToken cancellationToken = default)
+    public async Task<RouteKeyCollection> GetNonShardKeyRouteIndexAsync(string id, string indexName, CancellationToken cancellationToken = default)
     {
         // return await _nonShardKeyRouteIndexRepository.GetAsync(id, indexName);
 
         var client = _elasticsearchClientProvider.GetClient();
-        var selector = new Func<GetDescriptor<NonShardKeyRouteCollection>, IGetRequest>(s => s
+        var selector = new Func<GetDescriptor<RouteKeyCollection>, IGetRequest>(s => s
             .Index(indexName));
-        var result = new GetResponse<NonShardKeyRouteCollection>();
-        result = await client.GetAsync(new Nest.DocumentPath<NonShardKeyRouteCollection>(new Id(new { id = id.ToString() })),
+        var result = new GetResponse<RouteKeyCollection>();
+        result = await client.GetAsync(new Nest.DocumentPath<RouteKeyCollection>(new Id(new { id = id.ToString() })),
             selector, cancellationToken);
         return result.Found ? result.Source : null;
     }
@@ -298,7 +298,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                     var value = nonShardKey.getRouteKeyValueFunc(item);
                     string indexName = IndexNameHelper.RemoveCollectionPrefix(fullIndexNameList[indexNameCount],
                         _aelfEntityMappingOptions.CollectionPrefix);
-                    var nonShardKeyRouteIndexModel = new NonShardKeyRouteCollection()
+                    var nonShardKeyRouteIndexModel = new RouteKeyCollection()
                     {
                         Id = item.Id.ToString(),
                         CollectionName = indexName,
@@ -306,7 +306,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                         CollectionRouteKey = value?.ToString()
                     };
                     nonShardKeyRouteBulk.Operations.Add(
-                        new BulkIndexOperation<NonShardKeyRouteCollection>(nonShardKeyRouteIndexModel));
+                        new BulkIndexOperation<RouteKeyCollection>(nonShardKeyRouteIndexModel));
                     indexNameCount++;
                 }
 
@@ -331,7 +331,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             {
                 // var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
                 var value = nonShardKey.getRouteKeyValueFunc(model);
-                var nonShardKeyRouteIndexModel = new NonShardKeyRouteCollection()
+                var nonShardKeyRouteIndexModel = new RouteKeyCollection()
                 {
                     Id = model.Id.ToString(),
                     CollectionName = indexName,
@@ -377,7 +377,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                     nonShardKeyRouteIndexModel.CollectionRouteKey = value?.ToString();
 
                     var nonShardKeyRouteResult = await client.UpdateAsync(
-                        DocumentPath<NonShardKeyRouteCollection>.Id(new Id(nonShardKeyRouteIndexModel)),
+                        DocumentPath<RouteKeyCollection>.Id(new Id(nonShardKeyRouteIndexModel)),
                         ss => ss.Index(nonShardKeyRouteIndexName).Doc(nonShardKeyRouteIndexModel).RetryOnConflict(3)
                             .Refresh(_elasticsearchOptions.Refresh),
                         cancellationToken);
@@ -401,7 +401,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 };
                 foreach (var item in modelList)
                 {
-                    nonShardKeyRouteBulk.Operations.Add(new BulkDeleteOperation<NonShardKeyRouteCollection>(new Id(item)));
+                    nonShardKeyRouteBulk.Operations.Add(new BulkDeleteOperation<RouteKeyCollection>(new Id(item)));
                 }
                 
                 var nonShardKeyRouteResponse = await client.BulkAsync(nonShardKeyRouteBulk, cancellationToken);

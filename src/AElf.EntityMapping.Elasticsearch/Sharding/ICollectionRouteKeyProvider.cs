@@ -3,7 +3,7 @@ using Nest;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
-public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
+public interface ICollectionRouteKeyProvider<TEntity> where TEntity : class
 {
     /// <summary>
     /// 
@@ -17,7 +17,7 @@ public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
 
     Task<List<CollectionRouteKeyItem<TEntity>>> GetNonShardKeysAsync();
 
-    Task<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexAsync(string id, string indexName, CancellationToken cancellationToken = default);
+    Task<RouteKeyCollection> GetNonShardKeyRouteIndexAsync(string id, string indexName, CancellationToken cancellationToken = default);
     
     List<CollectionRouteKeyItem<TEntity>> NonShardKeys { get; set; }
 

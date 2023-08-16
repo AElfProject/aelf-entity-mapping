@@ -174,7 +174,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
                         $"{type.Name} Attribute Error! NeedShardRouteAttribute only support string type, please check field: {property.Name}");
                 }
                 var indexName = IndexNameHelper.GetNonShardKeyRouteIndexName(type, property.Name,_entityMappingOptions.CollectionPrefix);
-                await CreateIndexAsync(indexName, typeof(NonShardKeyRouteCollection), shard, numberOfReplicas);
+                await CreateIndexAsync(indexName, typeof(RouteKeyCollection), shard, numberOfReplicas);
             }
         }
     }
