@@ -14,8 +14,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
         private readonly IShardingKeyProvider<LogEventIndex> _logEventIndexShardingKeyProvider;
         private readonly IShardingKeyProvider<TransactionIndex> _logTransationIndexShardingKeyProvider;
         private readonly IElasticsearchRepository<BlockIndex, string> _elasticsearchRepository;
-
-
+        
         public ShardingKeyProviderTest()
         {
             _blockIndexShardingKeyProvider = GetRequiredService<IShardingKeyProvider<BlockIndex>>();
@@ -331,18 +330,6 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             var results = await _blockIndexShardingKeyProvider.GetCollectionNameAsync(list);
             Assert.True(results.Count == 4);
 
-        }
-
-        [Fact]
-        public void test()
-        {
-            string str = "aelfindexer.blockindex-aelf-1024";
-            string[] strs = str.Split('-');
-            var suffix = strs.Last();
-            var prefix = str.Substring(0, str.Length - suffix.Length - 1);
-            Assert.True(prefix == "aelfindexer.blockindex-aelf");
-            Assert.True(suffix == "1024");
-            
         }
     }
 }
