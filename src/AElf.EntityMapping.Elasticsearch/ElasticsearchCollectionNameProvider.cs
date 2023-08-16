@@ -92,15 +92,4 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
     {
         return name.ToLower();
     }
-
-    public override async Task<string> RemoveCollectionPrefix(string fullCollectionName)
-    {
-        var collectionName = fullCollectionName;
-        if (!string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix))
-        {
-            collectionName = collectionName.RemovePreFix($"{AElfEntityMappingOptions.CollectionPrefix}.".ToLower());
-        }
-
-        return collectionName;
-    }
 }

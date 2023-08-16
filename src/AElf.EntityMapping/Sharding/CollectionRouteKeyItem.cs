@@ -1,6 +1,6 @@
 namespace AElf.EntityMapping.Sharding;
 
-public class CollectionRouteKeyCacheItem
+public class CollectionRouteKeyItem
 {
     public string FieldName { get; set; }
     // public Type FieldValueType { get; set; }
