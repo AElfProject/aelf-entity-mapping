@@ -16,7 +16,7 @@ using Volo.Abp.Threading;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
-public class CollectionKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEntity> where TEntity : class, IEntity<string>
+public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEntity> where TEntity : class, IEntity<string>
 {
     public IAbpLazyServiceProvider LazyServiceProvider { get; set; }
     private IElasticsearchRepository<RouteKeyCollection,string> _nonShardKeyRouteIndexRepository => LazyServiceProvider
@@ -27,13 +27,13 @@ public class CollectionKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEntity>
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
     private readonly ElasticsearchOptions _elasticsearchOptions;
-    private readonly ILogger<CollectionKeyProvider<TEntity>> _logger;
+    private readonly ILogger<CollectionRouteKeyProvider<TEntity>> _logger;
 
-    public CollectionKeyProvider(IElasticsearchClientProvider elasticsearchClientProvider,
+    public CollectionRouteKeyProvider(IElasticsearchClientProvider elasticsearchClientProvider,
         // IDistributedCache<List<CollectionRouteKeyItem>> collectionRouteKeyCache,
         IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions,
         IOptions<ElasticsearchOptions> elasticsearchOptions,
-        ILogger<CollectionKeyProvider<TEntity>> logger,
+        ILogger<CollectionRouteKeyProvider<TEntity>> logger,
         IElasticIndexService elasticIndexService)
     {
         // _collectionRouteKeyCache = collectionRouteKeyCache;
@@ -78,7 +78,7 @@ public class CollectionKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEntity>
                     NonShardKeys.Add(collectionRouteKeyItem);
                 }
             }
-            _logger.LogInformation($"NonShardKeyRouteProvider.InitializeNonShardKeys: _nonShardKeys: {JsonConvert.SerializeObject(NonShardKeys)}");
+            _logger.LogInformation($"NonShardKeyRouteProvider.InitializeNonShardKeys: _nonShardKeys: {JsonConvert.SerializeObject(NonShardKeys.Select(n=>n.FieldName).ToList())}");
             
         }
     }
