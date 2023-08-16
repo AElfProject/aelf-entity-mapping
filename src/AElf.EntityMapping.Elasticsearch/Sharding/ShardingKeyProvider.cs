@@ -43,19 +43,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public ShardingKeyProvider()
     {
     }
-
-    private bool CheckCollectionType(Type type)
-    {
-        var compareType = typeof(IEntityMappingEntity);
-        if (compareType.IsAssignableFrom(type) && !compareType.IsAssignableFrom(type.BaseType) &&
-            !type.IsAbstract && type.IsClass && compareType != type)
-        {
-            return true;
-        }
-
-        return false;
-    }
-
     private void SetShardingKey(int currentNo, string keyName, string step, int order, string value,
         StepType stepType, Expression body,
         ReadOnlyCollection<ParameterExpression> parameterExpressions)
@@ -71,12 +58,13 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         {
             _shardKeyInfoList[currentNo].ShardKeys
                 .Add(new ShardingKey<TEntity>(keyName, step, order, value, stepType, func));
+            _shardKeyInfoList[currentNo].ShardKeys.Sort(new ShardingKeyInfoComparer<TEntity>());
         }
+        
     }
     
     public List<ShardingKeyInfo<TEntity>> GetShardingKeyByEntity()
     {
-        Type type = typeof(TEntity);
         if (_shardType == null)
         {
             InitShardProvider();
@@ -146,8 +134,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 {
                     if (conditions.Find(a => a.Key == entity.ShardKeyName)?.Value.ToString() == entity.Value)
                     {
-                        indexName = indexName + "-" + conditions.Find(a => a.Key == entity.ShardKeyName)!.Value ??
-                                    throw new InvalidOleVariantTypeException();
+                        indexName = indexName + "-" + conditions.Find(a => a.Key == entity.ShardKeyName)!.Value;
                         findGroup = true;
                     }
                 }
@@ -227,9 +214,9 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         for (long i = min; i <= max; i++)
         {
             var shardIndexName = (indexName + "-" + i).ToLower();
-            ;
-            var shardIndexNameExist = _existIndexShardDictionary.TryGetValue(
-                _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + shardIndexName, out var value);
+            var fullIndexName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + shardIndexName;
+            
+            var shardIndexNameExist = _existIndexShardDictionary.TryGetValue(fullIndexName, out var value);
             if (shardIndexNameExist)
             {
                 collectionNames.Add(shardIndexName);
@@ -237,13 +224,11 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             else
             {
                 var client = _elasticsearchClientProvider.GetClient();
-                var exits = await client.Indices.ExistsAsync(_aelfEntityMappingOptions.CollectionPrefix.ToLower() +
-                                                             "." + shardIndexName);
+                var exits = await client.Indices.ExistsAsync(fullIndexName);
 
                 if (exits.Exists)
                 {
-                    _existIndexShardDictionary[
-                        _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + shardIndexName] = true;
+                    _existIndexShardDictionary[fullIndexName] = true;
                     collectionNames.Add(shardIndexName);
                 }
             }
@@ -273,8 +258,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                     //The field values of entity's sub table must be consistent with the configuration in the sub table configuration file
                     if (shardKey.Func(entity).ToString() == shardKey.Value)
                     {
-                        indexName = indexName + "-" + shardKey.Func(entity) ??
-                                    throw new InvalidOleVariantTypeException();
+                        indexName = indexName + "-" + shardKey.Value;
                         findGroup = true;
                     }
                 }
@@ -336,8 +320,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                         //The field values of entity's sub table must be consistent with the configuration in the sub table configuration file
                         if (shardInfo.Func(entity).ToString() == shardInfo.Value)
                         {
-                            collectionName = collectionName + "-" + shardInfo.Func(entity) ??
-                                             throw new InvalidOleVariantTypeException();
+                            collectionName = collectionName + "-" + shardInfo.Value;
                             findGroup = true;
                         }
                     }
@@ -487,7 +470,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             if (attribute != null)
             {
                 var propertyExpression = GetPropertyExpression(type, property.Name);
-                List<ShardGroup>? shardGroups =
+                List<ShardGroup> shardGroups =
                     _indexShardOptions.Find(a => a.CollectionName == type.Name)?.ShardGroups;
                 if (shardGroups.IsNullOrEmpty())
                 {
