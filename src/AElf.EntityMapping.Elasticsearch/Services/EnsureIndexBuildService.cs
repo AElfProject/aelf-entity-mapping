@@ -12,15 +12,19 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
 {
     private readonly IElasticIndexService _elasticIndexService;
     private readonly List<Type> _modules;
-    private readonly ElasticsearchOptions _indexSettingOptions;
+    private readonly ElasticsearchOptions _elasticsearchOptions;
+    private readonly AElfEntityMappingOptions _entityMappingOptions;
     
     
     public EnsureIndexBuildService(IOptions<CollectionCreateOptions> moduleConfiguration,
-        IElasticIndexService elasticIndexService, IOptions<ElasticsearchOptions> indexSettingOptions)
+        IElasticIndexService elasticIndexService,
+        IOptions<AElfEntityMappingOptions> entityMappingOptions,
+        IOptions<ElasticsearchOptions> elasticsearchOptions)
     {
         _elasticIndexService = elasticIndexService;
         _modules = moduleConfiguration.Value.Modules;
-        _indexSettingOptions = indexSettingOptions.Value;
+        _elasticsearchOptions = elasticsearchOptions.Value;
+        _entityMappingOptions = entityMappingOptions.Value;
     }
     
     public void EnsureIndexesCreate()
@@ -39,25 +43,25 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
         var types = GetTypesAssignableFrom<IEntityMappingEntity>(moduleType.Assembly);
         foreach (var t in types)
         {
-            var indexName = _elasticIndexService.GetDefaultFullIndexName(t);
+            var indexName = IndexNameHelper.GetDefaultFullIndexName(t,_entityMappingOptions.CollectionPrefix);
             
             if (_elasticIndexService.IsShardingCollection(t))
             {
                 //if shard index, create index Template
                 var indexTemplateName = indexName + "-template";
                 await _elasticIndexService.CreateIndexTemplateAsync(indexTemplateName,indexName, t,
-                    _indexSettingOptions.NumberOfShards,
-                    _indexSettingOptions.NumberOfReplicas);
+                    _elasticsearchOptions.NumberOfShards,
+                    _elasticsearchOptions.NumberOfReplicas);
                 //create index marked field cache
                 // await _elasticIndexService.InitializeCollectionRouteKeyCacheAsync(t);
                 //create non shard key route index
-                await _elasticIndexService.CreateNonShardKeyRouteIndexAsync(t, _indexSettingOptions.NumberOfShards,
-                    _indexSettingOptions.NumberOfReplicas);
+                await _elasticIndexService.CreateNonShardKeyRouteIndexAsync(t, _elasticsearchOptions.NumberOfShards,
+                    _elasticsearchOptions.NumberOfReplicas);
             }
             else
             {
-                await _elasticIndexService.CreateIndexAsync(indexName, t, _indexSettingOptions.NumberOfShards,
-                    _indexSettingOptions.NumberOfReplicas);
+                await _elasticIndexService.CreateIndexAsync(indexName, t, _elasticsearchOptions.NumberOfShards,
+                    _elasticsearchOptions.NumberOfReplicas);
             }
             
         }

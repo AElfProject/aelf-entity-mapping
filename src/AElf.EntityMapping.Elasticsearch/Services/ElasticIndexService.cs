@@ -19,20 +19,22 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     private readonly ILogger<ElasticIndexService> _logger;
     private readonly AElfEntityMappingOptions _entityMappingOptions;
     private readonly ElasticsearchOptions _elasticsearchOptions;
-    private readonly IDistributedCache<List<CollectionRouteKeyItem>> _collectionRouteKeyCache;
+    // private readonly IDistributedCache<List<CollectionRouteKeyItem>> _collectionRouteKeyCache;
     // private readonly string _indexMarkFieldCachePrefix = "MarkField_";
     // private const string CollectionRouteKeyCacheNameFormat = "RouteKeyCache_{0}";
     private readonly List<ShardInitSetting> _indexSettingDtos;
     
     public ElasticIndexService(IElasticsearchClientProvider elasticsearchClientProvider,
-        ILogger<ElasticIndexService> logger, IOptions<AElfEntityMappingOptions> entityMappingOptions,IOptions<ElasticsearchOptions> elasticsearchOptions,
-        IDistributedCache<List<CollectionRouteKeyItem>> collectionRouteKeyCache)
+        ILogger<ElasticIndexService> logger, 
+        // IDistributedCache<List<CollectionRouteKeyItem>> collectionRouteKeyCache,
+        IOptions<AElfEntityMappingOptions> entityMappingOptions,
+        IOptions<ElasticsearchOptions> elasticsearchOptions)
         {
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
         _entityMappingOptions = entityMappingOptions.Value;
         _elasticsearchOptions = elasticsearchOptions.Value;
-        _collectionRouteKeyCache = collectionRouteKeyCache;
+        // _collectionRouteKeyCache = collectionRouteKeyCache;
         //_indexShardOptions = indexShardOptions.Value;
         _indexSettingDtos = entityMappingOptions.Value.ShardInitSettings;
     }
@@ -171,7 +173,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
                     throw new NotSupportedException(
                         $"{type.Name} Attribute Error! NeedShardRouteAttribute only support string type, please check field: {property.Name}");
                 }
-                var indexName = GetNonShardKeyRouteIndexName(type, property.Name);
+                var indexName = IndexNameHelper.GetNonShardKeyRouteIndexName(type, property.Name,_entityMappingOptions.CollectionPrefix);
                 await CreateIndexAsync(indexName, typeof(NonShardKeyRouteCollection), shard, numberOfReplicas);
             }
         }
@@ -197,23 +199,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         //     : $"{_entityMappingOptions.CollectionPrefix.ToLower()}.{type.Name.ToLower()}";
         return type.Name.ToLower();
     }
-
-    //TODO: Need to be the same algorithm as the CollectionNameProviderBase.GetFullCollectionNameAsync
-    public string GetDefaultFullIndexName(Type type)
-    {
-        var fullIndexName=_entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
-        ? type.Name.ToLower()
-        : $"{_entityMappingOptions.CollectionPrefix.ToLower()}.{type.Name.ToLower()}";
-        return fullIndexName;
-    }
-    public string GetNonShardKeyRouteIndexName(Type type, string fieldName)
-    {
-        var routeIndexName= _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
-            ? $"route.{type.Name.ToLower()}.{fieldName.ToLower()}"
-            : $"{_entityMappingOptions.CollectionPrefix.ToLower()}.route.{type.Name.ToLower()}.{fieldName.ToLower()}";
-        return routeIndexName;
-    }
-
+    
     public bool IsShardingCollection(Type type)
     {
         if (_indexSettingDtos == null)

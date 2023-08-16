@@ -106,7 +106,8 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             // var fieldValue = Convert.ChangeType(condition.Value, nonShardKey.FieldValueType);
             var fieldValue = condition.Value.ToString();
             var nonShardKeyRouteIndexName =
-                _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                IndexNameHelper.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName,
+                    _aelfEntityMappingOptions.CollectionPrefix);
             _logger.LogInformation($"NonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync:  " +
                                    $"nonShardKeyRouteIndexName: {nonShardKeyRouteIndexName}");
             if (condition.Type == ConditionType.Equal)
@@ -224,7 +225,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         }
         
         var nonShardKey= NonShardKeys[0];
-        var nonShardKeyRouteIndexName = _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+        var nonShardKeyRouteIndexName = IndexNameHelper.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName,_aelfEntityMappingOptions.CollectionPrefix);
         // var routeIndex=await _nonShardKeyRouteIndexRepository.GetAsync(id, nonShardKeyRouteIndexName);
         var routeIndex = await GetNonShardKeyRouteIndexAsync(id, nonShardKeyRouteIndexName);
         if (routeIndex != null)
@@ -278,7 +279,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             foreach (var nonShardKey in NonShardKeys)
             {
                 var nonShardKeyRouteIndexName =
-                    _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                    IndexNameHelper.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName,_aelfEntityMappingOptions.CollectionPrefix);
                 var nonShardKeyRouteBulk = new BulkRequest(nonShardKeyRouteIndexName)
                 {
                     Operations = new List<IBulkOperation>(),
@@ -333,7 +334,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 };
 
                 var nonShardKeyRouteIndexName =
-                    _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                    IndexNameHelper.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName,_aelfEntityMappingOptions.CollectionPrefix);
                 var nonShardKeyRouteResult = await client.IndexAsync(nonShardKeyRouteIndexModel,
                     ss => ss.Index(nonShardKeyRouteIndexName).Refresh(_elasticsearchOptions.Refresh),
                     cancellationToken);
@@ -355,7 +356,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             foreach (var nonShardKey in NonShardKeys)
             {
                 var nonShardKeyRouteIndexName =
-                    _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                    IndexNameHelper.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName,_aelfEntityMappingOptions.CollectionPrefix);
                 var nonShardKeyRouteIndexId = model.Id.ToString();
                 var nonShardKeyRouteIndexModel =
                     await GetNonShardKeyRouteIndexAsync(nonShardKeyRouteIndexId,
@@ -385,7 +386,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             foreach (var nonShardKey in NonShardKeys)
             {
                 var nonShardKeyRouteIndexName =
-                    _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                    IndexNameHelper.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName,_aelfEntityMappingOptions.CollectionPrefix);
                 var nonShardKeyRouteBulk = new BulkRequest(nonShardKeyRouteIndexName)
                 {
                     Operations = new List<IBulkOperation>(),
@@ -413,7 +414,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             foreach (var nonShardKey in NonShardKeys)
             {
                 var nonShardKeyRouteIndexName =
-                    _elasticIndexService.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName);
+                    IndexNameHelper.GetNonShardKeyRouteIndexName(typeof(TEntity), nonShardKey.FieldName,_aelfEntityMappingOptions.CollectionPrefix);
                 var nonShardKeyRouteIndexId = id;
                 var nonShardKeyRouteResult=await client.DeleteAsync(
                     new DeleteRequest(nonShardKeyRouteIndexName, new Id(new { id = nonShardKeyRouteIndexId.ToString() }))

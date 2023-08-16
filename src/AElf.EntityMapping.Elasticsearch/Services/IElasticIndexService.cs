@@ -16,9 +16,9 @@ public interface IElasticIndexService
 
     string GetDefaultIndexName(Type indexEntityType);
 
-    string GetDefaultFullIndexName(Type indexEntityType);
-    
-    string GetNonShardKeyRouteIndexName(Type indexEntityType, string fieldName);
+    // string GetDefaultFullIndexName(Type indexEntityType);
+    //
+    // string GetNonShardKeyRouteIndexName(Type indexEntityType, string fieldName);
     
     bool IsShardingCollection(Type type);
 }
