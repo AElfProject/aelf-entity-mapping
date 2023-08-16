@@ -95,13 +95,12 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         foreach (var condition in conditions)
         {
             var nonShardKey = NonShardKeys.FirstOrDefault(f => f.FieldName == condition.Key);
-            _logger.LogInformation($"NonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync:  " +
-                                   $"nonShardKey: {JsonConvert.SerializeObject(nonShardKey)}");
-            
             if (nonShardKey == null)
             {
                 continue;
             }
+            _logger.LogInformation($"NonShardKeyRouteProvider.GetShardCollectionNameListByConditionsAsync:  " +
+                                   $"nonShardKey: {JsonConvert.SerializeObject(nonShardKey.FieldName)}");
 
             if (condition.Value == null)
             {
