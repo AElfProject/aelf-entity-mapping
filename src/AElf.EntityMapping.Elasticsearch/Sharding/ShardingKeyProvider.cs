@@ -122,7 +122,12 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
-        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity)); 
+        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
+        if (conditions.IsNullOrEmpty())
+        {
+            return null;
+        }
+
         long min = 0;
         long max = await GetShardCollectionMaxNoAsync(conditions);
         _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionName:  " +
