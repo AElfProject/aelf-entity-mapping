@@ -15,11 +15,11 @@ public interface INonShardKeyRouteProvider<TEntity> where TEntity : class
 
     Task<string> GetCollectionNameAsync(string id);
 
-    Task<List<CollectionRouteKeyItem>> GetNonShardKeysAsync();
+    Task<List<CollectionRouteKeyItem<TEntity>>> GetNonShardKeysAsync();
 
     Task<NonShardKeyRouteCollection> GetNonShardKeyRouteIndexAsync(string id, string indexName, CancellationToken cancellationToken = default);
     
-    List<CollectionRouteKeyItem> NonShardKeys { get; set; }
+    List<CollectionRouteKeyItem<TEntity>> NonShardKeys { get; set; }
 
     Task AddManyNonShardKeyRoute(List<TEntity> modelList, List<string> fullIndexNameList, IElasticClient client,
         CancellationToken cancellationToken = default);

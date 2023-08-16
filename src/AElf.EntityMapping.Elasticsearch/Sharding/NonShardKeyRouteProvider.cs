@@ -23,7 +23,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         .LazyGetRequiredService<IElasticsearchRepository<NonShardKeyRouteCollection,string>>();
     private readonly IElasticIndexService _elasticIndexService;
     // private readonly IDistributedCache<List<CollectionRouteKeyItem>> _collectionRouteKeyCache;
-    public List<CollectionRouteKeyItem> NonShardKeys { get; set; }
+    public List<CollectionRouteKeyItem<TEntity>> NonShardKeys { get; set; }
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
     private readonly ElasticsearchOptions _elasticsearchOptions;
@@ -56,12 +56,12 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
             //     _logger.LogInformation($"NonShardKeyRouteProvider.InitializeNonShardKeys:  " +
             //                            $"_nonShardKeys: {JsonConvert.SerializeObject(NonShardKeys)}");
             // });
-            NonShardKeys = new List<CollectionRouteKeyItem>();
+            NonShardKeys = new List<CollectionRouteKeyItem<TEntity>>();
             Type type = typeof(TEntity);
             var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             foreach (var property in properties)
             {
-                var collectionRouteKeyItem = new CollectionRouteKeyItem()
+                var collectionRouteKeyItem = new CollectionRouteKeyItem<TEntity>()
                 {
                     FieldName = property.Name,
                     CollectionName = type.Name
@@ -70,6 +70,11 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 CollectionRoutekeyAttribute routeKeyAttribute = (CollectionRoutekeyAttribute)Attribute.GetCustomAttribute(property, typeof(CollectionRoutekeyAttribute));
                 if (routeKeyAttribute != null)
                 {
+                    // Creates a Func expression that gets the value of the property
+                    var parameter = Expression.Parameter(type, "entity");
+                    var propertyAccess = Expression.Property(parameter, property);
+                    var getPropertyFunc = Expression.Lambda<Func<TEntity, string>>(propertyAccess, parameter).Compile();
+                    collectionRouteKeyItem.getRouteKeyValueFunc = getPropertyFunc;
                     NonShardKeys.Add(collectionRouteKeyItem);
                 }
             }
@@ -236,7 +241,7 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         return collectionName;
     }
 
-    public async Task<List<CollectionRouteKeyItem>> GetNonShardKeysAsync()
+    public async Task<List<CollectionRouteKeyItem<TEntity>>> GetNonShardKeysAsync()
     {
         // var collectionRouteKeyCacheKey = _elasticIndexService.GetCollectionRouteKeyCacheName(typeof(TEntity));
         // var collectionRouteKeyCacheItems = await _collectionRouteKeyCache.GetAsync(collectionRouteKeyCacheKey);
@@ -289,7 +294,8 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                 foreach (var item in modelList)
                 {
                     //TODO: use func to get value
-                    var value = item.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(item);
+                    // var value = item.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(item);
+                    var value = nonShardKey.getRouteKeyValueFunc(item);
                     string indexName = IndexNameHelper.RemoveCollectionPrefix(fullIndexNameList[indexNameCount],
                         _aelfEntityMappingOptions.CollectionPrefix);
                     var nonShardKeyRouteIndexModel = new NonShardKeyRouteCollection()
@@ -323,8 +329,8 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
         {
             foreach (var nonShardKey in NonShardKeys)
             {
-                var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
-
+                // var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
+                var value = nonShardKey.getRouteKeyValueFunc(model);
                 var nonShardKeyRouteIndexModel = new NonShardKeyRouteCollection()
                 {
                     Id = model.Id.ToString(),
@@ -363,7 +369,8 @@ public class NonShardKeyRouteProvider<TEntity>:INonShardKeyRouteProvider<TEntity
                         nonShardKeyRouteIndexName);
                 // var nonShardKeyRouteIndexModel = GetAsync((TKey)Convert.ChangeType(nonShardKeyRouteIndexId, typeof(TKey)), nonShardKeyRouteIndexName)  as NonShardKeyRouteCollection;
 
-                var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
+                // var value = model.GetType().GetProperty(nonShardKey.FieldName)?.GetValue(model);
+                var value = nonShardKey.getRouteKeyValueFunc(model);
                 if (nonShardKeyRouteIndexModel != null && nonShardKeyRouteIndexModel.CollectionRouteKey != value?.ToString())
                 {
                     // nonShardKeyRouteIndexModel.SearchKey = Convert.ChangeType(value, nonShardKey.FieldValueType);
