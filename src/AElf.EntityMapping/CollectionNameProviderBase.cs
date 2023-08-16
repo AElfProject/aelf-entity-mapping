@@ -39,17 +39,6 @@ public abstract class CollectionNameProviderBase<TEntity> : ICollectionNameProvi
         collectionName = AddCollectionPrefix(new List<string> {collectionName}).First();
         return FormatCollectionName(collectionName);
     }
-    
-    public virtual async Task<string> RemoveCollectionPrefix(string fullCollectionName)
-    {
-        var collectionName = fullCollectionName;
-        if (!string.IsNullOrWhiteSpace(AElfEntityMappingOptions.CollectionPrefix))
-        {
-            collectionName = collectionName.Replace($"{AElfEntityMappingOptions.CollectionPrefix}.", "");
-        }
-
-        return collectionName;
-    }
 
     protected abstract Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions);
 

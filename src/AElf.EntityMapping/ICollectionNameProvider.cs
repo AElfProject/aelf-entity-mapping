@@ -10,8 +10,6 @@ public interface ICollectionNameProvider<TEntity>
     Task<List<string>> GetFullCollectionNameByEntityAsync(List<TEntity> entitys);
 
     Task<string> GetFullCollectionNameByIdAsync<TKey>(TKey id);
-    
-    Task<string> RemoveCollectionPrefix(string fullCollectionName);
 }
 
 public class CollectionNameCondition

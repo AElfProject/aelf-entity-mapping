@@ -24,7 +24,7 @@ public class NonShardKeyRouteProviderTests: AElfElasticsearchTestBase
     [Fact]
     public async Task GetNonShardKeys_Test()
     {
-        List<CollectionRouteKeyCacheItem> nonShardKeys = await _blockIndexNonShardKeyRouteProvider.GetNonShardKeysAsync();
+        List<CollectionRouteKeyItem> nonShardKeys = await _blockIndexNonShardKeyRouteProvider.GetNonShardKeysAsync();
         
         nonShardKeys.Count.ShouldBe(1);
         nonShardKeys[0].FieldName.ShouldBe(nameof(BlockIndex.BlockHash));
