@@ -14,8 +14,9 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
     private readonly INonShardKeyRouteProvider<TEntity> _nonShardKeyRouteProvider;
     private readonly ILogger<ElasticsearchCollectionNameProvider<TEntity>> _logger;
 
-    public ElasticsearchCollectionNameProvider(IElasticIndexService elasticIndexService,
-        IShardingKeyProvider<TEntity> shardingKeyProvider, INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider,
+    public ElasticsearchCollectionNameProvider(IShardingKeyProvider<TEntity> shardingKeyProvider,
+        IElasticIndexService elasticIndexService,
+        INonShardKeyRouteProvider<TEntity> nonShardKeyRouteProvider,
         ILogger<ElasticsearchCollectionNameProvider<TEntity>> logger)
     {
         _elasticIndexService = elasticIndexService;
@@ -26,7 +27,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
 
     private string GetDefaultCollectionName()
     {
-        return _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
+        return IndexNameHelper.GetDefaultIndexName(typeof(TEntity));
     }
 
     protected override async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)

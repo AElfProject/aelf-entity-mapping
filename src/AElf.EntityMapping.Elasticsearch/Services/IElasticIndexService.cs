@@ -14,7 +14,7 @@ public interface IElasticIndexService
     
     // string GetCollectionRouteKeyCacheName(Type indexEntityType);
 
-    string GetDefaultIndexName(Type indexEntityType);
+    // string GetDefaultIndexName(Type indexEntityType);
 
     // string GetDefaultFullIndexName(Type indexEntityType);
     //

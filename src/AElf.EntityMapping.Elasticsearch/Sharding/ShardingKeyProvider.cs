@@ -122,7 +122,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
-        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity));
+        var indexName = IndexNameHelper.GetDefaultIndexName(typeof(TEntity));
         if (conditions.IsNullOrEmpty())
         {
             return null;
@@ -258,7 +258,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public async Task<string> GetCollectionName(TEntity entity)
     {
-        var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity)); 
+        var indexName = IndexNameHelper.GetDefaultIndexName(typeof(TEntity)); 
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardingKeyByEntity();
         if (shardingKeyInfos.IsNullOrEmpty())
         {
@@ -316,7 +316,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardingKeyByEntity();
         if (shardingKeyInfos.IsNullOrEmpty())
         {
-            var collectionName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity)); 
+            var collectionName = IndexNameHelper.GetDefaultIndexName(typeof(TEntity)); 
             return new List<string>() { collectionName.ToLower() };
         }
 
@@ -326,7 +326,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
       
         foreach (var entity in entitys)
         {
-            var collectionName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity)); 
+            var collectionName = IndexNameHelper.GetDefaultIndexName(typeof(TEntity)); 
             string groupNo = "";
             foreach (var shardingKeyInfo in shardingKeyInfos)
             {

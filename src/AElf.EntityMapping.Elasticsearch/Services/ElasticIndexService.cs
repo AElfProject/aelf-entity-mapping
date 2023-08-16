@@ -190,16 +190,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
     //             : $"{_entityMappingOptions.CollectionPrefix}_{type.FullName}");
     //     return cacheName;
     // }
-    
-    public string GetDefaultIndexName(Type type)
-    {
-        // TODO: Maybe not correct? If not sharded there will be no prefix.
-        // var indexName = _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
-        //     ? type.Name.ToLower()
-        //     : $"{_entityMappingOptions.CollectionPrefix.ToLower()}.{type.Name.ToLower()}";
-        return type.Name.ToLower();
-    }
-    
+
     public bool IsShardingCollection(Type type)
     {
         if (_indexSettingDtos == null)
