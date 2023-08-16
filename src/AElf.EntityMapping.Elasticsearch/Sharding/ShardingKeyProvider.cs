@@ -23,8 +23,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ShardingKeyProvider<TEntity>> _logger;
 
-    private InitShardType? _isShardIndex = null;
-    private List<ShardingKeyInfo<TEntity>> ShardKeyInfoList = new List<ShardingKeyInfo<TEntity>>();
+    private ShardType? _shardType = null;
+    private List<ShardingKeyInfo<TEntity>> _shardKeyInfoList = new List<ShardingKeyInfo<TEntity>>();
     private Dictionary<string, bool> _existIndexShardDictionary = new Dictionary<string, bool>();
 
     public ShardingKeyProvider(IOptions<ElasticsearchOptions> indexSettingOptions,
@@ -56,63 +56,61 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return false;
     }
 
-    public void SetShardingKey(int currentNo, int totalCount, string keyName, string step, int order, string value,
+    private void SetShardingKey(int currentNo, string keyName, string step, int order, string value,
         StepType stepType, Expression body,
         ReadOnlyCollection<ParameterExpression> parameterExpressions)
     {
         var expression = Expression.Lambda<Func<TEntity, object>>(
             Expression.Convert(body, typeof(object)), parameterExpressions);
         var func = expression.Compile();
-        if (ShardKeyInfoList.Count <= currentNo)
+        if (_shardKeyInfoList.Count <= currentNo)
         {
-            ShardKeyInfoList.Add(new ShardingKeyInfo<TEntity>(keyName, step.ToString(), order, value, stepType, func));
+            _shardKeyInfoList.Add(new ShardingKeyInfo<TEntity>(keyName, step.ToString(), order, value, stepType, func));
         }
         else
         {
-            ShardKeyInfoList[currentNo].ShardKeys
+            _shardKeyInfoList[currentNo].ShardKeys
                 .Add(new ShardingKey<TEntity>(keyName, step, order, value, stepType, func));
         }
     }
-
+    
     public List<ShardingKeyInfo<TEntity>> GetShardingKeyByEntity()
     {
         Type type = typeof(TEntity);
-        if (_isShardIndex == null)
+        if (_shardType == null)
         {
             InitShardProvider();
         }
 
-        return ShardKeyInfoList;
+        return _shardKeyInfoList;
     }
 
     private async Task<long> GetShardCollectionMaxNoAsync(List<CollectionNameCondition> conditions)
     {
-        ShardingCollectionTail shardingCollectionTail = new ShardingCollectionTail();
-        shardingCollectionTail.EntityName = typeof(TEntity).Name;
-        var result = await GetCollectionMaxShardIndexAsync(shardingCollectionTail);
+        var result = await GetShardingCollectionTailAsync(new ShardingCollectionTail(){EntityName = typeof(TEntity).Name});
         if (result is null || result.Item1 == 0)
         {
             return 0;
         }
 
-        List<ShardingCollectionTail> catchList = result.Item2;
-        List<ShardingKeyInfo<TEntity>> entitys = GetShardingKeyByEntity();
-        if (entitys.IsNullOrEmpty())
+        List<ShardingCollectionTail> shardingCollectionTailList = result.Item2;
+        List<ShardingKeyInfo<TEntity>> shardingKeyInfoList = GetShardingKeyByEntity();
+        if (shardingKeyInfoList.IsNullOrEmpty())
         {
             return 0;
         }
 
         foreach (var condition in conditions)
         {
-            var entity = entitys.Find(a =>
+            var entity = shardingKeyInfoList.Find(a =>
                 a.ShardKeys.Find(b => b.ShardKeyName == condition.Key && b.StepType == StepType.None) != null);
-            if (entity != null && catchList != null)
+            if (entity != null && shardingCollectionTailList != null)
             {
-                ShardingCollectionTail cacheDto =
-                    catchList.Find(a => a.TailPrefix.StartsWith(condition.Value.ToString().ToLower()));
-                if (cacheDto != null)
+                var shardingCollectionTail =
+                    shardingCollectionTailList.Find(a => a.TailPrefix.StartsWith(condition.Value.ToString().ToLower()));
+                if (shardingCollectionTail != null)
                 {
-                    return cacheDto.Tail;
+                    return shardingCollectionTail.Tail;
                 }
             }
         }
@@ -256,7 +254,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return collectionNames;
     }
 
-    public async Task<string> GetCollectionName(TEntity entity)
+    public async Task<string> GetCollectionNameAsync(TEntity entity)
     {
         var indexName = _elasticIndexService.GetDefaultIndexName(typeof(TEntity)); 
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardingKeyByEntity();
@@ -302,16 +300,16 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             if (findGroup) break;
         }
 
-        //addCache
+        //add ShardingCollectionTail
         string[] collectionNameArr = indexName.ToLower().Split('-');
         var suffix = collectionNameArr.Last();
         var keys = indexName.ToLower().Substring(collectionNameArr[0].Length + 1,
             indexName.Length - suffix.Length - collectionNameArr[0].Length - 1);
-        await AddCollectionMaxShardIndex(typeof(TEntity).Name, keys, long.Parse(suffix));
+        await AddShardingCollectionTailAsync(typeof(TEntity).Name, keys, long.Parse(suffix));
         return indexName.ToLower();
     }
 
-    public async Task<List<string>> GetCollectionName(List<TEntity> entitys)
+    public async Task<List<string>> GetCollectionNameAsync(List<TEntity> entitys)
     {
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardingKeyByEntity();
         if (shardingKeyInfos.IsNullOrEmpty())
@@ -367,12 +365,12 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             collectionNames.Add(collectionName.ToLower());
         }
 
-        //addCache
+        //add ShardingCollectionTail
         string[] collectionNameArr = maxCollectionName.ToLower().Split('-');
         var suffix = collectionNameArr.Last();
         var keys = maxCollectionName.ToLower().Substring(collectionNameArr[0].Length + 1,
             maxCollectionName.Length - suffix.Length - collectionNameArr[0].Length - 1);
-        await AddCollectionMaxShardIndex(typeof(TEntity).Name, keys, long.Parse(suffix));
+        await AddShardingCollectionTailAsync(typeof(TEntity).Name, keys, long.Parse(suffix));
         return collectionNames;
     }
 
@@ -403,16 +401,16 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         }
     }
 
-    public async Task<Tuple<long, List<ShardingCollectionTail>>> GetCollectionMaxShardIndexAsync(
+    public async Task<Tuple<long, List<ShardingCollectionTail>>> GetShardingCollectionTailAsync(
         ShardingCollectionTail searchDto)
     {
         var indexName =
             (_aelfEntityMappingOptions.CollectionPrefix + "." + typeof(ShardingCollectionTail).Name).ToLower();
-        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionMaxShardIndex into create:  " +
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetShardingCollectionTailAsync into create:  " +
                                $"searchDto: {JsonConvert.SerializeObject(searchDto)},indexName:{indexName}");
         await _elasticIndexService.CreateIndexAsync(indexName, typeof(ShardingCollectionTail),
             _indexSettingOptions.NumberOfShards, _indexSettingOptions.NumberOfReplicas);
-        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionMaxShardIndex out create:  " +
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetShardingCollectionTailAsync out create:  " +
                                $"searchDto: {JsonConvert.SerializeObject(searchDto)},indexName:{indexName}");
         var client = _elasticsearchClientProvider.GetClient();
         var mustQuery = new List<Func<QueryContainerDescriptor<ShardingCollectionTail>, QueryContainer>>();
@@ -425,7 +423,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             s.Index(indexName).Query(Filter).Sort(st => st.Field(sortExp, SortOrder.Descending)));
 
         var result = await client.SearchAsync(selector);
-        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionMaxShardIndex:  " +
+        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetShardingCollectionTailAsync:  " +
                                $"searchDto: {JsonConvert.SerializeObject(searchDto)},indexName:{indexName},result:{JsonConvert.SerializeObject(result)}");
         if (!result.IsValid)
         {
@@ -435,33 +433,28 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return new Tuple<long, List<ShardingCollectionTail>>(result.Total, result.Documents.ToList());
     }
 
-    private async Task AddCollectionMaxShardIndex(string entityName, string keys, long maxShardNo)
+    private async Task AddShardingCollectionTailAsync(string entityName, string keys, long maxShardNo)
     {
-        ShardingCollectionTail shardCollectionSuffix = new ShardingCollectionTail();
-        shardCollectionSuffix.EntityName = entityName;
-        shardCollectionSuffix.TailPrefix = keys;
+        var result = await GetShardingCollectionTailAsync(new ShardingCollectionTail(){EntityName = entityName, TailPrefix = keys});
 
-        var result = await GetCollectionMaxShardIndexAsync(shardCollectionSuffix);
-
-        List<ShardingCollectionTail> shardCollectionSuffixes = result.Item2;
-        if (shardCollectionSuffixes.IsNullOrEmpty())
+        List<ShardingCollectionTail> shardingCollectionTailList = result.Item2;
+        if (shardingCollectionTailList.IsNullOrEmpty())
         {
-            ShardingCollectionTail cacheDto = new ShardingCollectionTail();
-            cacheDto.EntityName = entityName;
-            cacheDto.TailPrefix = keys;
-            cacheDto.Tail = maxShardNo;
-            cacheDto.Id = Guid.NewGuid().ToString();
-            await AddOrUpdateAsync(cacheDto);
+            var shardingCollectionTail = new ShardingCollectionTail();
+            shardingCollectionTail.EntityName = entityName;
+            shardingCollectionTail.TailPrefix = keys;
+            shardingCollectionTail.Tail = maxShardNo;
+            shardingCollectionTail.Id = Guid.NewGuid().ToString();
+            await AddOrUpdateAsync(shardingCollectionTail);
             return;
         }
 
-        ShardingCollectionTail shardCollectionCacheDto = shardCollectionSuffixes.Find(a => a.TailPrefix.Contains(keys));
+        var shardingCollection = shardingCollectionTailList.Find(a => a.TailPrefix.Contains(keys));
 
-        if (shardCollectionCacheDto != null && shardCollectionCacheDto.Tail < maxShardNo)
+        if (shardingCollection != null && shardingCollection.Tail < maxShardNo)
         {
-            ShardingCollectionTail cacheDto = shardCollectionCacheDto;
-            cacheDto.Tail = maxShardNo;
-            await AddOrUpdateAsync(cacheDto);
+            shardingCollection.Tail = maxShardNo;
+            await AddOrUpdateAsync(shardingCollection);
             return;
         }
     }
@@ -494,7 +487,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             if (attribute != null)
             {
                 var propertyExpression = GetPropertyExpression(type, property.Name);
-                MethodInfo? method = shardProviderType.GetMethod("SetShardingKey");
                 List<ShardGroup>? shardGroups =
                     _indexShardOptions.Find(a => a.CollectionName == type.Name)?.ShardGroups;
                 if (shardGroups.IsNullOrEmpty())
@@ -504,14 +496,14 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 for (int i = 0; i < shardGroups.Count; i++)
                 {
                     ShardKey? shardKey = shardGroups[i]?.ShardKeys.Find(a => a.Name == property.Name);
-                    SetShardingKey(i, shardGroups.Count(), property.Name, shardKey.Step, attribute.Order,
+                    SetShardingKey(i, property.Name, shardKey.Step, attribute.Order,
                         shardKey.Value, shardKey.StepType, propertyExpression.Body, propertyExpression.Parameters);
                 }
 
                 isShard = true;
             }
         }
-        _isShardIndex = isShard ? InitShardType.IsShard : InitShardType.NotShard;
+        _shardType = isShard ? ShardType.Shard : ShardType.NonShard;
     }
 
     private LambdaExpression GetPropertyExpression(Type entityType, string propertyName)
@@ -528,8 +520,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     }
 }
 
-public enum InitShardType
+public enum ShardType
 {
-    IsShard,
-    NotShard
+    Shard,
+    NonShard
 }
