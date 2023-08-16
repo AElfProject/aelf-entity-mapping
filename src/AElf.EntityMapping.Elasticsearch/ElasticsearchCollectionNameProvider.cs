@@ -73,7 +73,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
 
         if (!_entityMappingOptions.IsShardingCollection(typeof(TEntity)))
             return new List<string> { GetDefaultCollectionName() };
-        var shardKeyCollectionName = await _shardingKeyProvider.GetCollectionName(entity);
+        var shardKeyCollectionName = await _shardingKeyProvider.GetCollectionNameAsync(entity);
         return new List<string>() { shardKeyCollectionName };
     }
 
@@ -83,7 +83,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
             return new List<string> { GetDefaultCollectionName() };
 
         return _entityMappingOptions.IsShardingCollection(typeof(TEntity))
-            ? await _shardingKeyProvider.GetCollectionName(entitys)
+            ? await _shardingKeyProvider.GetCollectionNameAsync(entitys)
             : new List<string> { GetDefaultCollectionName() };
     }
 

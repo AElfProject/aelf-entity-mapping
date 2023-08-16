@@ -133,10 +133,10 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 BlockTime = DateTime.Now,
                 Confirmed = true
             };
-            var blockIndexNameMain = await _blockIndexShardingKeyProvider.GetCollectionName(blockIndex);
+            var blockIndexNameMain = await _blockIndexShardingKeyProvider.GetCollectionNameAsync(blockIndex);
             Assert.True(blockIndexNameMain.StartsWith("blockindex-aelf-"));
             blockIndex.BlockHeight = 10;
-            _blockIndexShardingKeyProvider.GetCollectionName(blockIndex);
+            _blockIndexShardingKeyProvider.GetCollectionNameAsync(blockIndex);
 
             BlockIndex blockIndex2 = new BlockIndex()
             {
@@ -146,7 +146,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 BlockTime = DateTime.Now,
                 Confirmed = true
             };
-            var blockIndexNameSide = await _blockIndexShardingKeyProvider.GetCollectionName(blockIndex2);
+            var blockIndexNameSide = await _blockIndexShardingKeyProvider.GetCollectionNameAsync(blockIndex2);
             Assert.True(blockIndexNameSide.StartsWith("blockindex-tdvv-"));
         }
 
@@ -328,7 +328,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 Confirmed = true
             };
             List<BlockIndex> list = new List<BlockIndex>() { blockIndex01, blockIndex02, blockIndex03, blockIndex04 };
-            var results = await _blockIndexShardingKeyProvider.GetCollectionName(list);
+            var results = await _blockIndexShardingKeyProvider.GetCollectionNameAsync(list);
             Assert.True(results.Count == 4);
 
         }
