@@ -22,6 +22,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
     private IElasticsearchRepository<RouteKeyCollection,string> _nonShardKeyRouteIndexRepository => LazyServiceProvider
         .LazyGetRequiredService<IElasticsearchRepository<RouteKeyCollection,string>>();
     private readonly IElasticIndexService _elasticIndexService;
+    private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
     private List<CollectionRouteKeyItem<TEntity>> CollectionRouteKeys { get; set; }
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
@@ -29,6 +30,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
     private readonly ILogger<CollectionRouteKeyProvider<TEntity>> _logger;
 
     public CollectionRouteKeyProvider(IElasticsearchClientProvider elasticsearchClientProvider,
+        IShardingKeyProvider<TEntity> shardingKeyProvider,
         IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions,
         IOptions<ElasticsearchOptions> elasticsearchOptions,
         ILogger<CollectionRouteKeyProvider<TEntity>> logger,
@@ -36,6 +38,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
     {
         _elasticIndexService = elasticIndexService;
         _elasticsearchClientProvider = elasticsearchClientProvider;
+        _shardingKeyProvider = shardingKeyProvider;
         _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
         _elasticsearchOptions = elasticsearchOptions.Value;
         _logger = logger;
@@ -176,7 +179,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
     //TODO: move to non shard key route provider
     public async Task AddManyCollectionRouteKey(List<TEntity> modelList,List<string> fullIndexNameList, IElasticClient client,CancellationToken cancellationToken = default)
     {
-        if (CollectionRouteKeys!=null && CollectionRouteKeys.Any() && _aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity)))
+        if (CollectionRouteKeys!=null && CollectionRouteKeys.Any() && _shardingKeyProvider.IsShardingCollection())
         {
             foreach (var nonShardKey in CollectionRouteKeys)
             {
@@ -214,7 +217,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
 
     public async Task AddCollectionRouteKey(TEntity model,string fullIndexName, IElasticClient client,CancellationToken cancellationToken = default)
     {
-        if (!_aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity)))
+        if (!_shardingKeyProvider.IsShardingCollection())
         {
             return;
         }
@@ -249,7 +252,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
     public async Task UpdateCollectionRouteKey(TEntity model, IElasticClient client,
         CancellationToken cancellationToken = default)
     {
-        if (!_aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity)))
+        if (!_shardingKeyProvider.IsShardingCollection())
         {
             return;
         }
@@ -285,7 +288,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
 
     public async Task DeleteManyCollectionRouteKey(List<TEntity> modelList,IElasticClient client,CancellationToken cancellationToken = default)
     {
-        if (CollectionRouteKeys!=null && CollectionRouteKeys.Any() && _aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity)))
+        if (CollectionRouteKeys!=null && CollectionRouteKeys.Any() && _shardingKeyProvider.IsShardingCollection())
         {
             foreach (var nonShardKey in CollectionRouteKeys)
             {
@@ -309,7 +312,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
     public async Task DeleteCollectionRouteKey(string id, IElasticClient client,
         CancellationToken cancellationToken = default)
     {
-        if (!_aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity)))
+        if (!_shardingKeyProvider.IsShardingCollection())
         {
             return;
         }

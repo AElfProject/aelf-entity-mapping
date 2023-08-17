@@ -151,7 +151,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     {
         //var indexName = GetCollectionNameAsync(collectionName);
         var indexNames = await GetFullCollectionNameAsync(collectionName, list);
-        var isSharding = _aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity));
+        var isSharding = _shardingKeyProvider.IsShardingCollection();
 
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response = new BulkResponse();
@@ -256,7 +256,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         CancellationToken cancellationToken = default)
     {
         var indexNames = await GetFullCollectionNameAsync(collectionName, list);
-        var isSharding = _aelfEntityMappingOptions.IsShardingCollection(typeof(TEntity));
+        var isSharding = _shardingKeyProvider.IsShardingCollection();
         
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response = new BulkResponse();
