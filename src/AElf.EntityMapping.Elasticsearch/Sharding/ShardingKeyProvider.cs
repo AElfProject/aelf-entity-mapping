@@ -281,7 +281,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return indexName.ToLower();
     }
 
-    public async Task<List<string>> GetCollectionNameAsync(List<TEntity> entitys)
+    public async Task<List<string>> GetCollectionNameAsync(List<TEntity> entities)
     {
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardingKeyByEntity();
         if (shardingKeyInfos.IsNullOrEmpty())
@@ -293,7 +293,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         long maxShardNo = 0;
         string maxCollectionName = "";
       
-        foreach (var entity in entitys)
+        foreach (var entity in entities)
         {
             var collectionName = _defaultCollectionName;
             string groupNo = "";
@@ -442,11 +442,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     private void InitShardProvider()
     {
-        Type shardProviderType = typeof(IShardingKeyProvider<>).MakeGenericType(_type);
-        Type providerImplementationType = typeof(ShardingKeyProvider<>).MakeGenericType(_type);
-
-        object? providerObj = Activator.CreateInstance(providerImplementationType);
-
         var properties = _type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         bool isShard = false;
         foreach (var property in properties)

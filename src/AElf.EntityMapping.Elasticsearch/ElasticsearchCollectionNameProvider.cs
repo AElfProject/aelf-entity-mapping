@@ -71,13 +71,13 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         return new List<string>() { shardKeyCollectionName };
     }
 
-    protected override async Task<List<string>> GetCollectionNameByEntityAsync(List<TEntity> entitys)
+    protected override async Task<List<string>> GetCollectionNameByEntityAsync(List<TEntity> entities)
     {
-        if (entitys == null || entitys.Count == 0)
+        if (entities == null || entities.Count == 0)
             return new List<string> { GetDefaultCollectionName() };
 
         return _elasticIndexService.IsShardingCollection(typeof(TEntity))
-            ? await _shardingKeyProvider.GetCollectionNameAsync(entitys)
+            ? await _shardingKeyProvider.GetCollectionNameAsync(entities)
             : new List<string> { GetDefaultCollectionName() };
     }
 

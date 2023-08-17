@@ -26,9 +26,9 @@ public abstract class CollectionNameProviderBase<TEntity> : ICollectionNameProvi
         return fullCollectionNames.Select(FormatCollectionName).ToList();
     }
     
-    public async Task<List<string>> GetFullCollectionNameByEntityAsync(List<TEntity> entitys)
+    public async Task<List<string>> GetFullCollectionNameByEntityAsync(List<TEntity> entities)
     {
-        var collectionNames = await GetCollectionNameByEntityAsync(entitys);
+        var collectionNames = await GetCollectionNameByEntityAsync(entities);
         var fullCollectionNames = AddCollectionPrefix(collectionNames);
         return fullCollectionNames.Select(FormatCollectionName).ToList();
     }

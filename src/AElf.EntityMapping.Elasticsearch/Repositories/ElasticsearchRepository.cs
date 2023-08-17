@@ -401,11 +401,11 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             : IndexNameHelper.FormatIndexName(await _collectionNameProvider.GetFullCollectionNameByEntityAsync(entity));
     }
     
-    private async Task<List<string>> GetFullCollectionNameAsync(string collection, List<TEntity> entitys)
+    private async Task<List<string>> GetFullCollectionNameAsync(string collection, List<TEntity> entities)
     {
         return !string.IsNullOrWhiteSpace(collection)
             ? new List<string>(){collection}
-            : await _collectionNameProvider.GetFullCollectionNameByEntityAsync(entitys);
+            : await _collectionNameProvider.GetFullCollectionNameByEntityAsync(entities);
     }
     
     private async Task<string> GetFullCollectionNameByIdAsync(TKey id, string collection = null)
