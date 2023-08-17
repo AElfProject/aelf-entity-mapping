@@ -19,12 +19,8 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
         {
             _blockIndexShardingKeyProvider = GetRequiredService<IShardingKeyProvider<BlockIndex>>();
             _blockIndexShardingKeyProvider2 = GetRequiredService<IShardingKeyProvider<BlockIndex>>();
-
             _logEventIndexShardingKeyProvider = GetRequiredService<IShardingKeyProvider<LogEventIndex>>();
-        
             _logTransationIndexShardingKeyProvider = GetRequiredService<IShardingKeyProvider<TransactionIndex>>();
-
-            // _logTransationIndexShardingKeyProvider = GetRequiredService<IShardingKeyProvider<TransactionIndex>>();
             _elasticsearchRepository = GetRequiredService<IElasticsearchRepository<BlockIndex, string>>();
         }
     

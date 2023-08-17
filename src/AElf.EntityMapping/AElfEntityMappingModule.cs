@@ -56,18 +56,6 @@ namespace AElf.EntityMapping
                         {
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys config cant be null");
                         }
-                        var checkStepValue = !shardKeys.Last().Value.IsNullOrWhiteSpace() && (shardKeys.Last().StepType == StepType.Floor);
-                        if (!checkStepValue)
-                        {
-                            throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.Step config is not correct, if step>0 need config at the end");
-                        }
-                        
-                        var similarShardKeys = shardKeys.FindAll(a=>!a.Value.IsNullOrWhiteSpace() && (int.TryParse(a.Step, out var stepValue) && stepValue > 0));
-                        if(similarShardKeys.Count == 0)
-                            throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.Step config is not correct,  step must greater than 0");
-                        
-                        if(similarShardKeys.Count > 1)
-                            throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys.Step config is not correct, greater than 0 step config can only one");
 
                         foreach (var shardKey in shardKeys)
                         {
