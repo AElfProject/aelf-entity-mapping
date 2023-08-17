@@ -15,25 +15,23 @@ public interface ICollectionRouteKeyProvider<TEntity> where TEntity : class
 
     Task<string> GetCollectionNameAsync(string id);
 
-    Task<List<CollectionRouteKeyItem<TEntity>>> GetNonShardKeysAsync();
+    Task<List<CollectionRouteKeyItem<TEntity>>> GetCollectionRouteKeysAsync();
 
-    Task<RouteKeyCollection> GetNonShardKeyRouteIndexAsync(string id, string indexName, CancellationToken cancellationToken = default);
-    
-    List<CollectionRouteKeyItem<TEntity>> NonShardKeys { get; set; }
+    Task<RouteKeyCollection> GetCollectionRouteKeyIndexAsync(string id, string indexName, CancellationToken cancellationToken = default);
 
-    Task AddManyNonShardKeyRoute(List<TEntity> modelList, List<string> fullIndexNameList, IElasticClient client,
+    Task AddManyCollectionRouteKey(List<TEntity> modelList, List<string> fullIndexNameList, IElasticClient client,
         CancellationToken cancellationToken = default);
 
-    Task AddNonShardKeyRoute(TEntity model, string fullIndexName, IElasticClient client,
+    Task AddCollectionRouteKey(TEntity model, string fullIndexName, IElasticClient client,
         CancellationToken cancellationToken = default);
 
-    Task UpdateNonShardKeyRoute(TEntity model, IElasticClient client,
+    Task UpdateCollectionRouteKey(TEntity model, IElasticClient client,
         CancellationToken cancellationToken = default);
 
-    Task DeleteManyNonShardKeyRoute(List<TEntity> modelList, IElasticClient client,
+    Task DeleteManyCollectionRouteKey(List<TEntity> modelList, IElasticClient client,
         CancellationToken cancellationToken = default);
 
-    Task DeleteNonShardKeyRoute(string id, IElasticClient client,
+    Task DeleteCollectionRouteKey(string id, IElasticClient client,
         CancellationToken cancellationToken = default);
 
 }

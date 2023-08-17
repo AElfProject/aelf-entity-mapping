@@ -11,5 +11,5 @@ public class CollectionRouteKeyItem<TEntity>
     public string CollectionName { get; set; }
     // public bool IsShardKey { get; set; }
     // public bool IsRouteKey { get; set; }
-    public Func<TEntity, string> getRouteKeyValueFunc { get; set; }
+    public Func<TEntity, string> GetRouteKeyValueFunc { get; set; }
 }

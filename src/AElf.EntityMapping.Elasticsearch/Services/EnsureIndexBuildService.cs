@@ -55,7 +55,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
                 //create index marked field cache
                 // await _elasticIndexService.InitializeCollectionRouteKeyCacheAsync(t);
                 //create non shard key route index
-                await _elasticIndexService.CreateNonShardKeyRouteIndexAsync(t, _elasticsearchOptions.NumberOfShards,
+                await _elasticIndexService.CreateCollectionRouteKeyIndexAsync(t, _elasticsearchOptions.NumberOfShards,
                     _elasticsearchOptions.NumberOfReplicas);
             }
             else

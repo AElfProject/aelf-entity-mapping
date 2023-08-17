@@ -24,7 +24,7 @@ public class CollectionRouteKeyProviderTests: AElfElasticsearchTestBase
     [Fact]
     public async Task GetNonShardKeys_Test()
     {
-        List<CollectionRouteKeyItem<BlockIndex>> nonShardKeys = await _blockIndexCollectionRouteKeyProvider.GetNonShardKeysAsync();
+        List<CollectionRouteKeyItem<BlockIndex>> nonShardKeys = await _blockIndexCollectionRouteKeyProvider.GetCollectionRouteKeysAsync();
         
         nonShardKeys.Count.ShouldBe(1);
         nonShardKeys[0].FieldName.ShouldBe(nameof(BlockIndex.BlockHash));
@@ -108,13 +108,13 @@ public class CollectionRouteKeyProviderTests: AElfElasticsearchTestBase
         var routeIndex = $"{_option.CollectionPrefix.ToLower()}.blockindex.blockhash.route";
         await InitBlocksAsync();
 
-        var route = await _blockIndexCollectionRouteKeyProvider.GetNonShardKeyRouteIndexAsync("block1", routeIndex);
+        var route = await _blockIndexCollectionRouteKeyProvider.GetCollectionRouteKeyIndexAsync("block1", routeIndex);
         route.Id.ShouldBe("block1");
         route.CollectionRouteKey.ShouldBe("BlockHash1");
         // route.ShardCollectionName.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-0");
         route.CollectionName.ShouldBe($"blockindex-aelf-0");
         
-        route = await _blockIndexCollectionRouteKeyProvider.GetNonShardKeyRouteIndexAsync("block6", routeIndex);
+        route = await _blockIndexCollectionRouteKeyProvider.GetCollectionRouteKeyIndexAsync("block6", routeIndex);
         route.Id.ShouldBe("block6");
         route.CollectionRouteKey.ShouldBe("BlockHash6");
         // route.ShardCollectionName.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
