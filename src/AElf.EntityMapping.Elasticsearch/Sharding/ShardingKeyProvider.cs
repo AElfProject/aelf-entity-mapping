@@ -1,7 +1,5 @@
-using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Entities;
@@ -68,7 +66,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     private async Task<long> GetShardCollectionMaxNoAsync(List<CollectionNameCondition> conditions)
     {
-        var result = await GetShardingCollectionTailAsync(new ShardingCollectionTail(){EntityName = _type.Name});
+        var result = await GetShardingCollectionTailAsync(new ShardingCollectionTail(){EntityName = _type.Name.ToLower()});
         if (result is null || result.Item1 == 0)
         {
             return 0;
@@ -217,6 +215,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public async Task<string> GetCollectionNameAsync(TEntity entity)
     {
         var indexName = _defaultCollectionName;
+        var tail = 0;
+        var tailPrefix = "";
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardingKeyByEntity();
         if (shardingKeyInfos.IsNullOrEmpty())
         {
@@ -233,9 +233,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                     //The field values of entity's sub table must be consistent with the configuration in the sub table configuration file
                     if (shardKey.Func(entity).ToString() == shardKey.Value)
                     {
-                        indexName = indexName + "-" + shardKey.Value;
+                        tailPrefix = tailPrefix.IsNullOrEmpty()?shardKey.Value:(tailPrefix + "-" + shardKey.Value);
                         findGroup = true;
-                        //考虑list/数组最后join或计数，数量对就拼接，不对就跳过
                     }
                 }
                 else
@@ -247,21 +246,15 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                     }
 
                     var value = shardKey.Func(entity);
-                    indexName = indexName + "-" +
-                                int.Parse(value.ToString()) / int.Parse(shardKey.Step);
+                    tail = int.Parse(value.ToString()) / int.Parse(shardKey.Step);
                 }
             }
 
             if (findGroup) break;
         }
-
+        indexName = indexName + "-" + tailPrefix + "-" + tail;
         //add ShardingCollectionTail
-        //todo: 优化，拆成helper方法，参数传进来
-        string[] collectionNameArr = indexName.ToLower().Split('-');
-        var suffix = collectionNameArr.Last();
-        var keys = indexName.ToLower().Substring(collectionNameArr[0].Length + 1,
-            indexName.Length - suffix.Length - collectionNameArr[0].Length - 1);
-        await AddShardingCollectionTailAsync(_type.Name, keys, long.Parse(suffix));
+        await AddShardingCollectionTailAsync(_defaultCollectionName, tailPrefix.ToLower(), tail);
         return indexName.ToLower();
     }
 
@@ -276,55 +269,51 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         List<string> collectionNames = new List<string>();
         long maxShardNo = 0;
         string maxCollectionName = "";
+        var tailPrefix = "";
       
         foreach (var entity in entities)
         {
+            tailPrefix = "";
             var collectionName = _defaultCollectionName;
             string groupNo = "";
             foreach (var shardingKeyInfo in shardingKeyInfos)
             {
                 bool findGroup = false;
-                foreach (var shardInfo in shardingKeyInfo.ShardKeys)
+                foreach (var shardKey in shardingKeyInfo.ShardKeys)
                 {
-                    if (shardInfo.StepType == StepType.None)
+                    if (shardKey.StepType == StepType.None)
                     {
                         //The field values of entity's sub table must be consistent with the configuration in the sub table configuration file
-                        if (shardInfo.Func(entity).ToString() == shardInfo.Value)
+                        if (shardKey.Func(entity).ToString() == shardKey.Value)
                         {
-                            collectionName = collectionName + "-" + shardInfo.Value;
+                            tailPrefix = tailPrefix.IsNullOrEmpty()?shardKey.Value:(tailPrefix + "-" + shardKey.Value);
+                            //collectionName = collectionName + "-" + shardKey.Value;
                             findGroup = true;
                         }
                     }
                     else
                     {
                         if(!findGroup) continue;
-                        if (shardInfo.StepType != StepType.Floor)
+                        if (shardKey.StepType != StepType.Floor)
                         {
-                            throw new Exception(shardInfo.ShardKeyName + "need config StepType equal Floor");
+                            throw new Exception(shardKey.ShardKeyName + "need config StepType equal Floor");
                         }
 
-                        var value = shardInfo.Func(entity);
-                        collectionName = collectionName + "-" +
-                                         int.Parse(value.ToString() ?? string.Empty) / int.Parse(shardInfo.Step);
-                        if (int.Parse(value.ToString() ?? string.Empty) / int.Parse(shardInfo.Step) >= maxShardNo)
+                        var value = shardKey.Func(entity);
+                       // collectionName = collectionName + "-" + int.Parse(value.ToString()) / int.Parse(shardKey.Step);
+                        if (int.Parse(value.ToString() ?? string.Empty) / int.Parse(shardKey.Step) >= maxShardNo)
                         {
-                            maxShardNo = int.Parse(value.ToString() ?? string.Empty) / int.Parse(shardInfo.Step);
-                            maxCollectionName = collectionName;
+                            maxShardNo = int.Parse(value.ToString()) / int.Parse(shardKey.Step);
                         }
                     }
                 }
                 if (findGroup) break;
             }
-
+            collectionName = collectionName + "-" + tailPrefix + "-" + maxShardNo;
             collectionNames.Add(collectionName.ToLower());
         }
-
-        //add ShardingCollectionTail
-        string[] collectionNameArr = maxCollectionName.ToLower().Split('-');
-        var suffix = collectionNameArr.Last();
-        var keys = maxCollectionName.ToLower().Substring(collectionNameArr[0].Length + 1,
-            maxCollectionName.Length - suffix.Length - collectionNameArr[0].Length - 1);
-        await AddShardingCollectionTailAsync(_type.Name, keys, long.Parse(suffix));
+        
+        await AddShardingCollectionTailAsync(_defaultCollectionName, tailPrefix.ToLower(), maxShardNo);
         return collectionNames;
     }
 
