@@ -110,11 +110,11 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                                    $"collectionRouteKeyIndexName: {collectionRouteKeyIndexName}");
             if (condition.Type == ConditionType.Equal)
             {
-                var indexList = await _collectionRouteKeyIndexRepository.GetListAsync(x => x.CollectionRouteKey == fieldValue,
+                var collectionList = await _collectionRouteKeyIndexRepository.GetListAsync(x => x.CollectionRouteKey == fieldValue,
                     collectionRouteKeyIndexName);
                 _logger.LogInformation($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
-                                       $"indexList: {JsonConvert.SerializeObject(indexList)}");
-                var nameList = indexList.Select(x => x.CollectionName).Distinct().ToList();
+                                       $"collectionList: {JsonConvert.SerializeObject(collectionList)}");
+                var nameList = collectionList.Select(x => x.CollectionName).Distinct().ToList();
                 if(collectionNameList.Count == 0)
                 {
                     collectionNameList.AddRange(nameList);
