@@ -22,14 +22,14 @@ public class CollectionRouteKeyProviderTests: AElfElasticsearchTestBase
     }
 
     [Fact]
-    public async Task GetNonShardKeys_Test()
+    public async Task GetRouteKeys_Test()
     {
-        List<CollectionRouteKeyItem<BlockIndex>> nonShardKeys = await _blockIndexCollectionRouteKeyProvider.GetCollectionRouteKeysAsync();
+        List<CollectionRouteKeyItem<BlockIndex>> routeKeys = await _blockIndexCollectionRouteKeyProvider.GetCollectionRouteKeysAsync();
         
-        nonShardKeys.Count.ShouldBe(1);
-        nonShardKeys[0].FieldName.ShouldBe(nameof(BlockIndex.BlockHash));
-        // nonShardKeys[0].FieldValueType.ShouldBe(typeof(string).ToString());
-        // nonShardKeys[0].IsRouteKey.ShouldBeTrue();
+        routeKeys.Count.ShouldBe(1);
+        routeKeys[0].FieldName.ShouldBe(nameof(BlockIndex.BlockHash));
+        // routeKeys[0].FieldValueType.ShouldBe(typeof(string).ToString());
+        // routeKeys[0].IsRouteKey.ShouldBeTrue();
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public class CollectionRouteKeyProviderTests: AElfElasticsearchTestBase
     }
 
     [Fact]
-    public async Task GetNonShardKeyRouteIndex_Test()
+    public async Task GetCollectionRouteKeyIndex_Test()
     {
         var routeIndex = $"{_option.CollectionPrefix.ToLower()}.blockindex.blockhash.route";
         await InitBlocksAsync();

@@ -46,24 +46,24 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
             return new List<string> { GetDefaultCollectionName() };
         
         var shardKeyCollectionNames = await _shardingKeyProvider.GetCollectionNameAsync(conditions);
-        var nonShardKeyCollectionNames =
+        var routeKeyCollectionNames =
             await _collectionRouteKeyProvider.GetCollectionNameAsync(conditions);
 
-        if (shardKeyCollectionNames.Count > 0 && nonShardKeyCollectionNames.Count > 0)
+        if (shardKeyCollectionNames.Count > 0 && routeKeyCollectionNames.Count > 0)
         {
             _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync1:  " +
                                    $"conditions: {JsonConvert.SerializeObject(conditions)}, " +
                                    $"shardKeyCollectionNames: {JsonConvert.SerializeObject(shardKeyCollectionNames)}," +
-                                   $"nonShardKeyCollectionNames:{JsonConvert.SerializeObject(nonShardKeyCollectionNames)}");
+                                   $"routeKeyCollectionNames:{JsonConvert.SerializeObject(routeKeyCollectionNames)}");
 
-            return shardKeyCollectionNames.Intersect(nonShardKeyCollectionNames).ToList();
+            return shardKeyCollectionNames.Intersect(routeKeyCollectionNames).ToList();
         }
         _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync2:  " +
                                $"conditions: {JsonConvert.SerializeObject(conditions)}, " +
                                $"shardKeyCollectionNames: {JsonConvert.SerializeObject(shardKeyCollectionNames)}," +
-                               $"nonShardKeyCollectionNames:{JsonConvert.SerializeObject(nonShardKeyCollectionNames)}");
+                               $"routeKeyCollectionNames:{JsonConvert.SerializeObject(routeKeyCollectionNames)}");
 
-        return shardKeyCollectionNames.Concat(nonShardKeyCollectionNames).ToList();
+        return shardKeyCollectionNames.Concat(routeKeyCollectionNames).ToList();
     }
 
     protected override  async Task<List<string>> GetCollectionNameByEntityAsync(TEntity entity)
