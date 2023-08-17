@@ -22,10 +22,10 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly ILogger<ShardingKeyProvider<TEntity>> _logger;
 
     private ShardType? _shardType = null;
-    private List<ShardingKeyInfo<TEntity>> _shardKeyInfoList = new List<ShardingKeyInfo<TEntity>>();
+    private readonly List<ShardingKeyInfo<TEntity>> _shardKeyInfoList = new List<ShardingKeyInfo<TEntity>>();
     private Dictionary<string, bool> _existIndexShardDictionary = new Dictionary<string, bool>();
-    private Type _type = typeof(TEntity);
-    private string _defaultCollectionName;
+    private readonly Type _type = typeof(TEntity);
+    private readonly string _defaultCollectionName;
 
     public ShardingKeyProvider(IOptions<ElasticsearchOptions> indexSettingOptions,
         IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions, IElasticIndexService elasticIndexService,
@@ -54,7 +54,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         _shardKeyInfoList.Add(shardingKeyInfo);
     }
     
-    public List<ShardingKeyInfo<TEntity>> GetShardingKeyByEntity()
+    public List<ShardingKeyInfo<TEntity>> GetShardKeyInfoList()
     {
         if (_shardType == null)
         {
@@ -64,16 +64,16 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         return _shardKeyInfoList;
     }
 
-    private async Task<long> GetShardCollectionMaxNoAsync(List<CollectionNameCondition> conditions)
+    private async Task<long> GetShardingCollectionTailAsync(List<CollectionNameCondition> conditions)
     {
-        var result = await GetShardingCollectionTailAsync(new ShardingCollectionTail(){EntityName = _type.Name.ToLower()});
-        if (result is null || result.Item1 == 0)
+        var totalShardingCollectionTailList = await GetShardingCollectionTailAsync(new ShardingCollectionTail(){EntityName = _type.Name.ToLower()});
+        if (totalShardingCollectionTailList is null || totalShardingCollectionTailList.Item1 == 0)
         {
             return 0;
         }
 
-        List<ShardingCollectionTail> shardingCollectionTailList = result.Item2;
-        List<ShardingKeyInfo<TEntity>> shardingKeyInfoList = GetShardingKeyByEntity();
+        List<ShardingCollectionTail> shardingCollectionTailList = totalShardingCollectionTailList.Item2;
+        List<ShardingKeyInfo<TEntity>> shardingKeyInfoList = GetShardKeyInfoList();
         if (shardingKeyInfoList.IsNullOrEmpty())
         {
             return 0;
@@ -106,10 +106,10 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         }
 
         long min = 0;
-        long max = await GetShardCollectionMaxNoAsync(conditions);
+        long max = await GetShardingCollectionTailAsync(conditions);
         _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionName:  " +
                                $"conditions: {JsonConvert.SerializeObject(conditions)},min:{min},max:{max}");
-        List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardingKeyByEntity();
+        List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
 
         if (shardingKeyInfos.IsNullOrEmpty())
         {
@@ -217,7 +217,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         var indexName = _defaultCollectionName;
         var tail = 0;
         var tailPrefix = "";
-        List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardingKeyByEntity();
+        List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
         if (shardingKeyInfos.IsNullOrEmpty())
         {
             return indexName.ToLower();
@@ -269,7 +269,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public async Task<List<string>> GetCollectionNameAsync(List<TEntity> entities)
     {
-        List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardingKeyByEntity();
+        List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
         if (shardingKeyInfos.IsNullOrEmpty())
         {
             return new List<string>() { _defaultCollectionName.ToLower() };
@@ -413,7 +413,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     public bool IsShardingCollection()
     {
-        List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardingKeyByEntity();
+        List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
         if (shardingKeyInfos.IsNullOrEmpty())
         {
             return false;

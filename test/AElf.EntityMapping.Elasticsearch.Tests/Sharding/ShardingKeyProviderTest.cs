@@ -35,14 +35,14 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 BlockTime = DateTime.Now,
                 Confirmed = true
             };
-            List<ShardingKeyInfo<BlockIndex>> blockPropertyFuncs = _blockIndexShardingKeyProvider.GetShardingKeyByEntity();
+            List<ShardingKeyInfo<BlockIndex>> blockPropertyFuncs = _blockIndexShardingKeyProvider.GetShardKeyInfoList();
             Assert.True(blockPropertyFuncs != null && blockPropertyFuncs.Count == 2);
             Assert.True(blockPropertyFuncs[0].ShardKeys[0].ShardKeyName == "ChainId");
             Assert.True(blockPropertyFuncs[0].ShardKeys[1].ShardKeyName == "BlockHeight");
             Assert.True(blockPropertyFuncs[1].ShardKeys[0].ShardKeyName == "ChainId");
             Assert.True(blockPropertyFuncs[1].ShardKeys[1].ShardKeyName == "BlockHeight");
         
-            List<ShardingKeyInfo<BlockIndex>> blockPropertyFuncs2 = _blockIndexShardingKeyProvider2.GetShardingKeyByEntity();
+            List<ShardingKeyInfo<BlockIndex>> blockPropertyFuncs2 = _blockIndexShardingKeyProvider2.GetShardKeyInfoList();
             Assert.True(blockPropertyFuncs2 != null && blockPropertyFuncs2.Count == 2);
             Assert.True(blockPropertyFuncs2[0].ShardKeys[0].ShardKeyName == "ChainId");
             Assert.True(blockPropertyFuncs2[0].ShardKeys[1].ShardKeyName == "BlockHeight");
@@ -57,7 +57,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 BlockTime = DateTime.Now,
                 Confirmed = true
             };
-            List<ShardingKeyInfo<LogEventIndex>> eventPropertyFuncs = _logEventIndexShardingKeyProvider.GetShardingKeyByEntity();
+            List<ShardingKeyInfo<LogEventIndex>> eventPropertyFuncs = _logEventIndexShardingKeyProvider.GetShardKeyInfoList();
             Assert.True(eventPropertyFuncs != null && eventPropertyFuncs.Count == 2);
             Assert.True(eventPropertyFuncs[0].ShardKeys[0].ShardKeyName == "ChainId");
             Assert.True(eventPropertyFuncs[0].ShardKeys[1].ShardKeyName == "BlockHeight");
@@ -77,7 +77,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 BlockTime = DateTime.Now,
                 Confirmed = true
             };
-            List<ShardingKeyInfo<LogEventIndex>> propertyFuncs = _logEventIndexShardingKeyProvider.GetShardingKeyByEntity();
+            List<ShardingKeyInfo<LogEventIndex>> propertyFuncs = _logEventIndexShardingKeyProvider.GetShardKeyInfoList();
             Assert.True(propertyFuncs != null && propertyFuncs.Count == 2);
             Assert.True(propertyFuncs[0].ShardKeys[0].ShardKeyName == "ChainId");
             Assert.True(propertyFuncs[0].ShardKeys[1].ShardKeyName == "BlockHeight");
