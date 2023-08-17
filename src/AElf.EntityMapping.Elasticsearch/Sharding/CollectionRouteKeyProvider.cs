@@ -61,7 +61,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     CollectionName = type.Name
                 };
                 //Find the field with the CollectionRouteKeyAttribute annotation set
-                CollectionRoutekeyAttribute routeKeyAttribute = (CollectionRoutekeyAttribute)Attribute.GetCustomAttribute(property, typeof(CollectionRoutekeyAttribute));
+                CollectionRouteKeyAttribute routeKeyAttribute = (CollectionRouteKeyAttribute)Attribute.GetCustomAttribute(property, typeof(CollectionRouteKeyAttribute));
                 if (routeKeyAttribute != null)
                 {
                     // Creates a Func expression that gets the value of the property

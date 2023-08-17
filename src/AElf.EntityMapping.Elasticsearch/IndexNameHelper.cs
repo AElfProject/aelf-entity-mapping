@@ -19,10 +19,6 @@ public static class IndexNameHelper
     }
     public static string GetDefaultIndexName(Type type)
     {
-        // TODO: Maybe not correct? If not sharded there will be no prefix.
-        // var indexName = _entityMappingOptions.CollectionPrefix.IsNullOrWhiteSpace()
-        //     ? type.Name.ToLower()
-        //     : $"{_entityMappingOptions.CollectionPrefix.ToLower()}.{type.Name.ToLower()}";
         return type.Name.ToLower();
     }
     //Attention: this need to be the same algorithm as the CollectionNameProviderBase.GetFullCollectionNameAsync

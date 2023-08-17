@@ -122,7 +122,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         foreach (var property in properties)
         {
-            CollectionRoutekeyAttribute shardRouteAttribute = (CollectionRoutekeyAttribute)Attribute.GetCustomAttribute(property, typeof(CollectionRoutekeyAttribute));
+            CollectionRouteKeyAttribute shardRouteAttribute = (CollectionRouteKeyAttribute)Attribute.GetCustomAttribute(property, typeof(CollectionRouteKeyAttribute));
             if (shardRouteAttribute != null)
             {
                 if (property.PropertyType != typeof(string))
