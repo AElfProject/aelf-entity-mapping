@@ -102,7 +102,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var result = await client.IndexAsync(model, ss => ss.Index(indexName).Refresh(_elasticsearchOptions.Refresh),
             cancellationToken);
 
-        await _collectionRouteKeyProvider.AddCollectionRouteKey(model, indexName, client, cancellationToken);
+        await _collectionRouteKeyProvider.AddCollectionRouteKey(model, indexName, cancellationToken);
         
         if (result.IsValid)
             return;
@@ -124,7 +124,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 ss => ss.Index(indexName).Doc(model).RetryOnConflict(3).Refresh(_elasticsearchOptions.Refresh),
                 cancellationToken);
 
-            await _collectionRouteKeyProvider.UpdateCollectionRouteKey(model, client, cancellationToken);
+            await _collectionRouteKeyProvider.UpdateCollectionRouteKey(model, cancellationToken);
             
             if (result.IsValid)
                 return;
@@ -137,7 +137,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 await client.IndexAsync(model, ss => ss.Index(indexName).Refresh(_elasticsearchOptions.Refresh),
                     cancellationToken);
             
-            await _collectionRouteKeyProvider.AddCollectionRouteKey(model, indexName, client, cancellationToken);
+            await _collectionRouteKeyProvider.AddCollectionRouteKey(model, indexName, cancellationToken);
             
             if (result.IsValid)
                 return;
@@ -187,7 +187,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         response = await client.BulkAsync(bulk, cancellationToken);
 
         //bulk index non shard key to route collection 
-        await _collectionRouteKeyProvider.AddManyCollectionRouteKey(list, indexNames, client, cancellationToken);
+        await _collectionRouteKeyProvider.AddManyCollectionRouteKey(list, indexNames, cancellationToken);
         
         if (!response.IsValid)
         {
@@ -205,7 +205,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             ss => ss.Index(indexName).Doc(model).RetryOnConflict(3).Refresh(_elasticsearchOptions.Refresh),
             cancellationToken);
         
-        await _collectionRouteKeyProvider.UpdateCollectionRouteKey(model, client, cancellationToken);
+        await _collectionRouteKeyProvider.UpdateCollectionRouteKey(model, cancellationToken);
 
         if (result.IsValid)
             return;
@@ -222,7 +222,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 new DeleteRequest(indexName, new Id(new { id = id.ToString() }))
                     { Refresh = _elasticsearchOptions.Refresh }, cancellationToken);
 
-        await _collectionRouteKeyProvider.DeleteCollectionRouteKey(id.ToString(), client, cancellationToken);
+        await _collectionRouteKeyProvider.DeleteCollectionRouteKey(id.ToString(), cancellationToken);
 
         if (response.ServerError == null)
         {
@@ -242,7 +242,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 new DeleteRequest(indexName, new Id(model)) { Refresh = _elasticsearchOptions.Refresh },
                 cancellationToken);
         
-        await _collectionRouteKeyProvider.DeleteCollectionRouteKey(model.Id.ToString(), client, cancellationToken);
+        await _collectionRouteKeyProvider.DeleteCollectionRouteKey(model.Id.ToString(), cancellationToken);
         
         if (response.ServerError == null)
         {
@@ -292,7 +292,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         response = await client.BulkAsync(bulk, cancellationToken);
 
         //bulk delete non shard key to route collection
-        await _collectionRouteKeyProvider.DeleteManyCollectionRouteKey(list, client, cancellationToken);
+        await _collectionRouteKeyProvider.DeleteManyCollectionRouteKey(list, cancellationToken);
 
         if (response.ServerError == null)
         {
