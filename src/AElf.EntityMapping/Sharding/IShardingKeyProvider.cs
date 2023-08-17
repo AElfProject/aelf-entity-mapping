@@ -5,7 +5,7 @@ namespace AElf.EntityMapping.Sharding;
 
 public interface IShardingKeyProvider<TEntity> where TEntity : class
 {
-    public List<ShardingKeyInfo<TEntity>> GetShardingKeyByEntity();
+    public List<ShardingKeyInfo<TEntity>> GetShardKeyInfoList();
     
     public Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions);
 
