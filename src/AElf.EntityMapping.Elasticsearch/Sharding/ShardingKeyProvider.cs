@@ -19,7 +19,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly ElasticsearchOptions _indexSettingOptions;
     private readonly IElasticIndexService _elasticIndexService;
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
-    private readonly List<ShardInitSetting> _indexShardOptions;
+    private readonly List<ShardInitSetting> _shardInitSetttings;
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ShardingKeyProvider<TEntity>> _logger;
 
@@ -36,7 +36,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     {
         _indexSettingOptions = indexSettingOptions.Value;
         _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
-        _indexShardOptions = aelfEntityMappingOptions.Value.ShardInitSettings;
+        _shardInitSetttings = aelfEntityMappingOptions.Value.ShardInitSettings;
         _elasticIndexService = elasticIndexService;
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
@@ -46,30 +46,14 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public ShardingKeyProvider()
     {
     }
-    private void SetShardingKey(int order, List<ShardGroup> shardGroups, string propertyName, Expression body,
-        ReadOnlyCollection<ParameterExpression> parameterExpressions)
+    private void SetShardingKey(List<ShardingKey<TEntity>> shardingKeyList)
     {
-        if (shardGroups.IsNullOrEmpty())
+        shardingKeyList.Sort(new ShardingKeyInfoComparer<TEntity>());
+        ShardingKeyInfo<TEntity> shardingKeyInfo = new ShardingKeyInfo<TEntity>()
         {
-            throw new Exception($"ShardGroup is null or empty,please check the config file");
-        }
-        for (int i = 0; i < shardGroups.Count; i++)
-        {
-            ShardKey? shardKey = shardGroups[i]?.ShardKeys.Find(a => a.Name == propertyName);
-            var expression = Expression.Lambda<Func<TEntity, object>>(
-                Expression.Convert(body, typeof(object)), parameterExpressions);
-            var func = expression.Compile();
-            if (_shardKeyInfoList.Count <= i)
-            {
-                _shardKeyInfoList.Add(new ShardingKeyInfo<TEntity>(propertyName, shardKey.Step.ToString(), order, shardKey.Value, shardKey.StepType, func));
-            }
-            else
-            {
-                _shardKeyInfoList[i].ShardKeys
-                    .Add(new ShardingKey<TEntity>(propertyName, shardKey.Step, order, shardKey.Value, shardKey.StepType, func));
-                _shardKeyInfoList[i].ShardKeys.Sort(new ShardingKeyInfoComparer<TEntity>());
-            }
-        }
+            ShardKeys = shardingKeyList
+        };
+        _shardKeyInfoList.Add(shardingKeyInfo);
     }
     
     public List<ShardingKeyInfo<TEntity>> GetShardingKeyByEntity()
@@ -226,8 +210,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             }
         }
 
-        _logger.LogInformation(
-            $"GetCollectionName: min: {min} , max: {max}, conditions: {JsonConvert.SerializeObject(conditions)}, indexName: {JsonConvert.SerializeObject(collectionNames)}");
+        _logger.LogInformation($"GetCollectionName: min: {min} , max: {max}, conditions: {JsonConvert.SerializeObject(conditions)}, indexName: {JsonConvert.SerializeObject(collectionNames)}");
         return collectionNames;
     }
 
@@ -433,25 +416,46 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
         return true;
     }
-
+    
     private void InitShardProvider()
     {
-        //todo 用groups反过来遍历property
+        List<ShardGroup> shardGroupsOptions = _shardInitSetttings.Find(a => a.CollectionName == _type.Name)?.ShardGroups;
         var properties = _type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        bool isShard = false;
+        if (shardGroupsOptions.IsNullOrEmpty())
+        {
+            _shardType = ShardType.NonShard;
+            return;
+        }
+
+        var dic = new Dictionary<string, (int Order, Func<TEntity, object> Func)>();
         foreach (var property in properties)
         {
-            ShardPropertyAttributes attribute =
+            var attribute =
                 (ShardPropertyAttributes)Attribute.GetCustomAttribute(property, typeof(ShardPropertyAttributes));
             if (attribute != null)
             {
                 var propertyExpression = GetPropertyExpression(_type, property.Name);
-                List<ShardGroup> shardGroups = _indexShardOptions.Find(a => a.CollectionName == _type.Name)?.ShardGroups;
-                SetShardingKey(attribute.Order, shardGroups, property.Name, propertyExpression.Body, propertyExpression.Parameters);
-                isShard = true;
+                var expression = Expression.Lambda<Func<TEntity, object>>(
+                    Expression.Convert(propertyExpression.Body, typeof(object)), propertyExpression.Parameters);
+                dic[property.Name] = (attribute.Order, expression.Compile());
             }
         }
-        _shardType = isShard ? ShardType.Shard : ShardType.NonShard;
+        
+        foreach (var shardGroup in shardGroupsOptions)
+        {
+            var shardingKeyList = new List<ShardingKey<TEntity>>();
+            foreach (var shardKey in shardGroup.ShardKeys)
+            {
+                var key = new ShardingKey<TEntity>(shardKey.Name, shardKey.Step, dic[shardKey.Name].Order, shardKey.Value, shardKey.StepType, dic[shardKey.Name].Func);
+                shardingKeyList.Add(key);
+            }
+
+            if (shardingKeyList.Count > 0)
+            {
+                SetShardingKey(shardingKeyList);
+                _shardType = ShardType.Shard;
+            }
+        }
     }
 
     private LambdaExpression GetPropertyExpression(Type entityType, string propertyName)
