@@ -225,7 +225,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         
         foreach (var shardKeyInfo in shardingKeyInfos)
         {
-            bool findGroup = false;
+            List<long> collectionNameTailList = new List<long>();
+            List<string> collectionNameTailPrefixList = new List<string>();
             foreach (var shardKey in shardKeyInfo.ShardKeys)
             {
                 if (shardKey.StepType == StepType.None)
@@ -233,13 +234,11 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                     //The field values of entity's sub table must be consistent with the configuration in the sub table configuration file
                     if (shardKey.Func(entity).ToString() == shardKey.Value)
                     {
-                        tailPrefix = tailPrefix.IsNullOrEmpty()?shardKey.Value:(tailPrefix + "-" + shardKey.Value);
-                        findGroup = true;
+                        collectionNameTailPrefixList.Add(shardKey.Value);
                     }
                 }
                 else
                 {
-                    if(!findGroup) continue;
                     if (shardKey.StepType != StepType.Floor)
                     {
                         throw new Exception(shardKey.ShardKeyName + "need config StepType equal Floor");
@@ -247,10 +246,20 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
                     var value = shardKey.Func(entity);
                     tail = int.Parse(value.ToString()) / int.Parse(shardKey.Step);
+                    collectionNameTailList.Add(tail);
                 }
             }
 
-            if (findGroup) break;
+            if ((collectionNameTailPrefixList.Count + collectionNameTailList.Count) == shardingKeyInfos.Count)
+            {
+                tailPrefix = collectionNameTailPrefixList.JoinAsString("-");
+                break;
+            }
+            else
+            {
+                collectionNameTailList.Clear();
+                collectionNameTailPrefixList.Clear();
+            }
         }
         indexName = indexName + "-" + tailPrefix + "-" + tail;
         //add ShardingCollectionTail
@@ -278,7 +287,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             string groupNo = "";
             foreach (var shardingKeyInfo in shardingKeyInfos)
             {
-                bool findGroup = false;
+                List<long> collectionNameTailList = new List<long>();
+                List<string> collectionNameTailPrefixList = new List<string>();
                 foreach (var shardKey in shardingKeyInfo.ShardKeys)
                 {
                     if (shardKey.StepType == StepType.None)
@@ -286,28 +296,34 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                         //The field values of entity's sub table must be consistent with the configuration in the sub table configuration file
                         if (shardKey.Func(entity).ToString() == shardKey.Value)
                         {
-                            tailPrefix = tailPrefix.IsNullOrEmpty()?shardKey.Value:(tailPrefix + "-" + shardKey.Value);
-                            //collectionName = collectionName + "-" + shardKey.Value;
-                            findGroup = true;
+                            collectionNameTailPrefixList.Add(shardKey.Value);
                         }
                     }
                     else
                     {
-                        if(!findGroup) continue;
                         if (shardKey.StepType != StepType.Floor)
                         {
                             throw new Exception(shardKey.ShardKeyName + "need config StepType equal Floor");
                         }
 
                         var value = shardKey.Func(entity);
-                       // collectionName = collectionName + "-" + int.Parse(value.ToString()) / int.Parse(shardKey.Step);
                         if (int.Parse(value.ToString() ?? string.Empty) / int.Parse(shardKey.Step) >= maxShardNo)
                         {
                             maxShardNo = int.Parse(value.ToString()) / int.Parse(shardKey.Step);
                         }
+                        collectionNameTailList.Add(maxShardNo);
                     }
                 }
-                if (findGroup) break;
+                if ((collectionNameTailPrefixList.Count + collectionNameTailList.Count) == shardingKeyInfos.Count)
+                {
+                    tailPrefix = collectionNameTailPrefixList.JoinAsString("-");
+                    break;
+                }
+                else
+                {
+                    collectionNameTailList.Clear();
+                    collectionNameTailPrefixList.Clear();
+                }
             }
             collectionName = collectionName + "-" + tailPrefix + "-" + maxShardNo;
             collectionNames.Add(collectionName.ToLower());
