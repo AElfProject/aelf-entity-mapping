@@ -59,8 +59,22 @@ namespace AElf.EntityMapping
 
                         foreach (var shardKey in shardKeys)
                         {
-                            if (shardKey.StepType == StepType.Floor) continue;
-                            
+                            if (shardKey.StepType == StepType.Floor)
+                            {
+                                if (int.TryParse(shardKey.Step, out var step))
+                                {
+                                    if (step <= 0)
+                                    {
+                                        throw new Exception($"AElfEntityMappingOptions.ShardGroups.ShardKeys.Step config is not correct,  StepType.Floor Step:{step} must be greater than 0");
+                                    }
+                                }
+                                else
+                                {
+                                    throw new Exception($"AElfEntityMappingOptions.ShardGroups.ShardKeys.Step config is not correct,  StepType.Floor Step:{shardKey.Step} must be int");
+                                }
+                                continue;
+                            }
+
                             if (!shardKeyDic.TryGetValue(shardKey.Name, out var value))
                             {
                                 shardKeyDic.Add(shardKey.Name, shardKey.Value);
@@ -69,7 +83,7 @@ namespace AElf.EntityMapping
                             {
                                 if (value == shardKey.Value)
                                 {
-                                    throw new Exception($"AElfEntityMappingOptions.ShardGroups.ShardKeys.Value config is not correct,  Value:{value} must be not consistent");
+                                    throw new Exception($"AElfEntityMappingOptions.ShardGroups.ShardKeys.Value config is not correct,  StepType.None Value:{value} must be not consistent");
                                 }
                             }
                         }

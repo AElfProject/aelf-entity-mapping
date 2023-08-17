@@ -17,12 +17,11 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly ElasticsearchOptions _indexSettingOptions;
     private readonly IElasticIndexService _elasticIndexService;
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
-    private readonly List<ShardInitSetting> _shardInitSetttings;
+    private readonly List<ShardInitSetting> _shardInitSettings;
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ShardingKeyProvider<TEntity>> _logger;
 
-    private ShardType? _shardType = null;
-    private readonly List<ShardingKeyInfo<TEntity>> _shardKeyInfoList = new List<ShardingKeyInfo<TEntity>>();
+    private List<ShardingKeyInfo<TEntity>> _shardKeyInfoList;
     private Dictionary<string, bool> _existIndexShardDictionary = new Dictionary<string, bool>();
     private readonly Type _type = typeof(TEntity);
     private readonly string _defaultCollectionName;
@@ -34,7 +33,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     {
         _indexSettingOptions = indexSettingOptions.Value;
         _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
-        _shardInitSetttings = aelfEntityMappingOptions.Value.ShardInitSettings;
+        _shardInitSettings = aelfEntityMappingOptions.Value.ShardInitSettings;
         _elasticIndexService = elasticIndexService;
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _logger = logger;
@@ -44,19 +43,24 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public ShardingKeyProvider()
     {
     }
-    private void SetShardingKey(List<ShardingKey<TEntity>> shardingKeyList)
+    private void SetShardKeyInfoList(List<ShardingKey<TEntity>> shardingKeyList)
     {
         shardingKeyList.Sort(new ShardingKeyInfoComparer<TEntity>());
         ShardingKeyInfo<TEntity> shardingKeyInfo = new ShardingKeyInfo<TEntity>()
         {
             ShardKeys = shardingKeyList
         };
+        if (_shardKeyInfoList == null)
+        {
+            _shardKeyInfoList = new List<ShardingKeyInfo<TEntity>>();
+        }
+
         _shardKeyInfoList.Add(shardingKeyInfo);
     }
     
     public List<ShardingKeyInfo<TEntity>> GetShardKeyInfoList()
     {
-        if (_shardType == null)
+        if (_shardKeyInfoList == null)
         {
             InitShardProvider();
         }
@@ -66,13 +70,12 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     private async Task<long> GetShardingCollectionTailAsync(List<CollectionNameCondition> conditions)
     {
-        var totalShardingCollectionTailList = await GetShardingCollectionTailAsync(new ShardingCollectionTail(){EntityName = _type.Name.ToLower()});
-        if (totalShardingCollectionTailList is null || totalShardingCollectionTailList.Item1 == 0)
+        var (total,shardingCollectionTailList) = await GetShardingCollectionTailAsync(new ShardingCollectionTail(){EntityName = _type.Name.ToLower()});
+        if (shardingCollectionTailList is null || total == 0)
         {
             return 0;
         }
 
-        List<ShardingCollectionTail> shardingCollectionTailList = totalShardingCollectionTailList.Item2;
         List<ShardingKeyInfo<TEntity>> shardingKeyInfoList = GetShardKeyInfoList();
         if (shardingKeyInfoList.IsNullOrEmpty())
         {
@@ -424,11 +427,10 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     
     private void InitShardProvider()
     {
-        List<ShardGroup> shardGroupsOptions = _shardInitSetttings.Find(a => a.CollectionName == _type.Name)?.ShardGroups;
+        List<ShardGroup> shardGroups = _shardInitSettings.Find(a => a.CollectionName == _type.Name)?.ShardGroups;
         var properties = _type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        if (shardGroupsOptions.IsNullOrEmpty())
+        if (shardGroups.IsNullOrEmpty())
         {
-            _shardType = ShardType.NonShard;
             return;
         }
 
@@ -446,7 +448,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             }
         }
         
-        foreach (var shardGroup in shardGroupsOptions)
+        foreach (var shardGroup in shardGroups)
         {
             var shardingKeyList = new List<ShardingKey<TEntity>>();
             foreach (var shardKey in shardGroup.ShardKeys)
@@ -457,8 +459,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
             if (shardingKeyList.Count > 0)
             {
-                SetShardingKey(shardingKeyList);
-                _shardType = ShardType.Shard;
+                SetShardKeyInfoList(shardingKeyList);
             }
         }
     }
@@ -475,10 +476,4 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
         return lambda;
     }
-}
-
-public enum ShardType
-{
-    Shard,
-    NonShard
 }
