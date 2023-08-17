@@ -11,7 +11,7 @@ public interface IShardingKeyProvider<TEntity> where TEntity : class
 
     public Task<string> GetCollectionNameAsync(TEntity entity);
     
-    public Task<List<string>> GetCollectionNameAsync(List<TEntity> entitys);
+    public Task<List<string>> GetCollectionNameAsync(List<TEntity> entities);
     
     public bool IsShardingCollection();
 

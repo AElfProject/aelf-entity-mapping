@@ -7,7 +7,7 @@ public interface ICollectionNameProvider<TEntity>
 
     Task<List<string>> GetFullCollectionNameByEntityAsync(TEntity entity);
     
-    Task<List<string>> GetFullCollectionNameByEntityAsync(List<TEntity> entitys);
+    Task<List<string>> GetFullCollectionNameByEntityAsync(List<TEntity> entities);
 
     Task<string> GetFullCollectionNameByIdAsync<TKey>(TKey id);
 }
