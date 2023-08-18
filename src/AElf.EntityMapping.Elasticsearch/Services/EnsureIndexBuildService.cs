@@ -1,5 +1,6 @@
 using System.Reflection;
 using AElf.EntityMapping.Elasticsearch.Options;
+using AElf.EntityMapping.Elasticsearch.Sharding;
 using AElf.EntityMapping.Entities;
 using AElf.EntityMapping.Options;
 using Microsoft.Extensions.Options;
@@ -57,6 +58,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
                 //create non shard key route index
                 await _elasticIndexService.CreateCollectionRouteKeyIndexAsync(t, _elasticsearchOptions.NumberOfShards,
                     _elasticsearchOptions.NumberOfReplicas);
+                await CreateShardingCollectionTailIndexAsync();
             }
             else
             {
@@ -65,6 +67,14 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
             }
             
         }
+        
+    }
+
+    private async Task CreateShardingCollectionTailIndexAsync()
+    {
+        var indexName = (_entityMappingOptions.CollectionPrefix + "." + typeof(ShardingCollectionTail).Name).ToLower();
+        await _elasticIndexService.CreateIndexAsync(indexName, typeof(ShardingCollectionTail),
+            _elasticsearchOptions.NumberOfShards, _elasticsearchOptions.NumberOfReplicas);
     }
 
     private List<Type> GetTypesAssignableFrom<T>(Assembly assembly)

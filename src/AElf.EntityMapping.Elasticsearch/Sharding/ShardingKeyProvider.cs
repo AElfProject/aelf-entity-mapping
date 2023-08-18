@@ -114,7 +114,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     {
         if (conditions.IsNullOrEmpty())
         {
-            return null;
+            return new List<string>();
         }
 
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
@@ -134,7 +134,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
         if (filterConditions.IsNullOrEmpty())
         {
-            return null;
+            return new List<string>();
         }
 
         foreach (var condition in filterConditions)
@@ -146,7 +146,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
         if (filterShardingKeyInfos.IsNullOrEmpty())
         {
-            return null;
+            return new List<string>();
         }
 
         var resultCollectionNames = new List<string>();
@@ -405,8 +405,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public async Task AddOrUpdateAsync(ShardingCollectionTail model)
     {
         var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + typeof(ShardingCollectionTail).Name).ToLower();
-        await _elasticIndexService.CreateIndexAsync(indexName, typeof(ShardingCollectionTail),
-            _indexSettingOptions.NumberOfShards, _indexSettingOptions.NumberOfReplicas);
         var client = _elasticsearchClientProvider.GetClient();
         var exits = client.DocumentExists(DocumentPath<TEntity>.Id(new Id(model)), dd => dd.Index(indexName));
 
@@ -430,10 +428,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         ShardingCollectionTail searchDto)
     {
         var indexName = (_aelfEntityMappingOptions.CollectionPrefix + "." + typeof(ShardingCollectionTail).Name).ToLower();
-        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetShardingCollectionTailAsync into create: searchDto: {JsonConvert.SerializeObject(searchDto)},indexName:{indexName}");
-        await _elasticIndexService.CreateIndexAsync(indexName, typeof(ShardingCollectionTail),
-            _indexSettingOptions.NumberOfShards, _indexSettingOptions.NumberOfReplicas);
-        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetShardingCollectionTailAsync out create: searchDto: {JsonConvert.SerializeObject(searchDto)},indexName:{indexName}");
         var client = _elasticsearchClientProvider.GetClient();
         var mustQuery = new List<Func<QueryContainerDescriptor<ShardingCollectionTail>, QueryContainer>>();
         mustQuery.Add(q => q.Term(i => i.Field(f => f.EntityName).Value(searchDto.EntityName)));
