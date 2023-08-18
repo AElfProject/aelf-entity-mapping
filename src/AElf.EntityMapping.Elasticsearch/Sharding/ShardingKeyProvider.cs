@@ -99,90 +99,169 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
         return 0;
     }
+    
+    private async Task<long> GetShardingCollectionTailAsync(string tailPrefix)
+    {
+        var (total,shardingCollectionTailList) = await GetShardingCollectionTailAsync(new ShardingCollectionTail(){EntityName = _type.Name.ToLower(), TailPrefix = tailPrefix.ToLower()});
+        if (shardingCollectionTailList is null || total == 0)
+        {
+            return 0;
+        }
 
+        return shardingCollectionTailList.First().Tail;
+    }
     public async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
-        var indexName = _defaultCollectionName;
         if (conditions.IsNullOrEmpty())
         {
             return null;
         }
 
-        long min = 0;
-        long max = await GetShardingCollectionTailAsync(conditions);
-        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionName:  " +
-                               $"conditions: {JsonConvert.SerializeObject(conditions)},min:{min},max:{max}");
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
 
-        if (shardingKeyInfos.IsNullOrEmpty())
+        List<ShardingKeyInfo<TEntity>> filterShardingKeyInfos = shardingKeyInfos;
+        List<CollectionNameCondition> filterConditions = new List<CollectionNameCondition>();
+
+        foreach (var condition in conditions)
         {
-            return new List<string>() { indexName.ToLower() };
+            var existShardKeyName =
+                shardingKeyInfos.Exists(a => a.ShardKeys.Exists(b => b.ShardKeyName == condition.Key));
+            if (existShardKeyName)
+            {
+                filterConditions.Add(condition);
+            }
         }
-        
-        foreach (var shardingKeyInfo in shardingKeyInfos)
+
+        if (filterConditions.IsNullOrEmpty())
         {
-            var findGroup = false;
+            return null;
+        }
+
+        foreach (var condition in filterConditions)
+        {
+            filterShardingKeyInfos = filterShardingKeyInfos.FindAll(a => a.ShardKeys.Exists(b =>
+                (b.ShardKeyName == condition.Key && b.Value == condition.Value && b.StepType == StepType.None) ||
+                (b.ShardKeyName == condition.Key && b.StepType == StepType.Floor)));
+        }
+
+        if (filterShardingKeyInfos.IsNullOrEmpty())
+        {
+            return null;
+        }
+
+        var resultCollectionNames = new List<string>();
+        foreach (var shardingKeyInfo in filterShardingKeyInfos)
+        {
+            long minTail = 0;
+            long maxTail = 0;
+            var tailPrefix = "";
+            List<string> tailPrefixList = new List<string>();
             foreach (var shardKey in shardingKeyInfo.ShardKeys)
             {
+                var equalTypeCollectionName = new List<string>();
                 if (shardKey.StepType == StepType.None)
                 {
-                    var conditionValue = conditions.Find(a => a.Key == shardKey.ShardKeyName)?.Value.ToString();
-                    if (conditionValue == shardKey.Value)
-                    {
-                        indexName = indexName + "-" + conditionValue;
-                        findGroup = true;
-                    }
+                    tailPrefixList.Add(shardKey.Value);
                 }
                 else
                 {
-                    if(!findGroup) continue;
                     if (shardKey.StepType != StepType.Floor)
                     {
                         throw new Exception(shardKey.ShardKeyName + "need config StepType equal Floor");
                     }
 
+                    tailPrefix = tailPrefixList.JoinAsString("-");
+                    maxTail = await GetShardingCollectionTailAsync(tailPrefix);
                     var shardConditions = conditions.FindAll(a => a.Key == shardKey.ShardKeyName);
-                    foreach (var condition in shardConditions)
+                    foreach (var shardCondition in shardConditions)
                     {
-                        var conditionType = condition.Type;
-                        if (conditionType == ConditionType.Equal)
+                        if (shardCondition != null)
                         {
-                            indexName = indexName + "-" + (int.Parse(condition.Value.ToString()!) / int.Parse(shardKey.Step));
-                            return new List<string>() { indexName.ToLower() };
-                        }
+                            var conditionType = shardCondition.Type;
+                            if (conditionType == ConditionType.Equal)
+                            {
+                                var tail = (int.Parse(shardCondition.Value.ToString()!) / int.Parse(shardKey.Step));
+                                var collectionName = _defaultCollectionName + "-" + tailPrefix + "-" + tail;
+                                equalTypeCollectionName.Add(collectionName.ToLower());
+                            }
 
-                        if (conditionType == ConditionType.GreaterThan)
-                        {
-                            var value = (int.Parse(condition.Value.ToString()) / int.Parse(shardKey.Step));
-                            min = ((value + 1) % int.Parse(shardKey.Step) == 0) ? value + 1 : value;
-                        }
+                            if (conditionType == ConditionType.GreaterThan)
+                            {
+                                var value = (int.Parse(shardCondition.Value.ToString()) / int.Parse(shardKey.Step));
+                                minTail = ((value + 1) % int.Parse(shardKey.Step) == 0) ? value + 1 : value;
+                            }
 
-                        if (conditionType == ConditionType.GreaterThanOrEqual)
-                        {
-                            min = (int.Parse(condition.Value.ToString()) / int.Parse(shardKey.Step));
-                        }
+                            if (conditionType == ConditionType.GreaterThanOrEqual)
+                            {
+                                minTail = (int.Parse(shardCondition.Value.ToString()) / int.Parse(shardKey.Step));
+                            }
 
-                        if (conditionType == ConditionType.LessThan)
-                        {
-                            var value = (int.Parse(condition.Value.ToString()) / int.Parse(shardKey.Step));
-                            max = ((value - 1) % int.Parse(shardKey.Step) == 0)
-                                ? Math.Min(max, value - 1)
-                                : Math.Min(max, value);
-                        }
+                            if (conditionType == ConditionType.LessThan)
+                            {
+                                var value = (int.Parse(shardCondition.Value.ToString()) / int.Parse(shardKey.Step));
+                                maxTail = ((value - 1) % int.Parse(shardKey.Step) == 0)
+                                    ? Math.Min(maxTail, value - 1)
+                                    : Math.Min(maxTail, value);
+                            }
 
-                        if (conditionType == ConditionType.LessThanOrEqual)
-                        {
-                            max = Math.Min(max, (int.Parse(condition.Value.ToString()) / int.Parse(shardKey.Step)));
+                            if (conditionType == ConditionType.LessThanOrEqual)
+                            {
+                                maxTail = Math.Min(maxTail,
+                                    (int.Parse(shardCondition.Value.ToString()) / int.Parse(shardKey.Step)));
+                            }
                         }
                     }
+
+                    var collectionNames =
+                        await GetCollectionByRangeAsync(tailPrefix, minTail, maxTail, equalTypeCollectionName);
+                    resultCollectionNames.AddRange(collectionNames);
                 }
             }
-            if (findGroup) break;
         }
 
-        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionName jump:  " +
-                               $"conditions: {JsonConvert.SerializeObject(conditions)},min:{min},max:{max}");
-        List<string> collectionNames = new List<string>();
+        return resultCollectionNames.Distinct().ToList();
+    }
+
+    private async Task<bool> checkCollectionExistAsync(string collectionName)
+    {
+        var shardIndexNameExist = _existIndexShardDictionary.TryGetValue(collectionName, out var value);
+        if (shardIndexNameExist)
+        {
+            return true;
+        }
+        else
+        {
+            var client = _elasticsearchClientProvider.GetClient();
+            var exits = await client.Indices.ExistsAsync(collectionName);
+
+            if (exits.Exists)
+            {
+                _existIndexShardDictionary[collectionName] = true;
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private async Task<List<string>> GetCollectionByRangeAsync(string prefixTail, long min, long max, List<string> equalTypeCollectionNames)
+    {
+        var indexName = _defaultCollectionName;
+        var resultCollectionNames = new List<string>();
+        
+        if(!equalTypeCollectionNames.IsNullOrEmpty())
+        {
+            foreach (var equalTypeCollectionName in equalTypeCollectionNames)
+            {
+                bool exist = await checkCollectionExistAsync(_aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." +equalTypeCollectionName);
+                if (exist)
+                {
+                    resultCollectionNames.Add(equalTypeCollectionName);
+                }
+            }
+            return resultCollectionNames;
+        }
+        
+        
         if (min > max)
         {
             return new List<string>() { };
@@ -190,29 +269,16 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
         for (long i = min; i <= max; i++)
         {
-            var shardIndexName = (indexName + "-" + i).ToLower();
+            var shardIndexName = (indexName + "-" + prefixTail + "-" + i).ToLower();
             var fullIndexName = _aelfEntityMappingOptions.CollectionPrefix.ToLower() + "." + shardIndexName;
             
-            var shardIndexNameExist = _existIndexShardDictionary.TryGetValue(fullIndexName, out var value);
-            if (shardIndexNameExist)
+            var exist =  await checkCollectionExistAsync(fullIndexName);
+            if (exist)
             {
-                collectionNames.Add(shardIndexName);
-            }
-            else
-            {
-                var client = _elasticsearchClientProvider.GetClient();
-                var exits = await client.Indices.ExistsAsync(fullIndexName);
-
-                if (exits.Exists)
-                {
-                    _existIndexShardDictionary[fullIndexName] = true;
-                    collectionNames.Add(shardIndexName);
-                }
+                resultCollectionNames.Add(shardIndexName);
             }
         }
-
-        _logger.LogInformation($"GetCollectionName: min: {min} , max: {max}, conditions: {JsonConvert.SerializeObject(conditions)}, indexName: {JsonConvert.SerializeObject(collectionNames)}");
-        return collectionNames;
+        return resultCollectionNames;
     }
 
     public async Task<string> GetCollectionNameAsync(TEntity entity)
