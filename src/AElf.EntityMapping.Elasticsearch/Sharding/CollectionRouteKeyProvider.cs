@@ -18,12 +18,12 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
 public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEntity> where TEntity : class, IEntity<string>
 {
-    public IAbpLazyServiceProvider LazyServiceProvider { get; set; }
+    private IAbpLazyServiceProvider LazyServiceProvider { get; set; }
     private IElasticsearchRepository<RouteKeyCollection,string> _collectionRouteKeyIndexRepository => LazyServiceProvider
         .LazyGetRequiredService<IElasticsearchRepository<RouteKeyCollection,string>>();
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
-    private List<CollectionRouteKeyItem<TEntity>> _collectionRouteKeys { get; set; }
+    private List<CollectionRouteKeyItem<TEntity>> _collectionRouteKeys;
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
     private readonly ElasticsearchOptions _elasticsearchOptions;
@@ -164,8 +164,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
             selector, cancellationToken);
         return result.Found ? result.Source : null;
     }
-
-    //TODO: move to non shard key route provider
+    
     public async Task AddManyCollectionRouteKey(List<TEntity> modelList,List<string> fullCollectionNameList,CancellationToken cancellationToken = default)
     {
         if (_collectionRouteKeys!=null && _collectionRouteKeys.Any() && _shardingKeyProvider.IsShardingCollection())
@@ -183,7 +182,6 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 int indexNameCount = 0;
                 foreach (var item in modelList)
                 {
-                    //TODO: use func to get value
                     // var value = item.GetType().GetProperty(collectionRouteKey.FieldName)?.GetValue(item);
                     var value = collectionRouteKey.GetRouteKeyValueFunc(item);
                     string indexName = IndexNameHelper.RemoveCollectionPrefix(fullCollectionNameList[indexNameCount],
