@@ -58,13 +58,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
     private async Task<long> GetShardingCollectionTailAsync(string tailPrefix)
     {
-        var (total,shardingCollectionTailList) = await _shardingCollectionTailProvider.GetShardingCollectionTailAsync(new ShardingCollectionTail(){EntityName = _type.Name.ToLower(), TailPrefix = tailPrefix.ToLower()});
-        if (shardingCollectionTailList is null || total == 0)
-        {
-            return 0;
-        }
-
-        return shardingCollectionTailList.First().Tail;
+        return await _shardingCollectionTailProvider.GetShardingCollectionTailAsync(tailPrefix);
     }
     public async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
@@ -272,7 +266,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         }
         indexName = GetCollectionName(indexName, tailPrefix, tail);
         //add ShardingCollectionTail
-        await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(_defaultCollectionName, tailPrefix.ToLower(), tail);
+        await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), tail);
         return indexName;
     }
 
@@ -331,7 +325,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             collectionNames.Add(collectionName);
         }
         
-        await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(_defaultCollectionName, tailPrefix.ToLower(), maxTail);
+        await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), maxTail);
         return collectionNames;
     }
     
