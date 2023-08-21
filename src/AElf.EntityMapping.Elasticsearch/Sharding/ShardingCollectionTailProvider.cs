@@ -17,13 +17,13 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ShardingCollectionTailProvider<TEntity>> _logger;
-    private readonly IDistributedCache<Dictionary<string,long>> _collectionTailCache;
+    private readonly IDistributedCache<CollectionTailCacheItem> _collectionTailCache;
     private readonly string _typeName = typeof(TEntity).Name.ToLower();
 
     public ShardingCollectionTailProvider(IOptions<ElasticsearchOptions> indexSettingOptions,
         IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions,
         IElasticsearchClientProvider elasticsearchClientProvider,
-        ILogger<ShardingCollectionTailProvider<TEntity>> logger,IDistributedCache<Dictionary<string,long>> collectionTailCache)
+        ILogger<ShardingCollectionTailProvider<TEntity>> logger,IDistributedCache<CollectionTailCacheItem> collectionTailCache)
     {
         _indexSettingOptions = indexSettingOptions.Value;
         _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
@@ -39,7 +39,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
     {
         var indexName = GetFullName(nameof(ShardingCollectionTail));
         var client = _elasticsearchClientProvider.GetClient();
-        var exits = client.DocumentExists(DocumentPath<TEntity>.Id(new Id(model)), dd => dd.Index(indexName));
+        var exits = await client.DocumentExistsAsync(DocumentPath<TEntity>.Id(new Id(model)), dd => dd.Index(indexName));
 
         if (exits.Exists)
         {
@@ -60,33 +60,36 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
     public async Task<long> GetShardingCollectionTailAsync(string tailPrefix)
     {
         tailPrefix = tailPrefix.ToLower();
+        var cacheKey = GetCollectionTailCacheKey();
         long tail = 0;
-        var shardTailCache = _collectionTailCache.Get(_typeName);
-        if (shardTailCache != null)
+        var shardTailCacheItem = await _collectionTailCache.GetAsync(cacheKey);
+        if (shardTailCacheItem != null)
         {
+            var shardTailCache = shardTailCacheItem.CollectionTailDictionary;
             if (shardTailCache.TryGetValue(tailPrefix, out tail))
             {
                 return tail;
             }
         }
         var result = await GetShardingCollectionTailByEsAsync(new ShardingCollectionTail(){EntityName = _typeName, TailPrefix = tailPrefix});
-        if (result.Item1 > 0)
+        if (!result.IsNullOrEmpty())
         {
-            tail = result.Item2.First().Tail;
-            if (shardTailCache == null)
+            tail = result.First().Tail;
+            if (shardTailCacheItem == null)
             {
-                shardTailCache = new Dictionary<string, long>();
+                shardTailCacheItem = new CollectionTailCacheItem();
+                shardTailCacheItem.CollectionTailDictionary = new Dictionary<string, long>();
             }
 
-            shardTailCache.Add(tailPrefix, tail);
-            _collectionTailCache.Set(_typeName, shardTailCache);
+            shardTailCacheItem.CollectionTailDictionary.Add(tailPrefix, tail);
+            await _collectionTailCache.SetAsync(cacheKey, shardTailCacheItem);
             return tail;
         }
 
         return tail;
     }
 
-    private async Task<Tuple<long, List<ShardingCollectionTail>>> GetShardingCollectionTailByEsAsync(
+    private async Task<List<ShardingCollectionTail>> GetShardingCollectionTailByEsAsync(
         ShardingCollectionTail shardingCollectionTail)
     {
         var indexName = GetFullName(nameof(ShardingCollectionTail));
@@ -109,24 +112,23 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             throw new Exception($"Search document failed at index {indexName} :" + result.ServerError.Error.Reason);
         }
 
-        return new Tuple<long, List<ShardingCollectionTail>>(result.Total, result.Documents.ToList());
+        return result.Documents.ToList();
     }
 
     public async Task AddShardingCollectionTailAsync(string tailPrefix, long tail)
     {
         tailPrefix = tailPrefix.ToLower();
-        var result = await GetShardingCollectionTailByEsAsync(new ShardingCollectionTail(){EntityName = _typeName, TailPrefix = tailPrefix});
+        var shardingCollectionTailList = await GetShardingCollectionTailByEsAsync(new ShardingCollectionTail(){EntityName = _typeName, TailPrefix = tailPrefix});
 
-        List<ShardingCollectionTail> shardingCollectionTailList = result.Item2;
         if (shardingCollectionTailList.IsNullOrEmpty())
         {
             var shardingCollectionTail = new ShardingCollectionTail();
             shardingCollectionTail.EntityName = _typeName;
-            shardingCollectionTail.TailPrefix = tailPrefix.ToLower();
+            shardingCollectionTail.TailPrefix = tailPrefix;
             shardingCollectionTail.Tail = tail;
             shardingCollectionTail.Id = Guid.NewGuid().ToString();
             await AddOrUpdateAsync(shardingCollectionTail);
-            await ClearCacheAsync(_typeName);
+            await ClearCacheAsync(GetCollectionTailCacheKey());
             return;
         }
 
@@ -136,7 +138,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
         {
             shardingCollection.Tail = tail;
             await AddOrUpdateAsync(shardingCollection);
-            await ClearCacheAsync(_typeName);
+            await ClearCacheAsync(GetCollectionTailCacheKey());
         }
     }
     private string GetFullName(string collectionName)
@@ -144,6 +146,11 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
         return (_aelfEntityMappingOptions.CollectionPrefix + ElasticsearchConstants.CollectionPrefixSplit + collectionName).ToLower();
     }
 
+    private string GetCollectionTailCacheKey()
+    {
+        var cacheKey = $"{_aelfEntityMappingOptions.CollectionPrefix}_{_typeName}";
+        return cacheKey.ToLower();
+    }
     private async Task ClearCacheAsync(string cacheKey)
     {
         await _collectionTailCache.RemoveAsync(cacheKey);
