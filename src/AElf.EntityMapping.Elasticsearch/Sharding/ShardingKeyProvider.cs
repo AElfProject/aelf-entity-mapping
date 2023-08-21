@@ -55,11 +55,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
 
         return _shardKeyInfoList;
     }
-
-    private async Task<long> GetShardingCollectionTailAsync(string tailPrefix)
-    {
-        return await _shardingCollectionTailProvider.GetShardingCollectionTailAsync(tailPrefix);
-    }
+    
     public async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
         if (conditions.IsNullOrEmpty())
@@ -116,7 +112,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 else
                 {
                     tailPrefix = tailPrefixList.JoinAsString(ElasticsearchConstants.CollectionPrefixTailSplit);
-                    maxTail = await GetShardingCollectionTailAsync(tailPrefix);
+                    maxTail = await _shardingCollectionTailProvider.GetShardingCollectionTailAsync(tailPrefix);
                     var shardConditions = conditions.FindAll(a => a.Key == shardKey.ShardKeyName);
                     foreach (var shardCondition in shardConditions)
                     {
