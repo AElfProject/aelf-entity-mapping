@@ -18,9 +18,9 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
 public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEntity> where TEntity : class, IEntity<string>
 {
-    private IAbpLazyServiceProvider LazyServiceProvider { get; set; }
-    private IElasticsearchRepository<RouteKeyCollection,string> _collectionRouteKeyIndexRepository => LazyServiceProvider
-        .LazyGetRequiredService<IElasticsearchRepository<RouteKeyCollection,string>>();
+    private readonly IAbpLazyServiceProvider _lazyServiceProvider;
+    // private IElasticsearchRepository<RouteKeyCollection,string> _collectionRouteKeyIndexRepository => LazyServiceProvider
+    //     .LazyGetRequiredService<IElasticsearchRepository<RouteKeyCollection,string>>();
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IShardingKeyProvider<TEntity> _shardingKeyProvider;
     private List<CollectionRouteKeyItem<TEntity>> _collectionRouteKeys;
@@ -31,6 +31,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
 
     public CollectionRouteKeyProvider(IElasticsearchClientProvider elasticsearchClientProvider,
         IShardingKeyProvider<TEntity> shardingKeyProvider,
+        IAbpLazyServiceProvider lazyServiceProvider,
         IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions,
         IOptions<ElasticsearchOptions> elasticsearchOptions,
         ILogger<CollectionRouteKeyProvider<TEntity>> logger,
@@ -39,6 +40,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         _elasticIndexService = elasticIndexService;
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _shardingKeyProvider = shardingKeyProvider;
+        _lazyServiceProvider= lazyServiceProvider;
         _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
         _elasticsearchOptions = elasticsearchOptions.Value;
         _logger = logger;
@@ -110,6 +112,8 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                                    $"collectionRouteKeyIndexName: {collectionRouteKeyIndexName}");
             if (condition.Type == ConditionType.Equal)
             {
+                var _collectionRouteKeyIndexRepository = _lazyServiceProvider
+                    .LazyGetRequiredService<IElasticsearchRepository<RouteKeyCollection, string>>();
                 var collectionList = await _collectionRouteKeyIndexRepository.GetListAsync(x => x.CollectionRouteKey == fieldValue,
                     collectionRouteKeyIndexName);
                 _logger.LogInformation($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
