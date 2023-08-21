@@ -1,7 +1,5 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using AElf.EntityMapping.Elasticsearch.Options;
-using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Entities;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
@@ -18,19 +16,19 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
     private readonly ElasticsearchOptions _indexSettingOptions;
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
-    private readonly ILogger<ShardingKeyProvider<TEntity>> _logger;
-    private readonly IDistributedCache<Dictionary<string,long>> _collectionTaildistributedCache;
+    private readonly ILogger<ShardingCollectionTailProvider<TEntity>> _logger;
+    private readonly IDistributedCache<Dictionary<string,long>> _collectionTailCache;
     private readonly string _typeName = typeof(TEntity).Name.ToLower();
 
     public ShardingCollectionTailProvider(IOptions<ElasticsearchOptions> indexSettingOptions,
         IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions,
         IElasticsearchClientProvider elasticsearchClientProvider,
-        ILogger<ShardingKeyProvider<TEntity>> logger,IDistributedCache<Dictionary<string,long>> collectionTaildistributedCache)
+        ILogger<ShardingCollectionTailProvider<TEntity>> logger,IDistributedCache<Dictionary<string,long>> collectionTailCache)
     {
         _indexSettingOptions = indexSettingOptions.Value;
         _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
         _elasticsearchClientProvider = elasticsearchClientProvider;
-        _collectionTaildistributedCache = collectionTaildistributedCache;
+        _collectionTailCache = collectionTailCache;
         _logger = logger;
     }
 
@@ -63,7 +61,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
     {
         tailPrefix = tailPrefix.ToLower();
         long tail = 0;
-        var shardTailCache = _collectionTaildistributedCache.Get(_typeName);
+        var shardTailCache = _collectionTailCache.Get(_typeName);
         if (shardTailCache != null)
         {
             if (shardTailCache.TryGetValue(tailPrefix, out tail))
@@ -81,7 +79,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             }
 
             shardTailCache.Add(tailPrefix, tail);
-            _collectionTaildistributedCache.Set(_typeName, shardTailCache);
+            _collectionTailCache.Set(_typeName, shardTailCache);
             return tail;
         }
 
@@ -148,6 +146,6 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
 
     private async Task ClearCacheAsync(string cacheKey)
     {
-        await _collectionTaildistributedCache.RemoveAsync(cacheKey);
+        await _collectionTailCache.RemoveAsync(cacheKey);
     }
 }
