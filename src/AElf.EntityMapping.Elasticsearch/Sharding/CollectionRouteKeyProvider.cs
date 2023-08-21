@@ -140,7 +140,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         var collectionRouteKey= _collectionRouteKeys[0];
         var collectionRouteKeyIndexName = IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,_aelfEntityMappingOptions.CollectionPrefix);
         // var routeIndex=await _collectionRouteKeyIndexRepository.GetAsync(id, collectionRouteKeyIndexName);
-        var routeIndex = await GetCollectionRouteKeyIndexAsync(id, collectionRouteKeyIndexName);
+        var routeIndex = await GetRouteKeyCollectionAsync(id, collectionRouteKeyIndexName);
         if (routeIndex != null)
         {
             collectionName = routeIndex.CollectionName;
@@ -149,12 +149,12 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         return collectionName;
     }
 
-    public Task<List<CollectionRouteKeyItem<TEntity>>> GetCollectionRouteKeysAsync()
+    public Task<List<CollectionRouteKeyItem<TEntity>>> GetCollectionRouteKeyItemsAsync()
     {
         return Task.FromResult(_collectionRouteKeys);
     }
 
-    public async Task<IRouteKeyCollection> GetCollectionRouteKeyIndexAsync(string id, string indexName, CancellationToken cancellationToken = default)
+    public async Task<IRouteKeyCollection> GetRouteKeyCollectionAsync(string id, string indexName, CancellationToken cancellationToken = default)
     {
         var client = _elasticsearchClientProvider.GetClient();
         var selector = new Func<GetDescriptor<RouteKeyCollection>, IGetRequest>(s => s
@@ -254,7 +254,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,_aelfEntityMappingOptions.CollectionPrefix);
                 var collectionRouteKeyIndexId = model.Id.ToString();
                 var collectionRouteKeyIndexModel =
-                    await GetCollectionRouteKeyIndexAsync(collectionRouteKeyIndexId,
+                    await GetRouteKeyCollectionAsync(collectionRouteKeyIndexId,
                         collectionRouteKeyIndexName);
                 // var collectionRouteKeyIndexModel = GetAsync((TKey)Convert.ChangeType(collectionRouteKeyIndexId, typeof(TKey)), collectionRouteKeyIndexName)  as RouteKeyCollection;
 

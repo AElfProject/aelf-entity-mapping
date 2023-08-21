@@ -13,9 +13,9 @@ public interface ICollectionRouteKeyProvider<TEntity> where TEntity : class
 
     Task<string> GetCollectionNameAsync(string id);
 
-    Task<List<CollectionRouteKeyItem<TEntity>>> GetCollectionRouteKeysAsync();
+    Task<List<CollectionRouteKeyItem<TEntity>>> GetCollectionRouteKeyItemsAsync();
 
-    Task<IRouteKeyCollection> GetCollectionRouteKeyIndexAsync(string id, string collectionName, CancellationToken cancellationToken = default);
+    Task<IRouteKeyCollection> GetRouteKeyCollectionAsync(string id, string collectionName, CancellationToken cancellationToken = default);
 
     Task AddManyCollectionRouteKeyAsync(List<TEntity> modelList, List<string> fullCollectionNameList, CancellationToken cancellationToken = default);
 
