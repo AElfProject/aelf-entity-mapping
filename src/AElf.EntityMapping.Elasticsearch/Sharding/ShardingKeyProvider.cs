@@ -219,47 +219,13 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     public async Task<string> GetCollectionNameAsync(TEntity entity)
     {
         var indexName = _defaultCollectionName;
-        var tail = 0;
-        var tailPrefix = "";
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
         if (shardingKeyInfos.IsNullOrEmpty())
         {
             return indexName.ToLower();
         }
-        
-        foreach (var shardKeyInfo in shardingKeyInfos)
-        {
-            List<long> collectionNameTailList = new List<long>();
-            List<string> collectionNameTailPrefixList = new List<string>();
-            foreach (var shardKey in shardKeyInfo.ShardKeys)
-            {
-                var funcValue = shardKey.Func(entity).ToString();
-                if (shardKey.StepType == StepType.None)
-                {
-                    //The field values of entity's sub table must be consistent with the configuration in the sub table configuration file
-                    if (funcValue == shardKey.Value)
-                    {
-                        collectionNameTailPrefixList.Add(shardKey.Value);
-                    }
-                }
-                else
-                {
-                    tail = int.Parse(funcValue!) / int.Parse(shardKey.Step);
-                    collectionNameTailList.Add(tail);
-                }
-            }
 
-            if ((collectionNameTailPrefixList.Count + collectionNameTailList.Count) == shardingKeyInfos.Count)
-            {
-                tailPrefix = collectionNameTailPrefixList.JoinAsString(ElasticsearchConstants.CollectionPrefixTailSplit);
-                break;
-            }
-            else
-            {
-                collectionNameTailList.Clear();
-                collectionNameTailPrefixList.Clear();
-            }
-        }
+        var (tailPrefix, tail) = GetShardingKeyTail(shardingKeyInfos, entity);
         indexName = GetCollectionName(indexName, tailPrefix, tail);
         //add ShardingCollectionTail
         await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), tail);
@@ -280,43 +246,9 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
       
         foreach (var entity in entities)
         {
-            tailPrefix = "";
             var collectionName = _defaultCollectionName;
-            var tail = -1;
-            foreach (var shardingKeyInfo in shardingKeyInfos)
-            {
-                List<long> collectionNameTailList = new List<long>();
-                List<string> collectionNameTailPrefixList = new List<string>();
-                foreach (var shardKey in shardingKeyInfo.ShardKeys)
-                {
-                    var funcValue = shardKey.Func(entity).ToString();
-                    if (shardKey.StepType == StepType.None)
-                    {
-                        //The field values of entity's sub table must be consistent with the configuration in the sub table configuration file
-                        if (funcValue == shardKey.Value)
-                        {
-                            collectionNameTailPrefixList.Add(shardKey.Value);
-                        }
-                    }
-                    else
-                    {
-                        tail = int.Parse(funcValue!) / int.Parse(shardKey.Step);
-                        maxTail = Math.Max(maxTail, tail);
-                        collectionNameTailList.Add(maxTail);
-                    }
-                }
-                if ((collectionNameTailPrefixList.Count + collectionNameTailList.Count) == shardingKeyInfos.Count)
-                {
-                    tailPrefix = collectionNameTailPrefixList.JoinAsString(ElasticsearchConstants.CollectionPrefixTailSplit);
-                    break;
-                }
-                else
-                {
-                    collectionNameTailList.Clear();
-                    collectionNameTailPrefixList.Clear();
-                }
-            }
-
+            (tailPrefix,var tail) = GetShardingKeyTail(shardingKeyInfos, entity);
+            maxTail = Math.Max(maxTail, tail);
             collectionName = GetCollectionName(collectionName, tailPrefix, tail);
             collectionNames.Add(collectionName);
         }
@@ -324,7 +256,50 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), maxTail);
         return collectionNames;
     }
-    
+
+    private Tuple<string, long> GetShardingKeyTail(List<ShardingKeyInfo<TEntity>> shardingKeyInfos, TEntity entity)
+    {
+        var tailPrefix = "";
+        var tail = -1;
+        foreach (var shardingKeyInfo in shardingKeyInfos)
+        {
+            List<long> collectionNameTailList = new List<long>();
+            List<string> collectionNameTailPrefixList = new List<string>();
+            foreach (var shardKey in shardingKeyInfo.ShardKeys)
+            {
+                var funcValue = shardKey.Func(entity).ToString();
+                if (shardKey.StepType == StepType.None)
+                {
+                    //The field values of entity's sub table must be consistent with the configuration in the sub table configuration file
+                    if (funcValue == shardKey.Value)
+                    {
+                        collectionNameTailPrefixList.Add(shardKey.Value);
+                    }
+                }
+                else
+                {
+                    tail = int.Parse(funcValue!) / int.Parse(shardKey.Step);
+                    //maxTail = Math.Max(maxTail, tail);
+                    collectionNameTailList.Add(tail);
+                }
+            }
+
+            if ((collectionNameTailPrefixList.Count + collectionNameTailList.Count) == shardingKeyInfos.Count)
+            {
+                tailPrefix =
+                    collectionNameTailPrefixList.JoinAsString(ElasticsearchConstants.CollectionPrefixTailSplit);
+                break;
+            }
+            else
+            {
+                collectionNameTailList.Clear();
+                collectionNameTailPrefixList.Clear();
+            }
+        }
+
+        return new Tuple<string, long>(tailPrefix, tail);
+    }
+
     public bool IsShardingCollection()
     {
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();

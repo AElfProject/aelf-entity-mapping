@@ -148,7 +148,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
 
     private string GetCollectionTailCacheKey()
     {
-        var cacheKey = $"{_aelfEntityMappingOptions.CollectionPrefix}_{_typeName}";
+        var cacheKey = $"{ElasticsearchConstants.CollectionTailCacheKeyPrefix}_{_typeName}";
         return cacheKey.ToLower();
     }
     private async Task ClearCacheAsync(string cacheKey)
