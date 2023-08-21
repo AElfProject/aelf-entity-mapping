@@ -22,14 +22,14 @@ public class CollectionRouteKeyProviderTests: AElfElasticsearchTestBase
     }
 
     [Fact]
-    public async Task GetNonShardKeys_Test()
+    public async Task GetRouteKeys_Test()
     {
-        List<CollectionRouteKeyItem<BlockIndex>> nonShardKeys = await _blockIndexCollectionRouteKeyProvider.GetNonShardKeysAsync();
+        List<CollectionRouteKeyItem<BlockIndex>> routeKeys = await _blockIndexCollectionRouteKeyProvider.GetCollectionRouteKeyItemsAsync();
         
-        nonShardKeys.Count.ShouldBe(1);
-        nonShardKeys[0].FieldName.ShouldBe(nameof(BlockIndex.BlockHash));
-        // nonShardKeys[0].FieldValueType.ShouldBe(typeof(string).ToString());
-        // nonShardKeys[0].IsRouteKey.ShouldBeTrue();
+        routeKeys.Count.ShouldBe(1);
+        routeKeys[0].FieldName.ShouldBe(nameof(BlockIndex.BlockHash));
+        // routeKeys[0].FieldValueType.ShouldBe(typeof(string).ToString());
+        // routeKeys[0].IsRouteKey.ShouldBeTrue();
     }
 
     [Fact]
@@ -103,18 +103,18 @@ public class CollectionRouteKeyProviderTests: AElfElasticsearchTestBase
     }
 
     [Fact]
-    public async Task GetNonShardKeyRouteIndex_Test()
+    public async Task GetCollectionRouteKeyIndex_Test()
     {
         var routeIndex = $"{_option.CollectionPrefix.ToLower()}.blockindex.blockhash.route";
         await InitBlocksAsync();
 
-        var route = await _blockIndexCollectionRouteKeyProvider.GetNonShardKeyRouteIndexAsync("block1", routeIndex);
+        var route = await _blockIndexCollectionRouteKeyProvider.GetRouteKeyCollectionAsync("block1", routeIndex);
         route.Id.ShouldBe("block1");
         route.CollectionRouteKey.ShouldBe("BlockHash1");
         // route.ShardCollectionName.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-0");
         route.CollectionName.ShouldBe($"blockindex-aelf-0");
         
-        route = await _blockIndexCollectionRouteKeyProvider.GetNonShardKeyRouteIndexAsync("block6", routeIndex);
+        route = await _blockIndexCollectionRouteKeyProvider.GetRouteKeyCollectionAsync("block6", routeIndex);
         route.Id.ShouldBe("block6");
         route.CollectionRouteKey.ShouldBe("BlockHash6");
         // route.ShardCollectionName.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");

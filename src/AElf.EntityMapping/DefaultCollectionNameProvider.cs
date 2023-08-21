@@ -26,9 +26,9 @@ public class DefaultCollectionNameProvider<TEntity> : CollectionNameProviderBase
         return Task.FromResult(new List<string> { GetDefaultCollectionName() });
     }
 
-    protected override async Task<string> GetCollectionNameByIdAsync<TKey>(TKey id)
+    protected override Task<string> GetCollectionNameByIdAsync<TKey>(TKey id)
     {
-        return GetDefaultCollectionName();
+        return Task.FromResult(GetDefaultCollectionName());
     }
 
     protected override string FormatCollectionName(string name)

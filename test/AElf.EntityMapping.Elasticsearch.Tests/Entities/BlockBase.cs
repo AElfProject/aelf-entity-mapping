@@ -9,7 +9,7 @@ public class BlockBase: AElfIndexerEntity<string>,IBlockchainData
     [Keyword]
      [ShardPropertyAttributes("ChainId",1)]
     public string ChainId { get; set; }
-    [CollectionRoutekey]
+    [CollectionRouteKey]
     [Keyword]public string BlockHash { get; set; }
     [ShardPropertyAttributes("BlockHeight",2)]
     public long BlockHeight { get; set; }

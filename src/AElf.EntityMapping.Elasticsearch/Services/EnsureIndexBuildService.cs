@@ -47,7 +47,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
         {
             var indexName = IndexNameHelper.GetDefaultFullIndexName(t,_entityMappingOptions.CollectionPrefix);
             
-            if (_entityMappingOptions.IsShardingCollection(t))
+            if (IsShardingCollection(t))
             {
                 //if shard index, create index Template
                 var indexTemplateName = indexName + "-template";
@@ -57,7 +57,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
                 //create index marked field cache
                 // await _elasticIndexService.InitializeCollectionRouteKeyCacheAsync(t);
                 //create non shard key route index
-                await _elasticIndexService.CreateNonShardKeyRouteIndexAsync(t, _elasticsearchOptions.NumberOfShards,
+                await _elasticIndexService.CreateCollectionRouteKeyIndexAsync(t, _elasticsearchOptions.NumberOfShards,
                     _elasticsearchOptions.NumberOfReplicas);
                 await CreateShardingCollectionTailIndexAsync();
             }
@@ -85,6 +85,14 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
             .Where(type => compareType.IsAssignableFrom(type) && !compareType.IsAssignableFrom(type.BaseType) &&
                            !type.IsAbstract && type.IsClass && compareType != type)
             .Cast<Type>().ToList();
+    }
+    
+    private bool IsShardingCollection(Type type)
+    {
+        if (_entityMappingOptions == null || _entityMappingOptions.ShardInitSettings == null)
+            return false;
+        var options = _entityMappingOptions.ShardInitSettings.Find(a => a.CollectionName == type.Name);
+        return options != null;
     }
     
 

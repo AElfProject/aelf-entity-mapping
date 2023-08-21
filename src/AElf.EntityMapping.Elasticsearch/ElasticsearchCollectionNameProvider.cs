@@ -1,5 +1,4 @@
 using AElf.EntityMapping.Elasticsearch.Services;
-using AElf.EntityMapping.Elasticsearch.Sharding;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Logging;
