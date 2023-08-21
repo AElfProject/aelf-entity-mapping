@@ -14,7 +14,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
 
     private List<ShardingKeyInfo<TEntity>> _shardKeyInfoList;
-    private Dictionary<string, bool> _existIndexShardDictionary = new Dictionary<string, bool>();
+    private readonly Dictionary<string, bool> _existIndexShardDictionary = new Dictionary<string, bool>();
     private readonly Type _type = typeof(TEntity);
     private readonly string _defaultCollectionName;
     private readonly IShardingCollectionTailProvider<TEntity> _shardingCollectionTailProvider;
