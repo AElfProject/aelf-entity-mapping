@@ -149,9 +149,9 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         return collectionName;
     }
 
-    public async Task<List<CollectionRouteKeyItem<TEntity>>> GetCollectionRouteKeysAsync()
+    public Task<List<CollectionRouteKeyItem<TEntity>>> GetCollectionRouteKeysAsync()
     {
-        return _collectionRouteKeys;
+        return Task.FromResult(_collectionRouteKeys);
     }
 
     public async Task<IRouteKeyCollection> GetCollectionRouteKeyIndexAsync(string id, string indexName, CancellationToken cancellationToken = default)
@@ -165,7 +165,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         return result.Found ? result.Source : null;
     }
     
-    public async Task AddManyCollectionRouteKey(List<TEntity> modelList,List<string> fullCollectionNameList,CancellationToken cancellationToken = default)
+    public async Task AddManyCollectionRouteKeyAsync(List<TEntity> modelList,List<string> fullCollectionNameList,CancellationToken cancellationToken = default)
     {
         if (_collectionRouteKeys!=null && _collectionRouteKeys.Any() && _shardingKeyProvider.IsShardingCollection())
         {
@@ -203,7 +203,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         }
     }
 
-    public async Task AddCollectionRouteKey(TEntity model,string fullCollectionName,CancellationToken cancellationToken = default)
+    public async Task AddCollectionRouteKeyAsync(TEntity model,string fullCollectionName,CancellationToken cancellationToken = default)
     {
         if (!_shardingKeyProvider.IsShardingCollection())
         {
@@ -238,7 +238,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         }
     }
 
-    public async Task UpdateCollectionRouteKey(TEntity model, CancellationToken cancellationToken = default)
+    public async Task UpdateCollectionRouteKeyAsync(TEntity model, CancellationToken cancellationToken = default)
     {
         if (!_shardingKeyProvider.IsShardingCollection())
         {
@@ -275,7 +275,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         }
     }
 
-    public async Task DeleteManyCollectionRouteKey(List<TEntity> modelList,CancellationToken cancellationToken = default)
+    public async Task DeleteManyCollectionRouteKeyAsync(List<TEntity> modelList,CancellationToken cancellationToken = default)
     {
         if (_collectionRouteKeys!=null && _collectionRouteKeys.Any() && _shardingKeyProvider.IsShardingCollection())
         {
@@ -299,7 +299,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         }
     }
 
-    public async Task DeleteCollectionRouteKey(string id, CancellationToken cancellationToken = default)
+    public async Task DeleteCollectionRouteKeyAsync(string id, CancellationToken cancellationToken = default)
     {
         if (!_shardingKeyProvider.IsShardingCollection())
         {

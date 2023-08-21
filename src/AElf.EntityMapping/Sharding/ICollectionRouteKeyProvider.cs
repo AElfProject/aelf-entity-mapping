@@ -17,14 +17,14 @@ public interface ICollectionRouteKeyProvider<TEntity> where TEntity : class
 
     Task<IRouteKeyCollection> GetCollectionRouteKeyIndexAsync(string id, string collectionName, CancellationToken cancellationToken = default);
 
-    Task AddManyCollectionRouteKey(List<TEntity> modelList, List<string> fullCollectionNameList, CancellationToken cancellationToken = default);
+    Task AddManyCollectionRouteKeyAsync(List<TEntity> modelList, List<string> fullCollectionNameList, CancellationToken cancellationToken = default);
 
-    Task AddCollectionRouteKey(TEntity model, string fullCollectionName, CancellationToken cancellationToken = default);
+    Task AddCollectionRouteKeyAsync(TEntity model, string fullCollectionName, CancellationToken cancellationToken = default);
 
-    Task UpdateCollectionRouteKey(TEntity model, CancellationToken cancellationToken = default);
+    Task UpdateCollectionRouteKeyAsync(TEntity model, CancellationToken cancellationToken = default);
 
-    Task DeleteManyCollectionRouteKey(List<TEntity> modelList, CancellationToken cancellationToken = default);
+    Task DeleteManyCollectionRouteKeyAsync(List<TEntity> modelList, CancellationToken cancellationToken = default);
 
-    Task DeleteCollectionRouteKey(string id, CancellationToken cancellationToken = default);
+    Task DeleteCollectionRouteKeyAsync(string id, CancellationToken cancellationToken = default);
 
 }
