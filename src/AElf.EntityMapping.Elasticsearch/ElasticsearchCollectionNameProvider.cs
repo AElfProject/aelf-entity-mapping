@@ -37,33 +37,22 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
 
     protected override async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
-        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync:  " +
-                               $"conditions: {JsonConvert.SerializeObject(conditions)}");
-
-        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync:  " +
-                               $"IsShardingCollection: {!_entityMappingOptions.IsShardingCollection(typeof(TEntity))}");
-        if (!_entityMappingOptions.IsShardingCollection(typeof(TEntity)))
+        _logger.LogInformation("ElasticsearchCollectionNameProvider.GetCollectionNameAsync: conditions:{conditions}, IsShardingCollection:{IsShardingCollection}",JsonConvert.SerializeObject(conditions), !_shardingKeyProvider.IsShardingCollection());
+        if (!_shardingKeyProvider.IsShardingCollection())
             return new List<string> { GetDefaultCollectionName() };
         
         var shardKeyCollectionNames = await _shardingKeyProvider.GetCollectionNameAsync(conditions);
-        var nonShardKeyCollectionNames =
+        var routeKeyCollectionNames =
             await _collectionRouteKeyProvider.GetCollectionNameAsync(conditions);
 
-        if (shardKeyCollectionNames.Count > 0 && nonShardKeyCollectionNames.Count > 0)
+        if (shardKeyCollectionNames.Count > 0 && routeKeyCollectionNames.Count > 0)
         {
-            _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync1:  " +
-                                   $"conditions: {JsonConvert.SerializeObject(conditions)}, " +
-                                   $"shardKeyCollectionNames: {JsonConvert.SerializeObject(shardKeyCollectionNames)}," +
-                                   $"nonShardKeyCollectionNames:{JsonConvert.SerializeObject(nonShardKeyCollectionNames)}");
+            _logger.LogInformation("ElasticsearchCollectionNameProvider.GetCollectionNameAsync1:conditions:{conditions},shardKeyCollectionNames: {shardKeyCollectionNames},routeKeyCollectionNames:{routeKeyCollectionNames}",
+                JsonConvert.SerializeObject(conditions),JsonConvert.SerializeObject(shardKeyCollectionNames),JsonConvert.SerializeObject(routeKeyCollectionNames));
 
-            return shardKeyCollectionNames.Intersect(nonShardKeyCollectionNames).ToList();
+            return shardKeyCollectionNames.Intersect(routeKeyCollectionNames).ToList();
         }
-        _logger.LogInformation($"ElasticsearchCollectionNameProvider.GetCollectionNameAsync2:  " +
-                               $"conditions: {JsonConvert.SerializeObject(conditions)}, " +
-                               $"shardKeyCollectionNames: {JsonConvert.SerializeObject(shardKeyCollectionNames)}," +
-                               $"nonShardKeyCollectionNames:{JsonConvert.SerializeObject(nonShardKeyCollectionNames)}");
-
-        return shardKeyCollectionNames.Concat(nonShardKeyCollectionNames).ToList();
+        return shardKeyCollectionNames.Concat(routeKeyCollectionNames).ToList();
     }
 
     protected override  async Task<List<string>> GetCollectionNameByEntityAsync(TEntity entity)
@@ -71,7 +60,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         if (entity == null)
             return new List<string> { GetDefaultCollectionName() };
 
-        if (!_entityMappingOptions.IsShardingCollection(typeof(TEntity)))
+        if (!_shardingKeyProvider.IsShardingCollection())
             return new List<string> { GetDefaultCollectionName() };
         var shardKeyCollectionName = await _shardingKeyProvider.GetCollectionNameAsync(entity);
         return new List<string>() { shardKeyCollectionName };
@@ -82,14 +71,14 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         if (entities == null || entities.Count == 0)
             return new List<string> { GetDefaultCollectionName() };
         
-        return _entityMappingOptions.IsShardingCollection(typeof(TEntity))
+        return _shardingKeyProvider.IsShardingCollection()
             ? await _shardingKeyProvider.GetCollectionNameAsync(entities)
             : new List<string> { GetDefaultCollectionName() };
     }
 
     protected override async Task<string> GetCollectionNameByIdAsync<TKey>(TKey id)
     {
-        if (!_entityMappingOptions.IsShardingCollection(typeof(TEntity))) 
+        if (!_shardingKeyProvider.IsShardingCollection()) 
             return GetDefaultCollectionName();
         return await _collectionRouteKeyProvider.GetCollectionNameAsync(id.ToString());
     }

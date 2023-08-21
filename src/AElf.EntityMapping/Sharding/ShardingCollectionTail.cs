@@ -2,7 +2,7 @@ using AElf.EntityMapping.Entities;
 using Nest;
 using Volo.Abp.Domain.Entities;
 
-namespace AElf.EntityMapping.Elasticsearch.Sharding;
+namespace AElf.EntityMapping.Sharding;
 
 public class ShardingCollectionTail:Entity,IEntity<string>,IEntityMappingEntity
 {

@@ -3,6 +3,7 @@ using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Elasticsearch.Sharding;
 using AElf.EntityMapping.Entities;
 using AElf.EntityMapping.Options;
+using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Threading;
