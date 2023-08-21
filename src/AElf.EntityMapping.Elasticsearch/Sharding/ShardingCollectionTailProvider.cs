@@ -19,6 +19,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
     private readonly ILogger<ShardingCollectionTailProvider<TEntity>> _logger;
     private readonly IDistributedCache<CollectionTailCacheItem> _collectionTailCache;
     private readonly string _typeName = typeof(TEntity).Name.ToLower();
+    private const string CollectionTailCacheKeyPrefix = "CollectionTail";
 
     public ShardingCollectionTailProvider(IOptions<ElasticsearchOptions> indexSettingOptions,
         IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions,
@@ -148,7 +149,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
 
     private string GetCollectionTailCacheKey()
     {
-        var cacheKey = $"{ElasticsearchConstants.CollectionTailCacheKeyPrefix}_{_typeName}";
+        var cacheKey = $"{CollectionTailCacheKeyPrefix}_{_typeName}";
         return cacheKey.ToLower();
     }
     private async Task ClearCacheAsync(string cacheKey)
