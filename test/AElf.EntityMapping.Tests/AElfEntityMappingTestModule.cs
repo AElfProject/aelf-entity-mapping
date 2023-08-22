@@ -51,9 +51,43 @@ public class AElfEntityMappingTestModule : AbpModule
                             Value = "0",
                             Step = "5",
                             StepType = StepType.Floor
-                        }
+                        }/*,
+                        new ShardKey()
+                        {
+                        Name = "Confirmed",
+                        Value = "True",
+                        Step = "",
+                        StepType = StepType.None
+                    }*/
                     }
                 },
+                /*new ShardGroup()
+                {
+                    ShardKeys = new List<ShardKey>()
+                    {
+                        new ShardKey()
+                        {
+                            Name = "ChainId",
+                            Value = "AELF",
+                            Step = "",
+                            StepType = StepType.None
+                        },
+                        new ShardKey()
+                        {
+                            Name = "BlockHeight",
+                            Value = "0",
+                            Step = "5",
+                            StepType = StepType.Floor
+                        },
+                        new ShardKey()
+                        {
+                            Name = "Confirmed",
+                            Value = "False",
+                            Step = "",
+                            StepType = StepType.None
+                        }
+                    }
+                },*/
                 new ShardGroup()
                 {
                     ShardKeys = new List<ShardKey>()
@@ -71,9 +105,45 @@ public class AElfEntityMappingTestModule : AbpModule
                             Value = "0",
                             Step = "10",
                             StepType = StepType.Floor
+                        }/*,
+                        new ShardKey()
+                        {
+                            Name = "Confirmed",
+                            Value = "True",
+                            Step = "",
+                            StepType = StepType.None
+                            
+                        }*/
+                    }
+                }/*,
+                new ShardGroup()
+                {
+                    ShardKeys = new List<ShardKey>()
+                    {
+                        new ShardKey()
+                        {
+                            Name = "ChainId",
+                            Value = "tDVV",
+                            Step = "",
+                            StepType = StepType.None
+                        },
+                        new ShardKey()
+                        {
+                            Name = "BlockHeight",
+                            Value = "0",
+                            Step = "10",
+                            StepType = StepType.Floor
+                        },
+                        new ShardKey()
+                        {
+                            Name = "Confirmed",
+                            Value = "False",
+                            Step = "",
+                            StepType = StepType.None
+                            
                         }
                     }
-                }
+                }*/
             };
 
             ShardInitSetting logEventIndexDto = new ShardInitSetting();

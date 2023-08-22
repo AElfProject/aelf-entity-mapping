@@ -284,7 +284,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 }
             }
 
-            if ((collectionNameTailPrefixList.Count + collectionNameTailList.Count) == shardingKeyInfos.Count)
+            if ((collectionNameTailPrefixList.Count + collectionNameTailList.Count) == shardingKeyInfo.ShardKeys.Count)
             {
                 tailPrefix =
                     collectionNameTailPrefixList.JoinAsString(ElasticsearchConstants.CollectionPrefixTailSplit);

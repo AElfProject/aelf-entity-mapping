@@ -1,4 +1,5 @@
-﻿using AElf.EntityMapping.Options;
+﻿using System.Collections;
+using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -48,7 +49,7 @@ namespace AElf.EntityMapping
                         throw new Exception("AElfEntityMappingOptions.ShardGroups config cant be null");
                     }
                     
-                    Dictionary<string,string> shardKeyDic = new Dictionary<string, string>();
+                    Dictionary<string,bool> shardKeyDic = new Dictionary<string, bool>();
                     foreach (var shardGroup in shardGroups)
                     {
                         var shardKeys = shardGroup.ShardKeys;
@@ -56,6 +57,8 @@ namespace AElf.EntityMapping
                         {
                             throw new Exception("AElfEntityMappingOptions.ShardGroups.ShardKeys config cant be null");
                         }
+
+                        List<string> shardKeyList = new List<string>();
 
                         foreach (var shardKey in shardKeys)
                         {
@@ -75,17 +78,19 @@ namespace AElf.EntityMapping
                                 continue;
                             }
 
-                            if (!shardKeyDic.TryGetValue(shardKey.Name, out var value))
+                            if (shardKey.StepType == StepType.None)
                             {
-                                shardKeyDic.Add(shardKey.Name, shardKey.Value);
+                                shardKeyList.Add(shardKey.Value);
                             }
-                            else
-                            {
-                                if (value == shardKey.Value)
-                                {
-                                    throw new Exception($"AElfEntityMappingOptions.ShardGroups.ShardKeys.Value config is not correct,  StepType.None Value:{value} must be not consistent");
-                                }
-                            }
+                        }
+                        
+                        if (!shardKeyDic.TryGetValue(shardKeyList.JoinAsString("-"), out var value))
+                        {
+                            shardKeyDic.Add(shardKeyList.JoinAsString("-"), true);
+                        }
+                        else
+                        { 
+                            throw new Exception($"AElfEntityMappingOptions.ShardGroups.ShardKeys.Value config is not correct,  StepType.None Value:{value} must be not consistent");
                         }
                         
                     }

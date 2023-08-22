@@ -327,5 +327,87 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             Assert.True(results.Count == 4);
 
         }
+        
+        /*[Fact]
+        public async Task GetCollectionNameByMultiShardKey()
+        {
+            {
+                var blockIndex =  new BlockIndex
+                {
+                    Id = "block001",
+                    BlockHash = "BlockHash001",
+                    BlockHeight = 11,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    LogEventCount = 10,
+                    ChainId = "AELF",
+                    Confirmed = true
+                };
+                await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
+                Thread.Sleep(500);
+            }
+            {
+                var blockIndex =  new BlockIndex
+                {
+                    Id = "block002",
+                    BlockHash = "BlockHash002",
+                    BlockHeight = 2,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    LogEventCount = 20,
+                    ChainId = "AELF",
+                    Confirmed = false
+                };
+                await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
+                Thread.Sleep(500);
+            }
+            {
+                var blockIndex =  new BlockIndex
+                {
+                    Id = "block003",
+                    BlockHash = "BlockHash003",
+                    BlockHeight = 3,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    LogEventCount = 30,
+                    ChainId = "tDVV",
+                    Confirmed = true
+                };
+                await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
+                Thread.Sleep(500);
+            }
+            {
+                var blockIndex =  new BlockIndex
+                {
+                    Id = "block004",
+                    BlockHash = "BlockHash004",
+                    BlockHeight = 4,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    LogEventCount = 40,
+                    ChainId = "tDVV",
+                    Confirmed = false
+                };
+                await _elasticsearchRepository.AddOrUpdateAsync(blockIndex);
+                Thread.Sleep(500);
+            }
+
+            
+            List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
+            CollectionNameCondition condition1 = new CollectionNameCondition();
+            condition1.Key = "ChainId";
+            condition1.Value = "AELF";
+            condition1.Type = ConditionType.Equal;
+            CollectionNameCondition condition2 = new CollectionNameCondition();
+            condition2.Key = "BlockHeight";
+            condition2.Value = "10";
+            condition2.Type = ConditionType.Equal;
+            CollectionNameCondition condition3 = new CollectionNameCondition();
+            condition3.Key = "Confirmed";
+            condition3.Value = "True";
+            condition3.Type = ConditionType.Equal;
+            conditions.Add(condition1);
+            conditions.Add(condition2);
+            conditions.Add(condition3);
+            List<string> indexNames = await _blockIndexShardingKeyProvider.GetCollectionNameAsync(conditions);
+            Assert.True(indexNames.First() == "blockindex-aelf-true-"+10/5);
+        
+        }*/
     }
 }

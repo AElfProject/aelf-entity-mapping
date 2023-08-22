@@ -11,12 +11,13 @@ public class BlockBase: AElfIndexerEntity<string>,IBlockchainData
     public string ChainId { get; set; }
     [CollectionRouteKey]
     [Keyword]public string BlockHash { get; set; }
-    [ShardPropertyAttributes("BlockHeight",2)]
+    [ShardPropertyAttributes("BlockHeight",3)]
     public long BlockHeight { get; set; }
     [Keyword]public string PreviousBlockHash { get; set; }
     public DateTime BlockTime { get; set; }
     [Keyword]public string SignerPubkey { get; set; }
     [Keyword]public string Signature { get; set; }
+    [ShardPropertyAttributes("Confirmed",2)]
     public bool Confirmed{get;set;}
     public Dictionary<string,string> ExtraProperties {get;set;}
 
