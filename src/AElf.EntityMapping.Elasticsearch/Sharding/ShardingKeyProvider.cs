@@ -368,11 +368,22 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         var indexName = typeName;
         if (tail >= 0)
         {
-            indexName = indexName + ElasticsearchConstants.CollectionPrefixTailSplit + prefixTail + ElasticsearchConstants.CollectionPrefixTailSplit + tail;
+            if (prefixTail.IsNullOrEmpty())
+            {
+                indexName = indexName + ElasticsearchConstants.CollectionPrefixTailSplit+ tail;
+            }
+            else
+            {
+                indexName = indexName + ElasticsearchConstants.CollectionPrefixTailSplit + prefixTail + ElasticsearchConstants.CollectionPrefixTailSplit + tail;
+
+            }
         }
         else
         {
-            indexName = indexName + ElasticsearchConstants.CollectionPrefixTailSplit + prefixTail;
+            if (!prefixTail.IsNullOrEmpty())
+            {
+                indexName = indexName + ElasticsearchConstants.CollectionPrefixTailSplit + prefixTail;
+            }
         }
 
         return indexName.ToLower();
