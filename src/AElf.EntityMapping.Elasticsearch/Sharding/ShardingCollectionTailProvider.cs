@@ -118,6 +118,11 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
 
     public async Task AddShardingCollectionTailAsync(string tailPrefix, long tail)
     {
+        if (tail < 0)
+        {
+            return;
+        }
+
         tailPrefix = tailPrefix.ToLower();
         var shardingCollectionTailList = await GetShardingCollectionTailByEsAsync(new ShardingCollectionTail(){EntityName = _typeName, TailPrefix = tailPrefix});
 

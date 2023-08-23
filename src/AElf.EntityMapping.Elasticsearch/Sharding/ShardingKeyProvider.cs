@@ -98,18 +98,19 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         var resultCollectionNames = new List<string>();
         foreach (var shardingKeyInfo in filterShardingKeyInfos)
         {
-            long minTail = 0;
-            long maxTail = 0;
+            long minTail = -1;
+            long maxTail = -1;
             var tailPrefix = "";
             List<string> tailPrefixList = new List<string>();
+            var equalTypeCollectionName = new List<string>();
             foreach (var shardKey in shardingKeyInfo.ShardKeys)
             {
-                var equalTypeCollectionName = new List<string>();
                 if (shardKey.StepType == StepType.None)
                 {
                     tailPrefixList.Add(shardKey.Value);
+                    continue;
                 }
-                else
+                if(shardKey.StepType == StepType.Floor)
                 {
                     tailPrefix = tailPrefixList.JoinAsString(ElasticsearchConstants.CollectionPrefixTailSplit);
                     maxTail = await _shardingCollectionTailProvider.GetShardingCollectionTailAsync(tailPrefix);
@@ -146,14 +147,15 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                             maxTail = Math.Min(maxTail,tail);
                         }
                     }
-
-                    var collectionNames =
-                        await GetCollectionByRangeAsync(tailPrefix, minTail, maxTail, equalTypeCollectionName);
-                    resultCollectionNames.AddRange(collectionNames);
                 }
             }
+            tailPrefix = tailPrefixList.JoinAsString(ElasticsearchConstants.CollectionPrefixTailSplit);
+            var collectionNames =
+                await GetCollectionByRangeAsync(tailPrefix, minTail, maxTail, equalTypeCollectionName);
+            resultCollectionNames.AddRange(collectionNames);
         }
 
+        
         return resultCollectionNames.Distinct().ToList();
     }
 
@@ -241,7 +243,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         }
 
         List<string> collectionNames = new List<string>();
-        long maxTail = 0;
+        long maxTail = -1;
         var tailPrefix = "";
       
         foreach (var entity in entities)
