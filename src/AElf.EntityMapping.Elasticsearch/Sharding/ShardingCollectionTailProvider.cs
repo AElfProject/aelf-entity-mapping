@@ -18,6 +18,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
     private readonly ILogger<ShardingCollectionTailProvider<TEntity>> _logger;
     private readonly IDistributedCache<CollectionTailCacheItem> _collectionTailCache;
+    private readonly Dictionary<string, long> _collectionTailCacheDictionary = new Dictionary<string, long>();
     private readonly string _typeName = typeof(TEntity).Name.ToLower();
     private const string CollectionTailCacheKeyPrefix = "CollectionTail";
 
@@ -126,6 +127,12 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
         }
 
         tailPrefix = tailPrefix.IsNullOrEmpty()?_typeName:tailPrefix.ToLower();
+        var localCacheTail = GetAndUpdateLocalCacheTail(tailPrefix, tail);
+        if(localCacheTail >= tail)
+        {
+            return;
+        }
+        
         var shardingCollectionTailList = await GetShardingCollectionTailByEsAsync(new ShardingCollectionTail(){EntityName = _typeName, TailPrefix = tailPrefix});
         _logger.LogInformation("ElasticsearchCollectionNameProvider.AddShardingCollectionTailAsync: tailPrefix: {tailPrefix},tail:{tail},shardingCollectionTailList:{shardingCollectionTailList}", tailPrefix,tail, JsonConvert.SerializeObject(shardingCollectionTailList));
 
@@ -165,5 +172,24 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
     private async Task ClearCacheAsync(string cacheKey)
     {
         await _collectionTailCache.RemoveAsync(cacheKey);
+    }
+
+    private long GetAndUpdateLocalCacheTail(string tailPrefix, long targetTail)
+    {
+        long localTail = -1;
+        if (_collectionTailCacheDictionary.TryGetValue(tailPrefix, out localTail))
+        {
+            if(targetTail > localTail)
+            {
+                _collectionTailCacheDictionary[tailPrefix] = targetTail;
+            }
+        }
+        else
+        {
+            _collectionTailCacheDictionary.Add(tailPrefix, targetTail);
+            localTail = -1;
+        }
+
+        return localTail;
     }
 }

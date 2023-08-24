@@ -262,11 +262,12 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             //maxTail = Math.Max(maxTail, tail);
             collectionName = GetCollectionName(collectionName, tailPrefix, tail);
             collectionNames.Add(collectionName);
-            var cacheTail = await _shardingCollectionTailProvider.GetShardingCollectionTailAsync(tailPrefix);
+            await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), tail);
+            /*var cacheTail = await _shardingCollectionTailProvider.GetShardingCollectionTailAsync(tailPrefix);
             if (cacheTail < tail)
             {
                 await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), tail);
-            }
+            }*/
         }
         
         //await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), maxTail);

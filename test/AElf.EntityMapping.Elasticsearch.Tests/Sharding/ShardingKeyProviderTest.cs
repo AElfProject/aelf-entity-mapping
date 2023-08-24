@@ -14,6 +14,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
         private readonly IShardingKeyProvider<LogEventIndex> _logEventIndexShardingKeyProvider;
         private readonly IShardingKeyProvider<TransactionIndex> _logTransationIndexShardingKeyProvider;
         private readonly IElasticsearchRepository<BlockIndex, string> _elasticsearchRepository;
+        private readonly IElasticsearchRepository<LogEventIndex, string> _elasticsearchRepositoryLogEventIndex;
         
         public ShardingKeyProviderTest()
         {
@@ -22,6 +23,7 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
             _logEventIndexShardingKeyProvider = GetRequiredService<IShardingKeyProvider<LogEventIndex>>();
             _logTransationIndexShardingKeyProvider = GetRequiredService<IShardingKeyProvider<TransactionIndex>>();
             _elasticsearchRepository = GetRequiredService<IElasticsearchRepository<BlockIndex, string>>();
+            _elasticsearchRepositoryLogEventIndex = GetRequiredService<IElasticsearchRepository<LogEventIndex, string>>();
         }
     
         [Fact]
@@ -751,6 +753,151 @@ namespace AElf.EntityMapping.Elasticsearch.Sharding
                 Assert.True(indexNames.First() == "blockindex-tdvv-false-0");
                 Assert.True(indexNames.Last() == "blockindex-tdvv-false-1");
             }
+        }*/
+        
+        /*[Fact]
+         public async Task GetCollectionNameByShardFloorKey()
+        {
+            {
+                var logEventIndex = new LogEventIndex()
+                {
+                    Id = "block001",
+                    BlockHash = "BlockHash001",
+                    BlockHeight = 1,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    ChainId = "AELF",
+                    Confirmed = true
+                };
+                await _elasticsearchRepositoryLogEventIndex.AddOrUpdateAsync(logEventIndex);
+                Thread.Sleep(500);
+            }
+            {
+                var logEventIndex = new LogEventIndex
+                {
+                    Id = "block002",
+                    BlockHash = "BlockHash001",
+                    BlockHeight = 2,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    ChainId = "AELF",
+                    Confirmed = true
+                };
+                await _elasticsearchRepositoryLogEventIndex.AddOrUpdateAsync(logEventIndex);
+                Thread.Sleep(500);
+            }
+            {
+                var logEventIndex = new LogEventIndex
+                {
+                    Id = "block003",
+                    BlockHash = "BlockHash002",
+                    BlockHeight = 3,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    ChainId = "AELF",
+                    Confirmed = false
+                };
+                await _elasticsearchRepositoryLogEventIndex.AddOrUpdateAsync(logEventIndex);
+                Thread.Sleep(500);
+            }
+            {
+                var logEventIndex = new LogEventIndex
+                {
+                    Id = "block004",
+                    BlockHash = "BlockHash002",
+                    BlockHeight = 4,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    ChainId = "AELF",
+                    Confirmed = false
+                };
+                await _elasticsearchRepositoryLogEventIndex.AddOrUpdateAsync(logEventIndex);
+                Thread.Sleep(500);
+            }
+            {
+                var logEventIndex = new LogEventIndex
+                {
+                    Id = "block005",
+                    BlockHash = "BlockHash003",
+                    BlockHeight = 5,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    ChainId = "tDVV",
+                    Confirmed = true
+                };
+                await _elasticsearchRepositoryLogEventIndex.AddOrUpdateAsync(logEventIndex);
+                Thread.Sleep(500);
+            }
+            {
+                var logEventIndex = new LogEventIndex
+                {
+                    Id = "block006",
+                    BlockHash = "BlockHash003",
+                    BlockHeight = 6,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    ChainId = "tDVV",
+                    Confirmed = true
+                };
+                await _elasticsearchRepositoryLogEventIndex.AddOrUpdateAsync(logEventIndex);
+                Thread.Sleep(500);
+            }
+            {
+                var logEventIndex = new LogEventIndex
+                {
+                    Id = "block007",
+                    BlockHash = "BlockHash004",
+                    BlockHeight = 7,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    ChainId = "tDVV",
+                    Confirmed = false
+                };
+                await _elasticsearchRepositoryLogEventIndex.AddOrUpdateAsync(logEventIndex);
+                Thread.Sleep(500);
+            }
+            {
+                var logEventIndex = new LogEventIndex
+                {
+                    Id = "block008",
+                    BlockHash = "BlockHash004",
+                    BlockHeight = 7,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    ChainId = "tDVV",
+                    Confirmed = false
+                };
+                await _elasticsearchRepositoryLogEventIndex.AddOrUpdateAsync(logEventIndex);
+                Thread.Sleep(500);
+            }
+            {
+                var logEventIndex = new LogEventIndex
+                {
+                    Id = "block009",
+                    BlockHash = "BlockHash004",
+                    BlockHeight = 9,
+                    BlockTime = DateTime.Now.AddDays(-8),
+                    ChainId = "tDVV",
+                    Confirmed = false
+                };
+                await _elasticsearchRepositoryLogEventIndex.AddOrUpdateAsync(logEventIndex);
+                Thread.Sleep(500);
+            }
+
+            {
+                List<CollectionNameCondition> conditions = new List<CollectionNameCondition>();
+                CollectionNameCondition condition1 = new CollectionNameCondition();
+                condition1.Key = "BlockHeight";
+                condition1.Value = "3";
+                condition1.Type = ConditionType.GreaterThanOrEqual;
+                CollectionNameCondition condition2 = new CollectionNameCondition();
+                condition2.Key = "BlockHeight";
+                condition2.Value = "6";
+                condition2.Type = ConditionType.LessThanOrEqual;
+                conditions.Add(condition1);
+                conditions.Add(condition2);
+                List<string> indexNames = await _logEventIndexShardingKeyProvider.GetCollectionNameAsync(conditions);
+                Assert.True(indexNames.Count == 2);
+                Assert.True(indexNames.First() == "logeventindex-1");
+                Assert.True(indexNames.Last() == "logeventindex-2");
+                indexNames = await _logEventIndexShardingKeyProvider.GetCollectionNameAsync(conditions);
+                Assert.True(indexNames.Count == 2);
+                Assert.True(indexNames.First() == "logeventindex-1");
+                Assert.True(indexNames.Last() == "logeventindex-2");
+            }
+            
         }*/
     }
 }
