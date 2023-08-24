@@ -125,6 +125,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
 
         tailPrefix = tailPrefix.ToLower();
         var shardingCollectionTailList = await GetShardingCollectionTailByEsAsync(new ShardingCollectionTail(){EntityName = _typeName, TailPrefix = tailPrefix});
+        _logger.LogInformation("ElasticsearchCollectionNameProvider.AddShardingCollectionTailAsync: tailPrefix: {tailPrefix},tail:{tail},shardingCollectionTailList:{shardingCollectionTailList}", tailPrefix,tail, JsonConvert.SerializeObject(shardingCollectionTailList));
 
         if (shardingCollectionTailList.IsNullOrEmpty())
         {
@@ -135,16 +136,18 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             shardingCollectionTail.Id = Guid.NewGuid().ToString();
             await AddOrUpdateAsync(shardingCollectionTail);
             await ClearCacheAsync(GetCollectionTailCacheKey());
+            _logger.LogInformation("ElasticsearchCollectionNameProvider.AddShardingCollectionTailAsync--ADD: tailPrefix: {tailPrefix},tail:{tail},shardingCollectionTailList:{shardingCollectionTailList}", tailPrefix,tail, JsonConvert.SerializeObject(shardingCollectionTailList));
             return;
         }
 
-        var shardingCollection = shardingCollectionTailList.Find(a => a.TailPrefix.Contains(tailPrefix));
+        var shardingCollection = shardingCollectionTailList.Find(a => a.TailPrefix == tailPrefix);
 
         if (shardingCollection != null && shardingCollection.Tail < tail)
         {
             shardingCollection.Tail = tail;
             await AddOrUpdateAsync(shardingCollection);
             await ClearCacheAsync(GetCollectionTailCacheKey());
+            _logger.LogInformation("ElasticsearchCollectionNameProvider.AddShardingCollectionTailAsync--Update: tailPrefix: {tailPrefix},tail:{tail},shardingCollectionTailList:{shardingCollectionTailList}", tailPrefix,tail, JsonConvert.SerializeObject(shardingCollectionTailList));
         }
     }
     private string GetFullName(string collectionName)

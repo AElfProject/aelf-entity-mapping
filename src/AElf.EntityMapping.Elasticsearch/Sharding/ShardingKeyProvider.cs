@@ -3,7 +3,9 @@ using System.Reflection;
 using AElf.EntityMapping.Entities;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
@@ -12,6 +14,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly AElfEntityMappingOptions _aelfEntityMappingOptions;
     private readonly List<ShardInitSetting> _shardInitSettings;
     private readonly IElasticsearchClientProvider _elasticsearchClientProvider;
+    private readonly ILogger<ShardingKeyProvider<TEntity>> _logger;
 
     private List<ShardingKeyInfo<TEntity>> _shardKeyInfoList;
     private readonly Dictionary<string, bool> _existIndexShardDictionary = new Dictionary<string, bool>();
@@ -19,13 +22,14 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly string _defaultCollectionName;
     private readonly IShardingCollectionTailProvider<TEntity> _shardingCollectionTailProvider;
 
-    public ShardingKeyProvider(IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions, IElasticsearchClientProvider elasticsearchClientProvider, IShardingCollectionTailProvider<TEntity> shardingCollectionTailProvider)
+    public ShardingKeyProvider(IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions, IElasticsearchClientProvider elasticsearchClientProvider, IShardingCollectionTailProvider<TEntity> shardingCollectionTailProvider,ILogger<ShardingKeyProvider<TEntity>> logger)
     {
         _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
         _shardInitSettings = aelfEntityMappingOptions.Value.ShardInitSettings;
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _defaultCollectionName = IndexNameHelper.GetDefaultIndexName(_type);
         _shardingCollectionTailProvider = shardingCollectionTailProvider;
+        _logger = logger;
     }
 
     public ShardingKeyProvider()
@@ -64,6 +68,9 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         }
 
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
+        _logger.LogInformation(
+            "ShardingKeyProvider.GetCollectionNameAsync: conditions: {conditions},ShardingKeyInfo:{ShardingKeyInfo}",
+            JsonConvert.SerializeObject(conditions), JsonConvert.SerializeObject(shardingKeyInfos.Count));
 
         List<ShardingKeyInfo<TEntity>> filterShardingKeyInfos = shardingKeyInfos;
         List<CollectionNameCondition> filterConditions = new List<CollectionNameCondition>();
@@ -89,7 +96,9 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 (b.ShardKeyName == condition.Key && b.Value == condition.Value.ToString() && b.StepType == StepType.None) ||
                 (b.ShardKeyName == condition.Key && b.StepType == StepType.Floor)));
         }
-
+        _logger.LogInformation(
+            "ShardingKeyProvider.GetCollectionNameAsync: conditions: {conditions},ShardingKeyInfo:{ShardingKeyInfo},filterConditions:{filterConditions},filterShardingKeyInfos:{filterShardingKeyInfos}",
+            JsonConvert.SerializeObject(conditions), JsonConvert.SerializeObject(shardingKeyInfos.Count),JsonConvert.SerializeObject(filterConditions),JsonConvert.SerializeObject(filterShardingKeyInfos.Count));
         if (filterShardingKeyInfos.IsNullOrEmpty())
         {
             return new List<string>();
@@ -155,7 +164,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             resultCollectionNames.AddRange(collectionNames);
         }
 
-        
+        _logger.LogInformation("ShardingKeyProvider.GetCollectionNameAsync: conditions: {conditions},resultCollectionNames:{resultCollectionNames}", JsonConvert.SerializeObject(conditions),resultCollectionNames.Distinct().ToList());
         return resultCollectionNames.Distinct().ToList();
     }
 
