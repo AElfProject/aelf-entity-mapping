@@ -62,7 +62,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
     {
         tailPrefix = tailPrefix.ToLower();
         var cacheKey = GetCollectionTailCacheKey();
-        long tail = 0;
+        long tail = -1;
         var shardTailCacheItem = await _collectionTailCache.GetAsync(cacheKey);
         if (shardTailCacheItem != null)
         {

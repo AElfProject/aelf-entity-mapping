@@ -252,19 +252,24 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         }
 
         List<string> collectionNames = new List<string>();
-        long maxTail = -1;
+        //long maxTail = -1;
         var tailPrefix = "";
       
         foreach (var entity in entities)
         {
             var collectionName = _defaultCollectionName;
             (tailPrefix,var tail) = GetShardingKeyTail(shardingKeyInfos, entity);
-            maxTail = Math.Max(maxTail, tail);
+            //maxTail = Math.Max(maxTail, tail);
             collectionName = GetCollectionName(collectionName, tailPrefix, tail);
             collectionNames.Add(collectionName);
+            var cacheTail = await _shardingCollectionTailProvider.GetShardingCollectionTailAsync(tailPrefix);
+            if (cacheTail < tail)
+            {
+                await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), tail);
+            }
         }
         
-        await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), maxTail);
+        //await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), maxTail);
         return collectionNames;
     }
 
