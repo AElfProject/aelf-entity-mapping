@@ -12,7 +12,7 @@ public class ShardingCollectionTail:Entity,IEntity<string>,IEntityMappingEntity
 
     [Keyword]public string TailPrefix { get; set; }
 
-    [Keyword]public long Tail { get; set; }
+    public long Tail { get; set; }
     
     public override object[] GetKeys()
     {
