@@ -60,7 +60,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
 
     public async Task<long> GetShardingCollectionTailAsync(string tailPrefix)
     {
-        tailPrefix = tailPrefix.ToLower();
+        tailPrefix = tailPrefix.IsNullOrEmpty() ? _typeName : tailPrefix.ToLower();
         var cacheKey = GetCollectionTailCacheKey();
         long tail = -1;
         var shardTailCacheItem = await _collectionTailCache.GetAsync(cacheKey);
@@ -69,6 +69,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             var shardTailCache = shardTailCacheItem.CollectionTailDictionary;
             if (shardTailCache.TryGetValue(tailPrefix, out tail))
             {
+                _logger.LogInformation("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--cache: tailPrefix: {tailPrefix},tail:{tail}", JsonConvert.SerializeObject(tailPrefix),tail);
                 return tail;
             }
         }
@@ -76,6 +77,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
         if (!result.IsNullOrEmpty())
         {
             tail = result.First().Tail;
+            _logger.LogInformation("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--ES: tailPrefix: {tailPrefix},tail:{tail}", JsonConvert.SerializeObject(tailPrefix),tail);
             if (shardTailCacheItem == null)
             {
                 shardTailCacheItem = new CollectionTailCacheItem();
@@ -86,7 +88,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             await _collectionTailCache.SetAsync(cacheKey, shardTailCacheItem);
             return tail;
         }
-
+        _logger.LogInformation("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--Return: tailPrefix: {tailPrefix},tail:{tail}", JsonConvert.SerializeObject(tailPrefix),tail);
         return tail;
     }
 
@@ -106,13 +108,13 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             s.Index(indexName).Query(Filter).Sort(st => st.Field(sortExp, SortOrder.Descending)).From(0).Size(1));
 
         var result = await client.SearchAsync(selector);
-        _logger.LogInformation("ElasticsearchCollectionNameProvider.GetShardingCollectionTailAsync: searchDto: {shardingCollectionTail},indexName:{indexName},result:{result}", JsonConvert.SerializeObject(shardingCollectionTail),indexName, JsonConvert.SerializeObject(result));
+        _logger.LogInformation("ElasticsearchCollectionNameProvider.GetShardingCollectionTailAsync: searchDto: {shardingCollectionTail},indexName:{indexName},result.IsValid:{IsValid}", JsonConvert.SerializeObject(shardingCollectionTail),indexName, result.IsValid);
 
         if (!result.IsValid)
         {
             throw new Exception($"Search document failed at index {indexName} :" + result.ServerError.Error.Reason);
         }
-
+        _logger.LogInformation("ElasticsearchCollectionNameProvider.GetShardingCollectionTailAsync: searchDto: {shardingCollectionTail},indexName:{indexName},result.Documents:{Documents}", JsonConvert.SerializeObject(shardingCollectionTail),indexName, JsonConvert.SerializeObject(result.Documents.ToList()));
         return result.Documents.ToList();
     }
 
