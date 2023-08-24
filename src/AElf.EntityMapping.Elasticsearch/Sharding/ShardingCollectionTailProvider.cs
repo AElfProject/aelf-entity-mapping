@@ -125,7 +125,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             return;
         }
 
-        tailPrefix = tailPrefix.ToLower();
+        tailPrefix = tailPrefix.IsNullOrEmpty()?_typeName:tailPrefix.ToLower();
         var shardingCollectionTailList = await GetShardingCollectionTailByEsAsync(new ShardingCollectionTail(){EntityName = _typeName, TailPrefix = tailPrefix});
         _logger.LogInformation("ElasticsearchCollectionNameProvider.AddShardingCollectionTailAsync: tailPrefix: {tailPrefix},tail:{tail},shardingCollectionTailList:{shardingCollectionTailList}", tailPrefix,tail, JsonConvert.SerializeObject(shardingCollectionTailList));
 
