@@ -100,6 +100,8 @@ jobs:
           reports: '$(Build.SourcesDirectory)/test/*/TestResults/*/coverage.cobertura.xml'
           targetdir: '$(Build.SourcesDirectory)/CodeCoverage'
           reporttypes: 'Cobertura'
-          assemblyfilters: '-xunit*'
+          assemblyfilters: '-$(Build.SourcesDirectory)/test/*,-$(Build.SourcesDirectory)/src/AElf.EntityMapping.Elasticsearch/Exceptions/*,-$(Build.SourcesDirectory)/src/AElf.EntityMapping.Elasticsearch/Linq/*'
       - script: PowerShell.exe -file build.ps1 -target=Upload-Coverage-Azure
         displayName: 'Upload data to Codecov'
+        
+        #/Users/yanfeng/Desktop/Code/shard2/aelf-entity-mapping/src/AElf.EntityMapping.Elasticsearch/Linq
