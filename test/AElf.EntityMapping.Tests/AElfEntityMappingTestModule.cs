@@ -25,6 +25,7 @@ public class AElfEntityMappingTestModule : AbpModule
         {
             options.CollectionPrefix = "AElfEntityMappingTest";
             options.ShardInitSettings = InitShardInitSettingOptions();
+            options.CollectionTailSecondExpireTime = 30;
         });
     }
     

@@ -3,6 +3,7 @@ using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Entities;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nest;
@@ -62,31 +63,21 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
     public async Task<long> GetShardingCollectionTailAsync(string tailPrefix)
     {
         tailPrefix = tailPrefix.IsNullOrEmpty() ? _typeName : tailPrefix.ToLower();
-        var cacheKey = GetCollectionTailCacheKey();
+        var cacheKey = GetCollectionTailCacheKey(tailPrefix);
         long tail = -1;
-        var shardTailCacheItem = await _collectionTailCache.GetAsync(cacheKey);
+        var shardTailCacheItem = await GetCollectionTailCacheAsync(cacheKey);
         if (shardTailCacheItem != null)
         {
-            var shardTailCache = shardTailCacheItem.CollectionTailDictionary;
-            if (shardTailCache.TryGetValue(tailPrefix, out tail))
-            {
-                _logger.LogDebug("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--cache: tailPrefix: {tailPrefix},tail:{tail}", JsonConvert.SerializeObject(tailPrefix),tail);
-                return tail;
-            }
+            tail = shardTailCacheItem.CollectionTail;
+            _logger.LogDebug("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--cache:cacheKey:{}, tailPrefix: {tailPrefix},tail:{tail}", cacheKey, tailPrefix, tail);
+            return tail;
         }
         var result = await GetShardingCollectionTailByEsAsync(new ShardingCollectionTail(){EntityName = _typeName, TailPrefix = tailPrefix});
         if (!result.IsNullOrEmpty())
         {
             tail = result.First().Tail;
-            _logger.LogInformation("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--ES: tailPrefix: {tailPrefix},tail:{tail}", JsonConvert.SerializeObject(tailPrefix),tail);
-            if (shardTailCacheItem == null)
-            {
-                shardTailCacheItem = new CollectionTailCacheItem();
-                shardTailCacheItem.CollectionTailDictionary = new Dictionary<string, long>();
-            }
-
-            shardTailCacheItem.CollectionTailDictionary.Add(tailPrefix, tail);
-            await _collectionTailCache.SetAsync(cacheKey, shardTailCacheItem);
+            _logger.LogInformation("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--ES:cacheKey:{}, tailPrefix: {tailPrefix},tail:{tail}", cacheKey, tailPrefix, tail);
+            await SetCollectionTailCacheAsync(tailPrefix, tail);
             return tail;
         }
         return tail;
@@ -131,7 +122,6 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
         }
         
         var shardingCollectionTailList = await GetShardingCollectionTailByEsAsync(new ShardingCollectionTail(){EntityName = _typeName, TailPrefix = tailPrefix});
-
         if (shardingCollectionTailList.IsNullOrEmpty())
         {
             var shardingCollectionTail = new ShardingCollectionTail();
@@ -140,7 +130,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             shardingCollectionTail.Tail = tail;
             shardingCollectionTail.Id = Guid.NewGuid().ToString();
             await AddOrUpdateAsync(shardingCollectionTail);
-            await ClearCacheAsync(GetCollectionTailCacheKey());
+            await SetCollectionTailCacheAsync(tailPrefix,tail);
             _logger.LogInformation("ElasticsearchCollectionNameProvider.AddShardingCollectionTailAsync--ADD: tailPrefix: {tailPrefix},tail:{tail},shardingCollectionTailList:{shardingCollectionTailList}", tailPrefix,tail, JsonConvert.SerializeObject(shardingCollectionTailList));
             return;
         }
@@ -151,7 +141,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
         {
             shardingCollection.Tail = tail;
             await AddOrUpdateAsync(shardingCollection);
-            await ClearCacheAsync(GetCollectionTailCacheKey());
+            await SetCollectionTailCacheAsync(tailPrefix,tail);
             _logger.LogInformation("ElasticsearchCollectionNameProvider.AddShardingCollectionTailAsync--Update: tailPrefix: {tailPrefix},tail:{tail},shardingCollectionTailList:{shardingCollectionTailList}", tailPrefix,tail, JsonConvert.SerializeObject(shardingCollectionTailList));
         }
     }
@@ -160,14 +150,39 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
         return (_aelfEntityMappingOptions.CollectionPrefix + ElasticsearchConstants.CollectionPrefixSplit + collectionName).ToLower();
     }
 
-    private string GetCollectionTailCacheKey()
+    private string GetCollectionTailCacheKey(string tailPrefix)
     {
-        var cacheKey = $"{CollectionTailCacheKeyPrefix}_{_typeName}";
+        var cacheKey = $"{CollectionTailCacheKeyPrefix}_{_typeName}_{tailPrefix}";
         return cacheKey.ToLower();
     }
-    private async Task ClearCacheAsync(string cacheKey)
+
+    private async Task SetCollectionTailCacheAsync(string tailPrefix, long tail)
     {
-        await _collectionTailCache.RemoveAsync(cacheKey);
+        var cacheKey = GetCollectionTailCacheKey(tailPrefix);
+        var shardTailCacheItem = await GetCollectionTailCacheAsync(cacheKey);
+        
+        if (shardTailCacheItem == null || tail > shardTailCacheItem.CollectionTail)
+        {
+            shardTailCacheItem = new CollectionTailCacheItem()
+            {
+                CollectionTail = tail
+            };
+
+            DistributedCacheEntryOptions cacheOptions = null;
+            if (_aelfEntityMappingOptions.CollectionTailSecondExpireTime <= 0)
+            {
+                var expireTime = DateTimeOffset.Now.AddSeconds(1000);
+                cacheOptions = new DistributedCacheEntryOptions().SetAbsoluteExpiration(expireTime);
+            }
+
+            await _collectionTailCache.SetAsync(cacheKey, shardTailCacheItem, cacheOptions);
+            _logger.LogInformation("ShardingCollectionTailProvider.SetCollectionTailCacheAsync:cacheKey:{cacheKey}, tailPrefix: {tailPrefix},tail:{tail}", cacheKey,tailPrefix,tail);
+        }
+    }
+
+    private async Task<CollectionTailCacheItem> GetCollectionTailCacheAsync(string cacheKey)
+    {
+        return await _collectionTailCache.GetAsync(cacheKey);
     }
 
     private long GetAndUpdateLocalCacheTail(string tailPrefix, long targetTail)
