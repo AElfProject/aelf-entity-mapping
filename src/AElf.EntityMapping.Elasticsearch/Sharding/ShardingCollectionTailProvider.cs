@@ -70,7 +70,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             var shardTailCache = shardTailCacheItem.CollectionTailDictionary;
             if (shardTailCache.TryGetValue(tailPrefix, out tail))
             {
-                _logger.LogInformation("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--cache: tailPrefix: {tailPrefix},tail:{tail}", JsonConvert.SerializeObject(tailPrefix),tail);
+                _logger.LogDebug("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--cache: tailPrefix: {tailPrefix},tail:{tail}", JsonConvert.SerializeObject(tailPrefix),tail);
                 return tail;
             }
         }
@@ -89,7 +89,6 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             await _collectionTailCache.SetAsync(cacheKey, shardTailCacheItem);
             return tail;
         }
-        _logger.LogInformation("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--Return: tailPrefix: {tailPrefix},tail:{tail}", JsonConvert.SerializeObject(tailPrefix),tail);
         return tail;
     }
 
@@ -109,8 +108,6 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             s.Index(indexName).Query(Filter).Sort(st => st.Field(sortExp, SortOrder.Descending)).From(0).Size(1));
 
         var result = await client.SearchAsync(selector);
-        _logger.LogInformation("ElasticsearchCollectionNameProvider.GetShardingCollectionTailAsync: searchDto: {shardingCollectionTail},indexName:{indexName},result.IsValid:{IsValid}", JsonConvert.SerializeObject(shardingCollectionTail),indexName, result.IsValid);
-
         if (!result.IsValid)
         {
             throw new Exception($"Search document failed at index {indexName} :" + result.ServerError.Error.Reason);
@@ -134,7 +131,6 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
         }
         
         var shardingCollectionTailList = await GetShardingCollectionTailByEsAsync(new ShardingCollectionTail(){EntityName = _typeName, TailPrefix = tailPrefix});
-        _logger.LogInformation("ElasticsearchCollectionNameProvider.AddShardingCollectionTailAsync: tailPrefix: {tailPrefix},tail:{tail},shardingCollectionTailList:{shardingCollectionTailList}", tailPrefix,tail, JsonConvert.SerializeObject(shardingCollectionTailList));
 
         if (shardingCollectionTailList.IsNullOrEmpty())
         {

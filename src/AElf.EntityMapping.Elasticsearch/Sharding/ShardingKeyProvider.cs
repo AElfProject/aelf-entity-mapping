@@ -68,10 +68,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         }
 
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
-        _logger.LogInformation(
-            "ShardingKeyProvider.GetCollectionNameAsync: conditions: {conditions},ShardingKeyInfo:{ShardingKeyInfo}",
-            JsonConvert.SerializeObject(conditions), JsonConvert.SerializeObject(shardingKeyInfos.Count));
-
         List<ShardingKeyInfo<TEntity>> filterShardingKeyInfos = shardingKeyInfos;
         List<CollectionNameCondition> filterConditions = new List<CollectionNameCondition>();
 
@@ -96,7 +92,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 (b.ShardKeyName == condition.Key && b.Value == condition.Value.ToString() && b.StepType == StepType.None) ||
                 (b.ShardKeyName == condition.Key && b.StepType == StepType.Floor)));
         }
-        _logger.LogInformation(
+        _logger.LogDebug(
             "ShardingKeyProvider.GetCollectionNameAsync: conditions: {conditions},ShardingKeyInfo:{ShardingKeyInfo},filterConditions:{filterConditions},filterShardingKeyInfos:{filterShardingKeyInfos}",
             JsonConvert.SerializeObject(conditions), JsonConvert.SerializeObject(shardingKeyInfos.Count),JsonConvert.SerializeObject(filterConditions),JsonConvert.SerializeObject(filterShardingKeyInfos.Count));
         if (filterShardingKeyInfos.IsNullOrEmpty())
@@ -164,7 +160,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             resultCollectionNames.AddRange(collectionNames);
         }
 
-        _logger.LogInformation("ShardingKeyProvider.GetCollectionNameAsync: conditions: {conditions},resultCollectionNames:{resultCollectionNames}", JsonConvert.SerializeObject(conditions),resultCollectionNames.Distinct().ToList());
+        _logger.LogDebug("ShardingKeyProvider.GetCollectionNameAsync-return: conditions: {conditions},resultCollectionNames:{resultCollectionNames}", JsonConvert.SerializeObject(conditions),resultCollectionNames.Distinct().ToList());
         return resultCollectionNames.Distinct().ToList();
     }
 
@@ -259,18 +255,10 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         {
             var collectionName = _defaultCollectionName;
             (tailPrefix,var tail) = GetShardingKeyTail(shardingKeyInfos, entity);
-            //maxTail = Math.Max(maxTail, tail);
             collectionName = GetCollectionName(collectionName, tailPrefix, tail);
             collectionNames.Add(collectionName);
             await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), tail);
-            /*var cacheTail = await _shardingCollectionTailProvider.GetShardingCollectionTailAsync(tailPrefix);
-            if (cacheTail < tail)
-            {
-                await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), tail);
-            }*/
         }
-        
-        //await _shardingCollectionTailProvider.AddShardingCollectionTailAsync(tailPrefix.ToLower(), maxTail);
         return collectionNames;
     }
 
@@ -296,7 +284,6 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
                 else
                 {
                     tail = int.Parse(funcValue!) / int.Parse(shardKey.Step);
-                    //maxTail = Math.Max(maxTail, tail);
                     collectionNameTailList.Add(tail);
                 }
             }
