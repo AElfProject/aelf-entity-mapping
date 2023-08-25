@@ -169,7 +169,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
             };
 
             DistributedCacheEntryOptions cacheOptions = null;
-            if (_aelfEntityMappingOptions.CollectionTailSecondExpireTime <= 0)
+            if (_aelfEntityMappingOptions.CollectionTailSecondExpireTime > 0)
             {
                 var expireTime = DateTimeOffset.Now.AddSeconds(1000);
                 cacheOptions = new DistributedCacheEntryOptions().SetAbsoluteExpiration(expireTime);
