@@ -56,7 +56,7 @@ jobs:
           reports: '$(Build.SourcesDirectory)/test/*/TestResults/*/coverage.cobertura.xml'
           targetdir: '$(Build.SourcesDirectory)/CodeCoverage'
           reporttypes: 'Cobertura'
-          assemblyfilters: '-xunit*'
+          assemblyfilters: '-xunit*,-$(Build.SourcesDirectory)/test/*,-$(Build.SourcesDirectory)/src/AElf.EntityMapping.Elasticsearch/Exceptions/*,-$(Build.SourcesDirectory)/src/AElf.EntityMapping.Elasticsearch/Linq/*'
       - script: bash build.sh --target=Upload-Coverage-Azure
         displayName: 'Upload data to Codecov'
   #All tasks on macOS
