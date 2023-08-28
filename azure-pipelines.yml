@@ -104,4 +104,3 @@ jobs:
       - script: PowerShell.exe -file build.ps1 -target=Upload-Coverage-Azure
         displayName: 'Upload data to Codecov'
         
-        #/Users/yanfeng/Desktop/Code/shard2/aelf-entity-mapping/src/AElf.EntityMapping.Elasticsearch/Linq
