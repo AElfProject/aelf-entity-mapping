@@ -105,7 +105,7 @@ public class CollectionRouteKeyProviderTests: AElfElasticsearchTestBase
     [Fact]
     public async Task GetCollectionRouteKeyIndex_Test()
     {
-        var routeIndex = $"{_option.CollectionPrefix.ToLower()}.blockindex.blockhash.route";
+        var routeIndex = $"{_option.CollectionPrefix.ToLower()}.route.blockindex.blockhash";
         await InitBlocksAsync();
 
         var route = await _blockIndexCollectionRouteKeyProvider.GetRouteKeyCollectionAsync("block1", routeIndex);
