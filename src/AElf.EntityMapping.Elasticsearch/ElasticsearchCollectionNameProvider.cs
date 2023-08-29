@@ -36,7 +36,6 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
 
     protected override async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
-        _logger.LogInformation("ElasticsearchCollectionNameProvider.GetCollectionNameAsync: conditions:{conditions}, IsShardingCollection:{IsShardingCollection}",JsonConvert.SerializeObject(conditions), !_shardingKeyProvider.IsShardingCollection());
         if (!_shardingKeyProvider.IsShardingCollection())
             return new List<string> { GetDefaultCollectionName() };
         
@@ -46,9 +45,6 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
 
         if (shardKeyCollectionNames.Count > 0 && routeKeyCollectionNames.Count > 0)
         {
-            _logger.LogInformation("ElasticsearchCollectionNameProvider.GetCollectionNameAsync1:conditions:{conditions},shardKeyCollectionNames: {shardKeyCollectionNames},routeKeyCollectionNames:{routeKeyCollectionNames}",
-                JsonConvert.SerializeObject(conditions),JsonConvert.SerializeObject(shardKeyCollectionNames),JsonConvert.SerializeObject(routeKeyCollectionNames));
-
             return shardKeyCollectionNames.Intersect(routeKeyCollectionNames).ToList();
         }
         return shardKeyCollectionNames.Concat(routeKeyCollectionNames).ToList();

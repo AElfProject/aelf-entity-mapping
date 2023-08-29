@@ -76,7 +76,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
         if (!result.IsNullOrEmpty())
         {
             tail = result.First().Tail;
-            _logger.LogInformation("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--ES:cacheKey:{}, tailPrefix: {tailPrefix},tail:{tail}", cacheKey, tailPrefix, tail);
+            _logger.LogDebug("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--ES:cacheKey:{}, tailPrefix: {tailPrefix},tail:{tail}", cacheKey, tailPrefix, tail);
             await SetCollectionTailCacheAsync(tailPrefix, tail);
             return tail;
         }
