@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>AElf.EntityMapping.Elasticsearch</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\AElf.EntityMapping.Elasticsearch\AElf.EntityMapping.Elasticsearch.csproj" />
+      <ProjectReference Include="..\..\src\AElf.EntityMapping\AElf.EntityMapping.csproj" />
+      <ProjectReference Include="..\AElf.EntityMapping.TestBase\AElf.EntityMapping.TestBase.csproj" />
+      <ProjectReference Include="..\AElf.EntityMapping.Tests\AElf.EntityMapping.Tests.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.3" />
+    </ItemGroup>
+
+</Project>

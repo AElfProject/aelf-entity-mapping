@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3B3C0D8B-1640-4089-B130-CA5D9D556471}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{A1DA5872-FCBB-4732-B543-2CF77B2CC900}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AElf.EntityMapping", "src\AElf.EntityMapping\AElf.EntityMapping.csproj", "{9E5B3C50-F4F5-40E8-AFEA-B730900EA3B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AElf.EntityMapping.Elasticsearch", "src\AElf.EntityMapping.Elasticsearch\AElf.EntityMapping.Elasticsearch.csproj", "{9CEF5949-B744-4D0E-99E7-8683ABDC2F2A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AElf.EntityMapping.Elasticsearch.Tests", "test\AElf.EntityMapping.Elasticsearch.Tests\AElf.EntityMapping.Elasticsearch.Tests.csproj", "{A7B92B32-3AE1-4F24-9882-239AAB1B5B2F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AElf.EntityMapping.TestBase", "test\AElf.EntityMapping.TestBase\AElf.EntityMapping.TestBase.csproj", "{00696502-4CC9-43AF-8642-9B393FE8DE3F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AElf.EntityMapping.Tests", "test\AElf.EntityMapping.Tests\AElf.EntityMapping.Tests.csproj", "{366F63F8-0089-499C-9413-CFAE471F0F13}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9E5B3C50-F4F5-40E8-AFEA-B730900EA3B1} = {3B3C0D8B-1640-4089-B130-CA5D9D556471}
+		{9CEF5949-B744-4D0E-99E7-8683ABDC2F2A} = {3B3C0D8B-1640-4089-B130-CA5D9D556471}
+		{A7B92B32-3AE1-4F24-9882-239AAB1B5B2F} = {A1DA5872-FCBB-4732-B543-2CF77B2CC900}
+		{00696502-4CC9-43AF-8642-9B393FE8DE3F} = {A1DA5872-FCBB-4732-B543-2CF77B2CC900}
+		{366F63F8-0089-499C-9413-CFAE471F0F13} = {A1DA5872-FCBB-4732-B543-2CF77B2CC900}
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9E5B3C50-F4F5-40E8-AFEA-B730900EA3B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E5B3C50-F4F5-40E8-AFEA-B730900EA3B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E5B3C50-F4F5-40E8-AFEA-B730900EA3B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E5B3C50-F4F5-40E8-AFEA-B730900EA3B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9CEF5949-B744-4D0E-99E7-8683ABDC2F2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9CEF5949-B744-4D0E-99E7-8683ABDC2F2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9CEF5949-B744-4D0E-99E7-8683ABDC2F2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9CEF5949-B744-4D0E-99E7-8683ABDC2F2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7B92B32-3AE1-4F24-9882-239AAB1B5B2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7B92B32-3AE1-4F24-9882-239AAB1B5B2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7B92B32-3AE1-4F24-9882-239AAB1B5B2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7B92B32-3AE1-4F24-9882-239AAB1B5B2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00696502-4CC9-43AF-8642-9B393FE8DE3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00696502-4CC9-43AF-8642-9B393FE8DE3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00696502-4CC9-43AF-8642-9B393FE8DE3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00696502-4CC9-43AF-8642-9B393FE8DE3F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{366F63F8-0089-499C-9413-CFAE471F0F13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{366F63F8-0089-499C-9413-CFAE471F0F13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{366F63F8-0089-499C-9413-CFAE471F0F13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{366F63F8-0089-499C-9413-CFAE471F0F13}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
