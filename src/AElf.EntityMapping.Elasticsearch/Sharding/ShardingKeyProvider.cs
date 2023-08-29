@@ -317,6 +317,10 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     
     private void InitShardProvider()
     {
+        if(_shardInitSettings.IsNullOrEmpty())
+        {
+            return;
+        }
         List<ShardGroup> shardGroups = _shardInitSettings.Find(a => a.CollectionName == _type.Name)?.ShardGroups;
         var properties = _type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         if (shardGroups.IsNullOrEmpty())
