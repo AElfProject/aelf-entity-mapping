@@ -80,7 +80,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
     }
 
     public async Task<List<string>> GetCollectionNameAsync(
-        List<CollectionNameCondition> conditions)
+        List<CollectionNameCondition> conditions, List<string> shardingKeyProviderCollectionNames = null)
     {
         var collectionNameList = new List<string>();
         if (_collectionRouteKeys == null || _collectionRouteKeys.Count == 0)
@@ -95,6 +95,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
             {
                 continue;
             }
+
             _logger.LogInformation($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
                                    $"collectionRouteKey: {JsonConvert.SerializeObject(collectionRouteKey.FieldName)}");
 
@@ -114,12 +115,23 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
             {
                 var _collectionRouteKeyIndexRepository = _lazyServiceProvider
                     .LazyGetRequiredService<IElasticsearchRepository<RouteKeyCollection, string>>();
-                var collectionList = await _collectionRouteKeyIndexRepository.GetListAsync(x => x.CollectionRouteKey == fieldValue,
-                    collectionRouteKeyIndexName);
+                var collectionList = new List<RouteKeyCollection>();
+                if (shardingKeyProviderCollectionNames != null && shardingKeyProviderCollectionNames.Count > 0)
+                {
+                    collectionList = await _collectionRouteKeyIndexRepository.GetListAsync(
+                        x => x.CollectionRouteKey == fieldValue && shardingKeyProviderCollectionNames.Contains(x.CollectionName),
+                        collectionRouteKeyIndexName);
+                }
+                else
+                {
+                    collectionList = await _collectionRouteKeyIndexRepository.GetListAsync(
+                        x => x.CollectionRouteKey == fieldValue,
+                        collectionRouteKeyIndexName);
+                }
                 _logger.LogInformation($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
                                        $"collectionList: {JsonConvert.SerializeObject(collectionList)}");
                 var nameList = collectionList.Select(x => x.CollectionName).Distinct().ToList();
-                if(collectionNameList.Count == 0)
+                if (collectionNameList.Count == 0)
                 {
                     collectionNameList.AddRange(nameList);
                 }
