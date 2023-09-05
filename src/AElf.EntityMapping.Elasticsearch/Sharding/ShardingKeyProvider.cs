@@ -75,26 +75,13 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         _logger.LogDebug(
             "ShardingKeyProvider.GetCollectionNameAsync: conditions: {conditions},ShardingKeyInfo:{ShardingKeyInfo}",
             JsonConvert.SerializeObject(conditions), JsonConvert.SerializeObject(shardingKeyInfos.Count));
-        if (!shardingKeyInfos.IsNullOrEmpty())
-        {
-            foreach (var shardingKeyInfo in shardingKeyInfos)
-            {
-                if (!shardingKeyInfo.ShardKeys.IsNullOrEmpty())
-                {
-                    foreach (var shardingKey in shardingKeyInfo.ShardKeys)
-                    {
-                        _logger.LogDebug(
-                            "ShardingKeyProvider.GetCollectionNameAsync-foreach: name:{name},value:{value},stepType:{stepType},step:{step},order:{order}",
-                            shardingKey.ShardKeyName, shardingKey.Value, shardingKey.StepType, shardingKey.Step, shardingKey.Order);
-                    }
-                }
-
-               
-            }
-        }
 
         foreach (var condition in conditions)
         {
+            if(condition.Key.IsNullOrEmpty() || condition.Value == null)
+            {
+                continue;
+            }
             var existShardKeyName =
                 shardingKeyInfos.Exists(a => a.ShardKeys.Exists(b => b.ShardKeyName == condition.Key));
             if (existShardKeyName)
