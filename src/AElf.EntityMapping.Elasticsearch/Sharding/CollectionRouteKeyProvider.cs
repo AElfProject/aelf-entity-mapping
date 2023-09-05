@@ -145,19 +145,24 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     //     collectionRouteKeyIndexName);
                     
                     var client = _elasticsearchClientProvider.GetClient();
-                    var mustQuery = new List<Func<QueryContainerDescriptor<RouteKeyCollection>, QueryContainer>>();
-                    mustQuery.Add(q => q.Term(i => i.Field(f => f.CollectionRouteKey).Value(fieldValue)));
-                    var shouldQuery = new List<Func<QueryContainerDescriptor<RouteKeyCollection>, QueryContainer>>();
-                    foreach (var value in shardingKeyProviderCollectionNames)
-                    {
-                        shouldQuery.Add(q => q.Term(i => i.Field(f => f.CollectionName).Value(value)));
-                    }
-                    mustQuery.Add(q => q.Bool(b => b.Should(shouldQuery)));
-                    QueryContainer Filter(QueryContainerDescriptor<RouteKeyCollection> f) => f.Bool(b => b.Must(mustQuery));
-                    Func<SearchDescriptor<RouteKeyCollection>, ISearchRequest> selector = null;
-                    selector = new Func<SearchDescriptor<RouteKeyCollection>, ISearchRequest>(s =>
-                        s.Index(collectionRouteKeyIndexName).Query(Filter).From(0).Size(10000));
-                    var result = await client.SearchAsync(selector);
+                    // var mustQuery = new List<Func<QueryContainerDescriptor<RouteKeyCollection>, QueryContainer>>();
+                    // mustQuery.Add(q => q.Term(i => i.Field(f => f.CollectionRouteKey).Value(fieldValue)));
+                    // var shouldQuery = new List<Func<QueryContainerDescriptor<RouteKeyCollection>, QueryContainer>>();
+                    // foreach (var value in shardingKeyProviderCollectionNames)
+                    // {
+                    //     shouldQuery.Add(q => q.Term(i => i.Field(f => f.CollectionName).Value(value)));
+                    // }
+                    // mustQuery.Add(q => q.Bool(b => b.Should(shouldQuery)));
+                    // QueryContainer Filter(QueryContainerDescriptor<RouteKeyCollection> f) => f.Bool(b => b.Must(mustQuery));
+                    // Func<SearchDescriptor<RouteKeyCollection>, ISearchRequest> selector = null;
+                    // selector = new Func<SearchDescriptor<RouteKeyCollection>, ISearchRequest>(s =>
+                    //     s.Index(collectionRouteKeyIndexName).Query(Filter).From(0).Size(10000));
+                    // var result = await client.SearchAsync(selector);
+
+                    var result = await client.SearchAsync<RouteKeyCollection>(s =>
+                        s.Size(10000).Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
+                            .Collapse(c => c.Field("CollectionName")).Aggregations(a => a
+                                .Cardinality("courseAgg", ca => ca.Field("CollectionName"))));
                     if (!result.IsValid)
                     {
                         throw new Exception($"Search document failed at index {collectionRouteKeyIndexName} :" + result.ServerError.Error.Reason);
