@@ -160,7 +160,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     // var result = await client.SearchAsync(selector);
 
                     var result = await client.SearchAsync<RouteKeyCollection>(s =>
-                        s.Size(10000).Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
+                        s.Index(collectionRouteKeyIndexName).Size(10000).Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
                             .Collapse(c => c.Field("CollectionName")).Aggregations(a => a
                                 .Cardinality("courseAgg", ca => ca.Field("CollectionName"))));
                     if (!result.IsValid)
