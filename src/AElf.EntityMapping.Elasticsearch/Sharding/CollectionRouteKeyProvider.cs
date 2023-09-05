@@ -161,8 +161,8 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
 
                     var result = await client.SearchAsync<RouteKeyCollection>(s =>
                         s.Index(collectionRouteKeyIndexName).Size(10000).Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
-                            .Collapse(c => c.Field("CollectionName")).Aggregations(a => a
-                                .Cardinality("courseAgg", ca => ca.Field("CollectionName"))));
+                            .Collapse(c => c.Field("collectionName")).Aggregations(a => a
+                                .Cardinality("courseAgg", ca => ca.Field("collectionName"))));
                     if (!result.IsValid)
                     {
                         throw new Exception($"Search document failed at index {collectionRouteKeyIndexName} :" + result.ServerError.Error.Reason);
