@@ -118,8 +118,31 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 var collectionList = new List<RouteKeyCollection>();
                 if (shardingKeyProviderCollectionNames != null && shardingKeyProviderCollectionNames.Count > 0)
                 {
+                    var parameter = Expression.Parameter(typeof(RouteKeyCollection), "x");
+                    var fieldValueConstantExpression = Expression.Constant(fieldValue);
+                    var propertyCollectionRouteKey = Expression.Property(parameter, "CollectionRouteKey");
+                    var equalsToValue1 = Expression.Equal(propertyCollectionRouteKey, fieldValueConstantExpression);
+
+                    // List<string> values = new List<string> { "value2", "value3", "value4", "value5", "value6" };
+                    Expression orExpression = null;
+                    var propertyCollectionName = Expression.Property(parameter, "CollectionName");
+
+                    foreach (var value in shardingKeyProviderCollectionNames)
+                    {
+                        var constant = Expression.Constant(value);
+                        var equalsToValue = Expression.Equal(propertyCollectionName, constant);
+
+                        orExpression = orExpression == null ? equalsToValue : Expression.Or(orExpression, equalsToValue);
+                    }
+
+                    // create a expression (x.A == value1 && (x.B == value2 || x.B == value3 || x.B == value4 || x.B == value5 || x.B == value6))
+                    var andExpression = Expression.AndAlso(equalsToValue1, orExpression);
+
+                    // create a lambda expression (x => x.A == value1 && (x.B == value2 || x.B == value3 || x.B == value4 || x.B == value5 || x.B == value6))
+                    var lambda = Expression.Lambda<Func<RouteKeyCollection, bool>>(andExpression, parameter);
+                
                     collectionList = await _collectionRouteKeyIndexRepository.GetListAsync(
-                        x => x.CollectionRouteKey == fieldValue && shardingKeyProviderCollectionNames.Contains(x.CollectionName),
+                        lambda,
                         collectionRouteKeyIndexName);
                 }
                 else
