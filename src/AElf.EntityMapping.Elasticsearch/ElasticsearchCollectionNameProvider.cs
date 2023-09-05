@@ -41,7 +41,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
         
         var shardKeyCollectionNames = await _shardingKeyProvider.GetCollectionNameAsync(conditions);
         var routeKeyCollectionNames =
-            await _collectionRouteKeyProvider.GetCollectionNameAsync(conditions, shardKeyCollectionNames);
+            await _collectionRouteKeyProvider.GetCollectionNameAsync(conditions);
 
         if (shardKeyCollectionNames.Count > 0 && routeKeyCollectionNames.Count > 0)
         {

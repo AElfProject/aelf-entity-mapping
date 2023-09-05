@@ -9,8 +9,7 @@ public interface ICollectionRouteKeyProvider<TEntity> where TEntity : class
     /// <param name="conditions"></param>
     /// <typeparam name="TEntity">ElasticSearch Index Entity</typeparam>
     /// <returns></returns>
-    Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions,
-        List<string> shardingKeyProviderCollectionNames = null);
+    Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions);
 
     Task<string> GetCollectionNameAsync(string id);
 

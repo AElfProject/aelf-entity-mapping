@@ -74,13 +74,12 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     _collectionRouteKeys.Add(collectionRouteKeyItem);
                 }
             }
-            _logger.LogInformation($"CollectionRouteKeyProvider.InitializeCollectionRouteKeys: _collectionRouteKeys: {JsonConvert.SerializeObject(_collectionRouteKeys.Select(n=>n.FieldName).ToList())}");
+            // _logger.LogInformation($"CollectionRouteKeyProvider.InitializeCollectionRouteKeys: _collectionRouteKeys: {JsonConvert.SerializeObject(_collectionRouteKeys.Select(n=>n.FieldName).ToList())}");
             
         }
     }
 
-    public async Task<List<string>> GetCollectionNameAsync(
-        List<CollectionNameCondition> conditions, List<string> shardingKeyProviderCollectionNames = null)
+    public async Task<List<string>> GetCollectionNameAsync(List<CollectionNameCondition> conditions)
     {
         var collectionNameList = new List<string>();
         if (_collectionRouteKeys == null || _collectionRouteKeys.Count == 0)
@@ -96,8 +95,8 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 continue;
             }
 
-            _logger.LogInformation($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
-                                   $"collectionRouteKey: {JsonConvert.SerializeObject(collectionRouteKey.FieldName)}");
+            // _logger.LogInformation($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
+            //                        $"collectionRouteKey: {JsonConvert.SerializeObject(collectionRouteKey.FieldName)}");
 
             if (condition.Value == null)
             {
@@ -113,70 +112,16 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                                    $"collectionRouteKeyIndexName: {collectionRouteKeyIndexName}");
             if (condition.Type == ConditionType.Equal)
             {
-                
-                var collectionList = new List<RouteKeyCollection>();
-                if (shardingKeyProviderCollectionNames != null && shardingKeyProviderCollectionNames.Count > 0)
+                var client = _elasticsearchClientProvider.GetClient();
+                var result = await client.SearchAsync<RouteKeyCollection>(s =>
+                    s.Index(collectionRouteKeyIndexName).Size(10000).Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
+                        .Collapse(c => c.Field("collectionName")).Aggregations(a => a
+                            .Cardinality("courseAgg", ca => ca.Field("collectionName"))));
+                if (!result.IsValid)
                 {
-                    // var parameter = Expression.Parameter(typeof(RouteKeyCollection), "x");
-                    // var fieldValueConstantExpression = Expression.Constant(fieldValue);
-                    // var propertyCollectionRouteKey = Expression.Property(parameter, "CollectionRouteKey");
-                    // var equalsToValue1 = Expression.Equal(propertyCollectionRouteKey, fieldValueConstantExpression);
-                    //
-                    // // List<string> values = new List<string> { "value2", "value3", "value4", "value5", "value6" };
-                    // Expression orExpression = null;
-                    // var propertyCollectionName = Expression.Property(parameter, "CollectionName");
-                    //
-                    // foreach (var value in shardingKeyProviderCollectionNames)
-                    // {
-                    //     var constant = Expression.Constant(value);
-                    //     var equalsToValue = Expression.Equal(propertyCollectionName, constant);
-                    //
-                    //     orExpression = orExpression == null ? equalsToValue : Expression.Or(orExpression, equalsToValue);
-                    // }
-                    //
-                    // // create a expression (x.A == value1 && (x.B == value2 || x.B == value3 || x.B == value4 || x.B == value5 || x.B == value6))
-                    // var andExpression = Expression.AndAlso(equalsToValue1, orExpression);
-                    //
-                    // // create a lambda expression (x => x.A == value1 && (x.B == value2 || x.B == value3 || x.B == value4 || x.B == value5 || x.B == value6))
-                    // var lambda = Expression.Lambda<Func<RouteKeyCollection, bool>>(andExpression, parameter);
-                    //
-                    // collectionList = await _collectionRouteKeyIndexRepository.GetListAsync(
-                    //     lambda,
-                    //     collectionRouteKeyIndexName);
-                    
-                    var client = _elasticsearchClientProvider.GetClient();
-                    // var mustQuery = new List<Func<QueryContainerDescriptor<RouteKeyCollection>, QueryContainer>>();
-                    // mustQuery.Add(q => q.Term(i => i.Field(f => f.CollectionRouteKey).Value(fieldValue)));
-                    // var shouldQuery = new List<Func<QueryContainerDescriptor<RouteKeyCollection>, QueryContainer>>();
-                    // foreach (var value in shardingKeyProviderCollectionNames)
-                    // {
-                    //     shouldQuery.Add(q => q.Term(i => i.Field(f => f.CollectionName).Value(value)));
-                    // }
-                    // mustQuery.Add(q => q.Bool(b => b.Should(shouldQuery)));
-                    // QueryContainer Filter(QueryContainerDescriptor<RouteKeyCollection> f) => f.Bool(b => b.Must(mustQuery));
-                    // Func<SearchDescriptor<RouteKeyCollection>, ISearchRequest> selector = null;
-                    // selector = new Func<SearchDescriptor<RouteKeyCollection>, ISearchRequest>(s =>
-                    //     s.Index(collectionRouteKeyIndexName).Query(Filter).From(0).Size(10000));
-                    // var result = await client.SearchAsync(selector);
-
-                    var result = await client.SearchAsync<RouteKeyCollection>(s =>
-                        s.Index(collectionRouteKeyIndexName).Size(10000).Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
-                            .Collapse(c => c.Field("collectionName")).Aggregations(a => a
-                                .Cardinality("courseAgg", ca => ca.Field("collectionName"))));
-                    if (!result.IsValid)
-                    {
-                        throw new Exception($"Search document failed at index {collectionRouteKeyIndexName} :" + result.ServerError.Error.Reason);
-                    }
-                    collectionList = result.Documents.ToList();
+                    throw new Exception($"Search document failed at index {collectionRouteKeyIndexName} :" + result.ServerError.Error.Reason);
                 }
-                else
-                {
-                    var _collectionRouteKeyIndexRepository = _lazyServiceProvider
-                        .LazyGetRequiredService<IElasticsearchRepository<RouteKeyCollection, string>>();
-                    collectionList = await _collectionRouteKeyIndexRepository.GetListAsync(
-                        x => x.CollectionRouteKey == fieldValue,
-                        collectionRouteKeyIndexName);
-                }
+                var collectionList = result.Documents.ToList();
                 _logger.LogInformation($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
                                        $"collectionList: {JsonConvert.SerializeObject(collectionList)}");
                 var nameList = collectionList.Select(x => x.CollectionName).Distinct().ToList();
