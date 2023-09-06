@@ -74,7 +74,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     _collectionRouteKeys.Add(collectionRouteKeyItem);
                 }
             }
-            // _logger.LogInformation($"CollectionRouteKeyProvider.InitializeCollectionRouteKeys: _collectionRouteKeys: {JsonConvert.SerializeObject(_collectionRouteKeys.Select(n=>n.FieldName).ToList())}");
+            // _logger.LogDebug($"CollectionRouteKeyProvider.InitializeCollectionRouteKeys: _collectionRouteKeys: {JsonConvert.SerializeObject(_collectionRouteKeys.Select(n=>n.FieldName).ToList())}");
             
         }
     }
@@ -95,7 +95,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 continue;
             }
 
-            // _logger.LogInformation($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
+            // _logger.LogDebug($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
             //                        $"collectionRouteKey: {JsonConvert.SerializeObject(collectionRouteKey.FieldName)}");
 
             if (condition.Value == null)
@@ -108,22 +108,22 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
             var collectionRouteKeyIndexName =
                 IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,
                     _aelfEntityMappingOptions.CollectionPrefix);
-            _logger.LogInformation($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
+            _logger.LogDebug($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
                                    $"collectionRouteKeyIndexName: {collectionRouteKeyIndexName}");
             if (condition.Type == ConditionType.Equal)
             {
                 var client = _elasticsearchClientProvider.GetClient();
                 var result = await client.SearchAsync<RouteKeyCollection>(s =>
                     s.Index(collectionRouteKeyIndexName).Size(10000).Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
-                        .Collapse(c => c.Field("collectionName")).Aggregations(a => a
-                            .Cardinality("courseAgg", ca => ca.Field("collectionName"))));
+                        .Collapse(c => c.Field(f=>f.CollectionName)).Aggregations(a => a
+                            .Cardinality("courseAgg", ca => ca.Field(f=>f.CollectionName))));
                 if (!result.IsValid)
                 {
                     throw new Exception($"Search document failed at index {collectionRouteKeyIndexName} :" + result.ServerError.Error.Reason);
                 }
                 var collectionList = result.Documents.ToList();
-                _logger.LogInformation($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
-                                       $"collectionList: {JsonConvert.SerializeObject(collectionList)}");
+                _logger.LogDebug($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
+                                 $"collectionList: {JsonConvert.SerializeObject(collectionList)}");
                 var nameList = collectionList.Select(x => x.CollectionName).Distinct().ToList();
                 if (collectionNameList.Count == 0)
                 {
