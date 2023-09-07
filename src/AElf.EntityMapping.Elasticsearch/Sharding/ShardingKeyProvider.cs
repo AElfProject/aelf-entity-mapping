@@ -72,10 +72,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
         List<ShardingKeyInfo<TEntity>> filterShardingKeyInfos = shardingKeyInfos;
         List<CollectionNameCondition> filterConditions = new List<CollectionNameCondition>();
-        _logger.LogDebug(
-            "ShardingKeyProvider.GetCollectionNameAsync: conditions: {conditions},ShardingKeyInfo:{ShardingKeyInfo}",
-            JsonConvert.SerializeObject(conditions), JsonConvert.SerializeObject(shardingKeyInfos.Count));
-
+       
         foreach (var condition in conditions)
         {
             if(condition.Key.IsNullOrEmpty() || condition.Value == null)
