@@ -55,8 +55,10 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         if (_shardKeyInfoList == null)
         {
             InitShardProvider();
+            _logger.LogDebug("ShardingKeyProvider.GetShardKeyInfoList: init");
         }
-
+        _logger.LogDebug(
+            "ShardingKeyProvider.GetShardKeyInfoList: hava cache:_shardKeyInfoList");
         return _shardKeyInfoList;
     }
     
@@ -70,9 +72,13 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
         List<ShardingKeyInfo<TEntity>> filterShardingKeyInfos = shardingKeyInfos;
         List<CollectionNameCondition> filterConditions = new List<CollectionNameCondition>();
-
+       
         foreach (var condition in conditions)
         {
+            if(condition.Key.IsNullOrEmpty() || condition.Value == null)
+            {
+                continue;
+            }
             var existShardKeyName =
                 shardingKeyInfos.Exists(a => a.ShardKeys.Exists(b => b.ShardKeyName == condition.Key));
             if (existShardKeyName)
