@@ -154,6 +154,22 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var isSharding = _shardingKeyProvider.IsShardingCollection();
 
         var client = await GetElasticsearchClientAsync(cancellationToken);
+        var bulkAddTaskList = new List<Task>();
+        bulkAddTaskList.Add(GetBulkAddTaskAsync(client, indexNames, list, isSharding, cancellationToken));
+        var routeKeyTaskList =
+            await _collectionRouteKeyProvider.GetAddManyCollectionRouteKeyTasksAsync(list, indexNames,
+                cancellationToken);
+        if (routeKeyTaskList.Count > 0)
+        {
+            bulkAddTaskList.AddRange(routeKeyTaskList);
+        }
+        await Task.WhenAll(routeKeyTaskList.ToArray());
+        //bulk index non shard key to route collection 
+        // await _collectionRouteKeyProvider.AddManyCollectionRouteKeyAsync(list, indexNames, cancellationToken);
+    }
+
+    private async Task GetBulkAddTaskAsync(IElasticClient client,List<string> indexNames,List<TEntity> list, bool isSharding, CancellationToken cancellationToken = default)
+    {
         var response = new BulkResponse();
         var currentIndexName = indexNames[0];
         var bulk = new BulkRequest(currentIndexName)
@@ -185,10 +201,6 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         }
         
         response = await client.BulkAsync(bulk, cancellationToken);
-
-        //bulk index non shard key to route collection 
-        await _collectionRouteKeyProvider.AddManyCollectionRouteKeyAsync(list, indexNames, cancellationToken);
-        
         if (!response.IsValid)
         {
             throw new ElasticsearchException(

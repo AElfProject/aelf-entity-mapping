@@ -174,8 +174,8 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
             selector, cancellationToken);
         return result.Found ? result.Source : null;
     }
-    
-    public async Task AddManyCollectionRouteKeyAsync(List<TEntity> modelList,List<string> fullCollectionNameList,CancellationToken cancellationToken = default)
+
+    public async Task<List<Task>> GetAddManyCollectionRouteKeyTasksAsync(List<TEntity> modelList,List<string> fullCollectionNameList,CancellationToken cancellationToken = default)
     {
         if (_collectionRouteKeys!=null && _collectionRouteKeys.Any() && _shardingKeyProvider.IsShardingCollection())
         {
@@ -185,8 +185,10 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
             {
                 routeKeyTaskList.Add(BulkAddRouteKey(client,modelList,collectionRouteKey,fullCollectionNameList,cancellationToken));
             }
-            await Task.WhenAll(routeKeyTaskList.ToArray());
+            // await Task.WhenAll(routeKeyTaskList.ToArray());
+            return routeKeyTaskList;
         }
+        return new List<Task>();
     }
 
     public async Task AddCollectionRouteKeyAsync(TEntity model,string fullCollectionName,CancellationToken cancellationToken = default)
