@@ -163,7 +163,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         {
             bulkAddTaskList.AddRange(routeKeyTaskList);
         }
-        await Task.WhenAll(routeKeyTaskList.ToArray());
+        await Task.WhenAll(bulkAddTaskList.ToArray());
         //bulk index non shard key to route collection 
         // await _collectionRouteKeyProvider.AddManyCollectionRouteKeyAsync(list, indexNames, cancellationToken);
     }
