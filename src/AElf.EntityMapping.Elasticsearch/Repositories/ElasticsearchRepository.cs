@@ -155,7 +155,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response = new BulkResponse();
-        var currentIndexName = indexNames[0];
+        // var currentIndexName = indexNames[0];
         var bulk = new BulkRequest()
         {
             Operations = new List<IBulkOperation>(),
@@ -264,7 +264,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response = new BulkResponse();
-        var currentIndexName = indexNames[0];
+        // var currentIndexName = indexNames[0];
         var bulk = new BulkRequest()
         {
             Operations = new List<IBulkOperation>(),
