@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq.Expressions;
 using AElf.EntityMapping.Elasticsearch.Exceptions;
 using AElf.EntityMapping.Elasticsearch.Linq;
@@ -6,6 +7,7 @@ using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Elasticsearch.Sharding;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nest;
 using Volo.Abp.Domain.Entities;
@@ -24,14 +26,17 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     private readonly ICollectionRouteKeyProvider<TEntity> _collectionRouteKeyProvider;
     private readonly IElasticIndexService _elasticIndexService;
     private readonly IElasticsearchQueryableFactory<TEntity> _elasticsearchQueryableFactory;
+    private readonly ILogger<ElasticsearchRepository<TEntity, TKey>> _logger;
 
 
     public ElasticsearchRepository(IElasticsearchClientProvider elasticsearchClientProvider,
         IOptions<AElfEntityMappingOptions> aelfEntityMappingOptions,
+        ILogger<ElasticsearchRepository<TEntity, TKey>> logger,
         IOptions<ElasticsearchOptions> options, ICollectionNameProvider<TEntity> collectionNameProvider,
         IShardingKeyProvider<TEntity> shardingKeyProvider, ICollectionRouteKeyProvider<TEntity> collectionRouteKeyProvider,
         IElasticIndexService elasticIndexService, IElasticsearchQueryableFactory<TEntity> elasticsearchQueryableFactory)
     {
+        _logger = logger;
         _elasticsearchClientProvider = elasticsearchClientProvider;
         _collectionNameProvider = collectionNameProvider;
         _aelfEntityMappingOptions = aelfEntityMappingOptions.Value;
@@ -192,12 +197,16 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var routeKeyBulkOperationList =
             await _collectionRouteKeyProvider.AddManyCollectionRouteKeyAsync(list, indexNames, cancellationToken);
         bulk.Operations.AddRange(routeKeyBulkOperationList);
+        var stopwatch = Stopwatch.StartNew();
         response = await client.BulkAsync(bulk, cancellationToken);
+        stopwatch.Stop();
         if (!response.IsValid)
         {
             throw new ElasticsearchException(
                 $"Bulk InsertOrUpdate Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
         }
+        
+        _logger.LogDebug("AddOrUpdateManyAsync elapsed time: {0} ms", stopwatch.Elapsed.TotalMilliseconds);
     }
 
     public async Task UpdateAsync(TEntity model, string collectionName = null,
