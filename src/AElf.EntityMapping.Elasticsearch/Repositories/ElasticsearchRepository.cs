@@ -156,7 +156,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response = new BulkResponse();
         var currentIndexName = indexNames[0];
-        var bulk = new BulkRequest(currentIndexName)
+        var bulk = new BulkRequest()
         {
             Operations = new List<IBulkOperation>(),
             Refresh = _elasticsearchOptions.Refresh
@@ -164,31 +164,35 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
         for (int i = 0; i < list.Count; i++)
         {
-            if (isSharding && (currentIndexName != indexNames[i]))
-            {
-                response = await client.BulkAsync(bulk, cancellationToken);
-                if (!response.IsValid)
-                {
-                    throw new ElasticsearchException(
-                        $"Bulk InsertOrUpdate Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
-                }
-                
-                currentIndexName = indexNames[i];
-                
-                bulk = new BulkRequest(currentIndexName)
-                {
-                    Operations = new List<IBulkOperation>(),
-                    Refresh = _elasticsearchOptions.Refresh
-                };
-            }
-            bulk.Operations.Add(new BulkIndexOperation<TEntity>(list[i]));
+            // if (isSharding && (currentIndexName != indexNames[i]))
+            // {
+            //     response = await client.BulkAsync(bulk, cancellationToken);
+            //     if (!response.IsValid)
+            //     {
+            //         throw new ElasticsearchException(
+            //             $"Bulk InsertOrUpdate Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
+            //     }
+            //     
+            //     currentIndexName = indexNames[i];
+            //     
+            //     bulk = new BulkRequest(currentIndexName)
+            //     {
+            //         Operations = new List<IBulkOperation>(),
+            //         Refresh = _elasticsearchOptions.Refresh
+            //     };
+            // }
+            // bulk.Operations.Add(new BulkIndexOperation<TEntity>(list[i]));
+
+            var operation = new BulkIndexOperation<TEntity>(list[i]);
+            operation.Index = indexNames[i];
+            bulk.Operations.Add(operation);
         }
         
-        response = await client.BulkAsync(bulk, cancellationToken);
-
         //bulk index non shard key to route collection 
-        await _collectionRouteKeyProvider.AddManyCollectionRouteKeyAsync(list, indexNames, cancellationToken);
-        
+        var routeKeyBulkOperationList =
+            await _collectionRouteKeyProvider.AddManyCollectionRouteKeyAsync(list, indexNames, cancellationToken);
+        bulk.Operations.AddRange(routeKeyBulkOperationList);
+        response = await client.BulkAsync(bulk, cancellationToken);
         if (!response.IsValid)
         {
             throw new ElasticsearchException(
@@ -261,7 +265,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response = new BulkResponse();
         var currentIndexName = indexNames[0];
-        var bulk = new BulkRequest(currentIndexName)
+        var bulk = new BulkRequest()
         {
             Operations = new List<IBulkOperation>(),
             Refresh = _elasticsearchOptions.Refresh
@@ -269,31 +273,34 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         
         for (int i = 0; i < list.Count; i++)
         {
-            if (isSharding && (currentIndexName != indexNames[i]))
-            {
-                response = await client.BulkAsync(bulk, cancellationToken);
-                if (!response.IsValid)
-                {
-                    throw new ElasticsearchException(
-                        $"Bulk Delete Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
-                }
-                
-                currentIndexName = indexNames[i];
-                
-                bulk = new BulkRequest(currentIndexName)
-                {
-                    Operations = new List<IBulkOperation>(),
-                    Refresh = _elasticsearchOptions.Refresh
-                };
-            }
-            bulk.Operations.Add(new BulkDeleteOperation<TEntity>(new Id(list[i])));
+            // if (isSharding && (currentIndexName != indexNames[i]))
+            // {
+            //     response = await client.BulkAsync(bulk, cancellationToken);
+            //     if (!response.IsValid)
+            //     {
+            //         throw new ElasticsearchException(
+            //             $"Bulk Delete Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
+            //     }
+            //     
+            //     currentIndexName = indexNames[i];
+            //     
+            //     bulk = new BulkRequest(currentIndexName)
+            //     {
+            //         Operations = new List<IBulkOperation>(),
+            //         Refresh = _elasticsearchOptions.Refresh
+            //     };
+            // }
+            // bulk.Operations.Add(new BulkDeleteOperation<TEntity>(new Id(list[i])));
+            var operation = new BulkDeleteOperation<TEntity>(new Id(list[i]));
+            operation.Index = indexNames[i];
+            bulk.Operations.Add(operation);
         }
         
-        response = await client.BulkAsync(bulk, cancellationToken);
-
         //bulk delete non shard key to route collection
-        await _collectionRouteKeyProvider.DeleteManyCollectionRouteKeyAsync(list, cancellationToken);
-
+        var routeKeyBulkOperationList =
+            await _collectionRouteKeyProvider.DeleteManyCollectionRouteKeyAsync(list, cancellationToken);
+        bulk.Operations.AddRange(routeKeyBulkOperationList);
+        response = await client.BulkAsync(bulk, cancellationToken);
         if (response.ServerError == null)
         {
             return;
