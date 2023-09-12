@@ -197,16 +197,14 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var routeKeyBulkOperationList =
             await _collectionRouteKeyProvider.AddManyCollectionRouteKeyAsync(list, indexNames, cancellationToken);
         bulk.Operations.AddRange(routeKeyBulkOperationList);
-        var stopwatch = Stopwatch.StartNew();
+        _logger.LogDebug("Before BulkAsync time: {0} ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"));
         response = await client.BulkAsync(bulk, cancellationToken);
-        stopwatch.Stop();
+        _logger.LogDebug("After BulkAsync time: {0} ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"));
         if (!response.IsValid)
         {
             throw new ElasticsearchException(
                 $"Bulk InsertOrUpdate Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
         }
-        
-        _logger.LogDebug("AddOrUpdateManyAsync elapsed time: {0} ms", stopwatch.Elapsed.TotalMilliseconds);
     }
 
     public async Task UpdateAsync(TEntity model, string collectionName = null,

@@ -306,11 +306,11 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 var collectionRouteKeyRouteIndexName =
                     IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,
                         _aelfEntityMappingOptions.CollectionPrefix);
-                var collectionRouteKeyRouteBulk = new BulkRequest(collectionRouteKeyRouteIndexName)
-                {
-                    Operations = new List<IBulkOperation>(),
-                    Refresh = _elasticsearchOptions.Refresh
-                };
+                // var collectionRouteKeyRouteBulk = new BulkRequest(collectionRouteKeyRouteIndexName)
+                // {
+                //     Operations = new List<IBulkOperation>(),
+                //     Refresh = _elasticsearchOptions.Refresh
+                // };
                 foreach (var item in modelList)
                 {
                     // collectionRouteKeyRouteBulk.Operations.Add(new BulkDeleteOperation<RouteKeyCollection>(new Id(item)));
@@ -319,7 +319,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     bulkDeleteOperationList.Add(operation);
                 }
 
-                await client.BulkAsync(collectionRouteKeyRouteBulk, cancellationToken);
+                // await client.BulkAsync(collectionRouteKeyRouteBulk, cancellationToken);
             }
             // await Task.WhenAll(routeKeyTaskList.ToArray());
         }
