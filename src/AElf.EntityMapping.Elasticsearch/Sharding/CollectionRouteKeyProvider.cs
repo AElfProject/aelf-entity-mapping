@@ -175,52 +175,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         return result.Found ? result.Source : null;
     }
 
-    public async Task<List<BulkIndexOperation<IRouteKeyCollection>>> AddManyCollectionRouteKeyAsync(List<TEntity> modelList,
-        List<string> fullCollectionNameList, CancellationToken cancellationToken = default)
-    {
-        var bulkIndexOperationList = new List<BulkIndexOperation<IRouteKeyCollection>>();
-        if (_collectionRouteKeys != null && _collectionRouteKeys.Any() && _shardingKeyProvider.IsShardingCollection())
-        {
-            // var routeKeyTaskList = new List<Task>();
-            var client = await GetElasticsearchClientAsync(cancellationToken);
-            foreach (var collectionRouteKey in _collectionRouteKeys)
-            {
-                var collectionRouteKeyIndexName =
-                    IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,
-                        _aelfEntityMappingOptions.CollectionPrefix);
-                // var collectionRouteKeyBulk = new BulkRequest(collectionRouteKeyIndexName)
-                // {
-                //     Operations = new List<IBulkOperation>(),
-                //     Refresh = _elasticsearchOptions.Refresh
-                // };
-                int indexNameCount = 0;
-                foreach (var item in modelList)
-                {
-                    // var value = item.GetType().GetProperty(collectionRouteKey.FieldName)?.GetValue(item);
-                    var value = collectionRouteKey.GetRouteKeyValueFunc(item);
-                    string indexName = IndexNameHelper.RemoveCollectionPrefix(fullCollectionNameList[indexNameCount],
-                        _aelfEntityMappingOptions.CollectionPrefix);
-                    var collectionRouteKeyIndexModel = new RouteKeyCollection()
-                    {
-                        Id = item.Id.ToString(),
-                        CollectionName = indexName,
-                        // SearchKey = Convert.ChangeType(value, collectionRouteKey.FieldValueType)
-                        CollectionRouteKey = value?.ToString()
-                    };
-                    var operation = new BulkIndexOperation<IRouteKeyCollection>(collectionRouteKeyIndexModel);
-                    operation.Index = collectionRouteKeyIndexName;
-                    bulkIndexOperationList.Add(operation);
-                    indexNameCount++;
-                }
-
-                // await client.BulkAsync(collectionRouteKeyBulk, cancellationToken);
-            }
-
-            // await Task.WhenAll(routeKeyTaskList.ToArray());
-        }
-
-        return bulkIndexOperationList;
-    }
+    
 
     public async Task AddCollectionRouteKeyAsync(TEntity model,string fullCollectionName,CancellationToken cancellationToken = default)
     {
@@ -294,38 +249,6 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         }
     }
 
-    public async Task<List<BulkDeleteOperation<IRouteKeyCollection>>> DeleteManyCollectionRouteKeyAsync(List<TEntity> modelList,CancellationToken cancellationToken = default)
-    {
-        var bulkDeleteOperationList = new List<BulkDeleteOperation<IRouteKeyCollection>>();
-        if (_collectionRouteKeys!=null && _collectionRouteKeys.Any() && _shardingKeyProvider.IsShardingCollection())
-        {
-            // var routeKeyTaskList = new List<Task>();
-            var client = await GetElasticsearchClientAsync(cancellationToken);
-            foreach (var collectionRouteKey in _collectionRouteKeys)
-            {
-                var collectionRouteKeyRouteIndexName =
-                    IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,
-                        _aelfEntityMappingOptions.CollectionPrefix);
-                // var collectionRouteKeyRouteBulk = new BulkRequest(collectionRouteKeyRouteIndexName)
-                // {
-                //     Operations = new List<IBulkOperation>(),
-                //     Refresh = _elasticsearchOptions.Refresh
-                // };
-                foreach (var item in modelList)
-                {
-                    // collectionRouteKeyRouteBulk.Operations.Add(new BulkDeleteOperation<RouteKeyCollection>(new Id(item)));
-                    var operation = new BulkDeleteOperation<IRouteKeyCollection>(new Id(item.Id.ToString()));
-                    operation.Index = collectionRouteKeyRouteIndexName;
-                    bulkDeleteOperationList.Add(operation);
-                }
-
-                // await client.BulkAsync(collectionRouteKeyRouteBulk, cancellationToken);
-            }
-            // await Task.WhenAll(routeKeyTaskList.ToArray());
-        }
-        return bulkDeleteOperationList;
-    }
-
     public async Task DeleteCollectionRouteKeyAsync(string id, CancellationToken cancellationToken = default)
     {
         if (!_shardingKeyProvider.IsShardingCollection())
@@ -350,18 +273,5 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
     private Task<IElasticClient> GetElasticsearchClientAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult(_elasticsearchClientProvider.GetClient());
-    }
-
-    private async Task BulkAddRouteKey(IElasticClient client, List<TEntity> modelList,
-        CollectionRouteKeyItem<TEntity> collectionRouteKey, List<string> fullCollectionNameList,
-        CancellationToken cancellationToken)
-    {
-        
-    }
-
-    private async Task BulkDeleteRouteKey(IElasticClient client, List<TEntity> modelList,
-        CollectionRouteKeyItem<TEntity> collectionRouteKey, CancellationToken cancellationToken)
-    {
-        
     }
 }
