@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using AElf.EntityMapping.Elasticsearch.Options;
-using AElf.EntityMapping.Elasticsearch.Repositories;
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
@@ -9,10 +8,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nest;
 using Newtonsoft.Json;
-using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
-using Volo.Abp.Threading;
 
 namespace AElf.EntityMapping.Elasticsearch.Sharding;
 
