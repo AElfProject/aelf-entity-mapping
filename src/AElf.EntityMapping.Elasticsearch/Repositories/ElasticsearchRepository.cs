@@ -158,7 +158,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var indexNames = await GetFullCollectionNameAsync(collectionName, list);
         _logger.LogDebug("[{1}]After GetFullCollectionNameAsync time: {0} ",
             DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), entityName);
-        // var isSharding = _shardingKeyProvider.IsShardingCollection();
+        var isSharding = _shardingKeyProvider.IsShardingCollection();
 
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response = new BulkResponse();
@@ -171,19 +171,23 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         for (int i = 0; i < list.Count; i++)
         {
             var operation = new BulkIndexOperation<TEntity>(list[i]);
-            operation.Index = indexNames[i];
+            operation.Index = isSharding ? indexNames[i] : indexNames[0];
             bulk.Operations.Add(operation);
         }
 
-        _logger.LogDebug("[{1}]Before GetBulkAddMCollectionRouteKeyOperationsAsync time: {0} ",
-            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-            entityName);
-        //bulk index non shard key to route collection 
-        var routeKeyBulkOperationList =
-            await GetBulkAddMCollectionRouteKeyOperationsAsync(list, indexNames, cancellationToken);
-        _logger.LogDebug("[{1}]After GetBulkAddMCollectionRouteKeyOperationsAsync time: {0} ",
-            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), entityName);
-        bulk.Operations.AddRange(routeKeyBulkOperationList);
+        if (isSharding)
+        {
+            _logger.LogDebug("[{1}]Before GetBulkAddMCollectionRouteKeyOperationsAsync time: {0} ",
+                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                entityName);
+            //bulk index non shard key to route collection 
+            var routeKeyBulkOperationList =
+                await GetBulkAddMCollectionRouteKeyOperationsAsync(list, indexNames, cancellationToken);
+            _logger.LogDebug("[{1}]After GetBulkAddMCollectionRouteKeyOperationsAsync time: {0} ",
+                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), entityName);
+            bulk.Operations.AddRange(routeKeyBulkOperationList);
+        }
+        
         _logger.LogDebug("[{1}]Before BulkAsync time: {0} ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
             entityName);
         response = await client.BulkAsync(bulk, cancellationToken);
@@ -269,14 +273,18 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         for (int i = 0; i < list.Count; i++)
         {
             var operation = new BulkDeleteOperation<TEntity>(new Id(list[i]));
-            operation.Index = indexNames[i];
+            operation.Index = isSharding ? indexNames[i] : indexNames[0];
             bulk.Operations.Add(operation);
         }
+
+        if (isSharding)
+        {
+            //bulk delete non shard key to route collection
+            var routeKeyBulkOperationList =
+                await GetBulkDeleteCollectionRouteKeyOperationsAsync(list, cancellationToken);
+            bulk.Operations.AddRange(routeKeyBulkOperationList);
+        }
         
-        //bulk delete non shard key to route collection
-        var routeKeyBulkOperationList =
-            await GetBulkDeleteCollectionRouteKeyOperationsAsync(list, cancellationToken);
-        bulk.Operations.AddRange(routeKeyBulkOperationList);
         response = await client.BulkAsync(bulk, cancellationToken);
         if (response.ServerError == null)
         {
