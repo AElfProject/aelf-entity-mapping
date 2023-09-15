@@ -152,8 +152,13 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     public async Task AddOrUpdateManyAsync(List<TEntity> list, string collectionName = null,
         CancellationToken cancellationToken = default)
     {
+        string entityName = typeof(TEntity).Name;
+        _logger.LogDebug("[{1}]Before AddOrUpdateManyAsync time: {0} ",
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), entityName);
         var indexNames = await GetFullCollectionNameAsync(collectionName, list);
-        var isSharding = _shardingKeyProvider.IsShardingCollection();
+        _logger.LogDebug("[{1}]After GetFullCollectionNameAsync time: {0} ",
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), entityName);
+        // var isSharding = _shardingKeyProvider.IsShardingCollection();
 
         var client = await GetElasticsearchClientAsync(cancellationToken);
         var response = new BulkResponse();
@@ -169,14 +174,21 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             operation.Index = indexNames[i];
             bulk.Operations.Add(operation);
         }
-        
+
+        _logger.LogDebug("[{1}]Before GetBulkAddMCollectionRouteKeyOperationsAsync time: {0} ",
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+            entityName);
         //bulk index non shard key to route collection 
         var routeKeyBulkOperationList =
             await GetBulkAddMCollectionRouteKeyOperationsAsync(list, indexNames, cancellationToken);
+        _logger.LogDebug("[{1}]After GetBulkAddMCollectionRouteKeyOperationsAsync time: {0} ",
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), entityName);
         bulk.Operations.AddRange(routeKeyBulkOperationList);
-        _logger.LogDebug("Before BulkAsync time: {0} ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+        _logger.LogDebug("[{1}]Before BulkAsync time: {0} ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+            entityName);
         response = await client.BulkAsync(bulk, cancellationToken);
-        _logger.LogDebug("After BulkAsync time: {0} ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+        _logger.LogDebug("[{1}]After BulkAsync time: {0} ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+            entityName);
         if (!response.IsValid)
         {
             throw new ElasticsearchException(
