@@ -69,7 +69,7 @@ public class ShardingCollectionTailProvider<TEntity> : IShardingCollectionTailPr
         if (shardTailCacheItem != null)
         {
             tail = shardTailCacheItem.CollectionTail;
-            _logger.LogDebug("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--cache:cacheKey:{}, tailPrefix: {tailPrefix},tail:{tail}", cacheKey, tailPrefix, tail);
+            _logger.LogTrace("ShardingCollectionTailProvider.GetShardingCollectionTailAsync--cache:cacheKey:{}, tailPrefix: {tailPrefix},tail:{tail}", cacheKey, tailPrefix, tail);
             return tail;
         }
         var result = await GetShardingCollectionTailByEsAsync(new ShardingCollectionTail(){EntityName = _typeName, TailPrefix = tailPrefix});
