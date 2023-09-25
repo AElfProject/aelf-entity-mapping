@@ -159,10 +159,39 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         _logger.LogDebug("[{1}]After GetFullCollectionNameAsync time: {0} ",
             DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), entityName);
         var isSharding = _shardingKeyProvider.IsShardingCollection();
-
+        
         var client = await GetElasticsearchClientAsync(cancellationToken);
+        if (!isSharding)
+        {
+            await BulkAddAsync(client, indexNames, list, isSharding, cancellationToken);
+            return;
+        }
+        
+        _logger.LogDebug("[{1}]Before GetBulkAddTaskAsync time: {0} ",
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+            entityName);
+        var bulkAddTaskList = new List<Task>();
+        bulkAddTaskList.Add(BulkAddAsync(client, indexNames, list, isSharding, cancellationToken));
+        _logger.LogDebug("[{1}]After GetBulkAddTaskAsync time: {0} ",
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), entityName);
+        var routeKeyTaskList =
+            await GetBulkAddCollectionRouteKeyTasksAsync(isSharding, list, indexNames, cancellationToken);
+        if (routeKeyTaskList.Count > 0)
+        {
+            bulkAddTaskList.AddRange(routeKeyTaskList);
+        }
+        _logger.LogDebug("[{1}]Before Task.WhenAll time: {0} ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+            entityName);
+        await Task.WhenAll(bulkAddTaskList.ToArray());
+        _logger.LogDebug("[{1}]After Task.WhenAll time: {0} ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+            entityName);
+    }
+    
+    private async Task BulkAddAsync(IElasticClient client,List<string> indexNames,List<TEntity> list, bool isSharding, CancellationToken cancellationToken = default)
+    {
         var response = new BulkResponse();
-        var bulk = new BulkRequest()
+        var currentIndexName = indexNames[0];
+        var bulk = new BulkRequest(currentIndexName)
         {
             Operations = new List<IBulkOperation>(),
             Refresh = _elasticsearchOptions.Refresh
@@ -170,29 +199,27 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
 
         for (int i = 0; i < list.Count; i++)
         {
-            var operation = new BulkIndexOperation<TEntity>(list[i]);
-            operation.Index = isSharding ? indexNames[i] : indexNames[0];
-            bulk.Operations.Add(operation);
-        }
-
-        if (isSharding)
-        {
-            _logger.LogDebug("[{1}]Before GetBulkAddMCollectionRouteKeyOperationsAsync time: {0} ",
-                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-                entityName);
-            //bulk index non shard key to route collection 
-            var routeKeyBulkOperationList =
-                await GetBulkAddMCollectionRouteKeyOperationsAsync(list, indexNames, cancellationToken);
-            _logger.LogDebug("[{1}]After GetBulkAddMCollectionRouteKeyOperationsAsync time: {0} ",
-                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), entityName);
-            bulk.Operations.AddRange(routeKeyBulkOperationList);
+            if (isSharding && (currentIndexName != indexNames[i]))
+            {
+                response = await client.BulkAsync(bulk, cancellationToken);
+                if (!response.IsValid)
+                {
+                    throw new ElasticsearchException(
+                        $"Bulk InsertOrUpdate Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
+                }
+                
+                currentIndexName = indexNames[i];
+                
+                bulk = new BulkRequest(currentIndexName)
+                {
+                    Operations = new List<IBulkOperation>(),
+                    Refresh = _elasticsearchOptions.Refresh
+                };
+            }
+            bulk.Operations.Add(new BulkIndexOperation<TEntity>(list[i]));
         }
         
-        _logger.LogDebug("[{1}]Before BulkAsync time: {0} ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-            entityName);
         response = await client.BulkAsync(bulk, cancellationToken);
-        _logger.LogDebug("[{1}]After BulkAsync time: {0} ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-            entityName);
         if (!response.IsValid)
         {
             throw new ElasticsearchException(
@@ -263,8 +290,30 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var isSharding = _shardingKeyProvider.IsShardingCollection();
         
         var client = await GetElasticsearchClientAsync(cancellationToken);
+        if (!isSharding)
+        {
+            await BulkDeleteAsync(client, indexNames, list, isSharding, cancellationToken);
+            return;
+        }
+        
+        var bulkDeleteTaskList = new List<Task>();
+        bulkDeleteTaskList.Add(BulkDeleteAsync(client, indexNames, list, isSharding, cancellationToken));
+        var routeKeyTaskList =
+            await GetBulkDeleteCollectionRouteKeyTasksAsync(isSharding, list, cancellationToken);
+        if (routeKeyTaskList.Count > 0)
+        {
+            bulkDeleteTaskList.AddRange(routeKeyTaskList);
+        }
+        await Task.WhenAll(bulkDeleteTaskList.ToArray());
+
+    }
+
+    private async Task BulkDeleteAsync(IElasticClient client, List<string> indexNames, List<TEntity> list, bool isSharding,
+        CancellationToken cancellationToken = default)
+    {
         var response = new BulkResponse();
-        var bulk = new BulkRequest()
+        var currentIndexName = indexNames[0];
+        var bulk = new BulkRequest(currentIndexName)
         {
             Operations = new List<IBulkOperation>(),
             Refresh = _elasticsearchOptions.Refresh
@@ -272,20 +321,28 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         
         for (int i = 0; i < list.Count; i++)
         {
-            var operation = new BulkDeleteOperation<TEntity>(new Id(list[i]));
-            operation.Index = isSharding ? indexNames[i] : indexNames[0];
-            bulk.Operations.Add(operation);
-        }
-
-        if (isSharding)
-        {
-            //bulk delete non shard key to route collection
-            var routeKeyBulkOperationList =
-                await GetBulkDeleteCollectionRouteKeyOperationsAsync(list, cancellationToken);
-            bulk.Operations.AddRange(routeKeyBulkOperationList);
+            if (isSharding && (currentIndexName != indexNames[i]))
+            {
+                response = await client.BulkAsync(bulk, cancellationToken);
+                if (!response.IsValid)
+                {
+                    throw new ElasticsearchException(
+                        $"Bulk Delete Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
+                }
+                
+                currentIndexName = indexNames[i];
+                
+                bulk = new BulkRequest(currentIndexName)
+                {
+                    Operations = new List<IBulkOperation>(),
+                    Refresh = _elasticsearchOptions.Refresh
+                };
+            }
+            bulk.Operations.Add(new BulkDeleteOperation<TEntity>(new Id(list[i])));
         }
         
         response = await client.BulkAsync(bulk, cancellationToken);
+
         if (response.ServerError == null)
         {
             return;
@@ -335,67 +392,97 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             : await _collectionNameProvider.GetFullCollectionNameByIdAsync(id);
     }
 
-    
-    private async Task<List<BulkIndexOperation<IRouteKeyCollection>>> GetBulkAddMCollectionRouteKeyOperationsAsync(List<TEntity> modelList,
+
+    private async Task<List<Task>> GetBulkAddCollectionRouteKeyTasksAsync(bool isSharding, List<TEntity> modelList,
         List<string> fullCollectionNameList, CancellationToken cancellationToken = default)
     {
         var collectionRouteKeys = await _collectionRouteKeyProvider.GetCollectionRouteKeyItemsAsync();
-        var bulkIndexOperationList = new List<BulkIndexOperation<IRouteKeyCollection>>();
-        if (collectionRouteKeys != null && collectionRouteKeys.Any() && _shardingKeyProvider.IsShardingCollection())
+        if (collectionRouteKeys != null && collectionRouteKeys.Any() && isSharding)
         {
+            var routeKeyTaskList = new List<Task>();
             var client = await GetElasticsearchClientAsync(cancellationToken);
             foreach (var collectionRouteKey in collectionRouteKeys)
             {
-                var collectionRouteKeyIndexName =
-                    IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,
-                        _aelfEntityMappingOptions.CollectionPrefix);
-                int indexNameCount = 0;
-                foreach (var item in modelList)
-                {
-                    // var value = item.GetType().GetProperty(collectionRouteKey.FieldName)?.GetValue(item);
-                    var value = collectionRouteKey.GetRouteKeyValueFunc(item);
-                    string indexName = IndexNameHelper.RemoveCollectionPrefix(fullCollectionNameList[indexNameCount],
-                        _aelfEntityMappingOptions.CollectionPrefix);
-                    var collectionRouteKeyIndexModel = new RouteKeyCollection()
-                    {
-                        Id = item.Id.ToString(),
-                        CollectionName = indexName,
-                        // SearchKey = Convert.ChangeType(value, collectionRouteKey.FieldValueType)
-                        CollectionRouteKey = value?.ToString()
-                    };
-                    var operation = new BulkIndexOperation<IRouteKeyCollection>(collectionRouteKeyIndexModel);
-                    operation.Index = collectionRouteKeyIndexName;
-                    bulkIndexOperationList.Add(operation);
-                    indexNameCount++;
-                }
+                routeKeyTaskList.Add(BulkAddRouteKey(client, modelList, collectionRouteKey, fullCollectionNameList,
+                    cancellationToken));
             }
+
+            return routeKeyTaskList;
         }
 
-        return bulkIndexOperationList;
+        return new List<Task>();
     }
-    
-    private async Task<List<BulkDeleteOperation<IRouteKeyCollection>>> GetBulkDeleteCollectionRouteKeyOperationsAsync(List<TEntity> modelList,CancellationToken cancellationToken = default)
+
+    private async Task BulkAddRouteKey(IElasticClient client, List<TEntity> modelList,
+        CollectionRouteKeyItem<TEntity> collectionRouteKey, List<string> fullCollectionNameList,
+        CancellationToken cancellationToken)
+    {
+        var collectionRouteKeyIndexName =
+            IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,
+                _aelfEntityMappingOptions.CollectionPrefix);
+        var collectionRouteKeyBulk = new BulkRequest(collectionRouteKeyIndexName)
+        {
+            Operations = new List<IBulkOperation>(),
+            Refresh = _elasticsearchOptions.Refresh
+        };
+        int indexNameCount = 0;
+        foreach (var item in modelList)
+        {
+            // var value = item.GetType().GetProperty(collectionRouteKey.FieldName)?.GetValue(item);
+            var value = collectionRouteKey.GetRouteKeyValueFunc(item);
+            string indexName = IndexNameHelper.RemoveCollectionPrefix(fullCollectionNameList[indexNameCount],
+                _aelfEntityMappingOptions.CollectionPrefix);
+            var collectionRouteKeyIndexModel = new RouteKeyCollection()
+            {
+                Id = item.Id.ToString(),
+                CollectionName = indexName,
+                // SearchKey = Convert.ChangeType(value, collectionRouteKey.FieldValueType)
+                CollectionRouteKey = value?.ToString()
+            };
+            collectionRouteKeyBulk.Operations.Add(
+                new BulkIndexOperation<RouteKeyCollection>(collectionRouteKeyIndexModel));
+            indexNameCount++;
+        }
+
+        await client.BulkAsync(collectionRouteKeyBulk, cancellationToken);
+    }
+
+    private async Task<List<Task>> GetBulkDeleteCollectionRouteKeyTasksAsync(bool isSharding, List<TEntity> modelList,
+        CancellationToken cancellationToken = default)
     {
         var collectionRouteKeys = await _collectionRouteKeyProvider.GetCollectionRouteKeyItemsAsync();
-        var bulkDeleteOperationList = new List<BulkDeleteOperation<IRouteKeyCollection>>();
-        if (collectionRouteKeys!=null && collectionRouteKeys.Any() && _shardingKeyProvider.IsShardingCollection())
+        if (collectionRouteKeys != null && collectionRouteKeys.Any() && isSharding)
         {
-            // var routeKeyTaskList = new List<Task>();
+            var routeKeyTaskList = new List<Task>();
             var client = await GetElasticsearchClientAsync(cancellationToken);
             foreach (var collectionRouteKey in collectionRouteKeys)
             {
-                var collectionRouteKeyRouteIndexName =
-                    IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,
-                        _aelfEntityMappingOptions.CollectionPrefix);
-                foreach (var item in modelList)
-                {
-                    var operation = new BulkDeleteOperation<IRouteKeyCollection>(new Id(item.Id.ToString()));
-                    operation.Index = collectionRouteKeyRouteIndexName;
-                    bulkDeleteOperationList.Add(operation);
-                }
+                routeKeyTaskList.Add(BulkDeleteRouteKey(client, modelList, collectionRouteKey, cancellationToken));
             }
+            
+            return routeKeyTaskList;
         }
-        return bulkDeleteOperationList;
+
+        return new List<Task>();
+    }
+
+    private async Task BulkDeleteRouteKey(IElasticClient client, List<TEntity> modelList,
+        CollectionRouteKeyItem<TEntity> collectionRouteKey, CancellationToken cancellationToken)
+    {
+        var collectionRouteKeyRouteIndexName =
+            IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,
+                _aelfEntityMappingOptions.CollectionPrefix);
+        var collectionRouteKeyRouteBulk = new BulkRequest(collectionRouteKeyRouteIndexName)
+        {
+            Operations = new List<IBulkOperation>(),
+            Refresh = _elasticsearchOptions.Refresh
+        };
+        foreach (var item in modelList)
+        {
+            collectionRouteKeyRouteBulk.Operations.Add(new BulkDeleteOperation<RouteKeyCollection>(new Id(item)));
+        }
+
+        await client.BulkAsync(collectionRouteKeyRouteBulk, cancellationToken);
     }
 
 }
