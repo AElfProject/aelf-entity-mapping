@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using AElf.EntityMapping.Elasticsearch.Exceptions;
 using AElf.EntityMapping.Entities;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
@@ -180,9 +181,13 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         else
         {
             var client = _elasticsearchClientProvider.GetClient();
-            var exits = await client.Indices.ExistsAsync(collectionName);
-
-            if (exits.Exists)
+            var response = await client.Indices.ExistsAsync(collectionName);
+            if (response.ServerError != null)
+            {
+                throw new ElasticsearchException(
+                    $"Exists Document failed at index {collectionName} :{response.ServerError.Error.Reason}");
+            }
+            if (response.Exists)
             {
                 _existIndexShardDictionary[collectionName] = true;
                 return true;

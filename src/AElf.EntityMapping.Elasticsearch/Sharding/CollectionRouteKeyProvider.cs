@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using AElf.EntityMapping.Elasticsearch.Exceptions;
 using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Options;
@@ -116,7 +117,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                             .Cardinality("courseAgg", ca => ca.Field(f=>f.CollectionName))));
                 if (!result.IsValid)
                 {
-                    throw new Exception($"Search document failed at index {collectionRouteKeyIndexName} :" + result.ServerError.Error.Reason);
+                    throw new ElasticsearchException($"Search document failed at index {collectionRouteKeyIndexName} :" + result.ServerError.Error.Reason);
                 }
                 var collectionList = result.Documents.ToList();
                 _logger.LogDebug($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
@@ -167,8 +168,15 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         var selector = new Func<GetDescriptor<RouteKeyCollection>, IGetRequest>(s => s
             .Index(indexName));
         var result = new GetResponse<RouteKeyCollection>();
-        result = await client.GetAsync(new Nest.DocumentPath<RouteKeyCollection>(new Id(new { id = id.ToString() })),
-            selector, cancellationToken);
+        try
+        {
+            result = await client.GetAsync(new Nest.DocumentPath<RouteKeyCollection>(new Id(new { id = id.ToString() })),
+                selector, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            throw new ElasticsearchException($"Get Document failed at index {indexName} id {id.ToString()}", e);
+        }
         return result.Found ? result.Source : null;
     }
 
@@ -204,6 +212,12 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 var collectionRouteKeyResult = await client.IndexAsync(collectionRouteKeyIndexModel,
                     ss => ss.Index(collectionRouteKeyIndexName).Refresh(_elasticsearchOptions.Refresh),
                     cancellationToken);
+                if (!collectionRouteKeyResult.IsValid)
+                {
+                    throw new ElasticsearchException(
+                        $"Index document failed at index {collectionRouteKeyIndexName} id {(collectionRouteKeyIndexModel == null ? "" : collectionRouteKeyIndexModel.Id)} :" +
+                        collectionRouteKeyResult.ServerError.Error.Reason);
+                }
 
             }
         }
@@ -226,7 +240,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 var collectionRouteKeyIndexId = model.Id.ToString();
                 var collectionRouteKeyIndexModel =
                     await GetRouteKeyCollectionAsync(collectionRouteKeyIndexId,
-                        collectionRouteKeyIndexName);
+                        collectionRouteKeyIndexName, cancellationToken);
                 // var collectionRouteKeyIndexModel = GetAsync((TKey)Convert.ChangeType(collectionRouteKeyIndexId, typeof(TKey)), collectionRouteKeyIndexName)  as RouteKeyCollection;
 
                 // var value = model.GetType().GetProperty(collectionRouteKey.FieldName)?.GetValue(model);
@@ -236,11 +250,17 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     // collectionRouteKeyIndexModel.SearchKey = Convert.ChangeType(value, collectionRouteKey.FieldValueType);
                     collectionRouteKeyIndexModel.CollectionRouteKey = value?.ToString();
 
-                    var collectionRouteKeyRouteResult = await client.UpdateAsync(
+                    var collectionRouteKeyResult = await client.UpdateAsync(
                         DocumentPath<RouteKeyCollection>.Id(new Id(collectionRouteKeyIndexModel)),
                         ss => ss.Index(collectionRouteKeyIndexName).Doc((RouteKeyCollection)collectionRouteKeyIndexModel).RetryOnConflict(3)
                             .Refresh(_elasticsearchOptions.Refresh),
                         cancellationToken);
+                    if (!collectionRouteKeyResult.IsValid)
+                    {
+                        throw new ElasticsearchException(
+                            $"Update document failed at index {collectionRouteKeyIndexName} id {(collectionRouteKeyIndexModel == null ? "" : collectionRouteKeyIndexModel.Id)} :" +
+                            collectionRouteKeyResult.ServerError.Error.Reason);
+                    }
                 }
             }
         }
@@ -257,12 +277,18 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
             var client = await GetElasticsearchClientAsync(cancellationToken);
             foreach (var collectionRouteKey in _collectionRouteKeys)
             {
-                var collectionRouteKeyRouteIndexName =
+                var collectionRouteKeyIndexName =
                     IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,_aelfEntityMappingOptions.CollectionPrefix);
                 var collectionRouteKeyIndexId = id;
                 var collectionRouteKeyResult=await client.DeleteAsync(
-                    new DeleteRequest(collectionRouteKeyRouteIndexName, new Id(new { id = collectionRouteKeyIndexId.ToString() }))
+                    new DeleteRequest(collectionRouteKeyIndexName, new Id(new { id = collectionRouteKeyIndexId.ToString() }))
                         { Refresh = _elasticsearchOptions.Refresh }, cancellationToken);
+                if (collectionRouteKeyResult.ServerError != null)
+                {
+                    throw new ElasticsearchException(
+                        $"Delete document failed at index {collectionRouteKeyIndexName} id {collectionRouteKeyIndexId} :" +
+                        collectionRouteKeyResult.ServerError.Error.Reason);
+                }
             }
         }
     }
