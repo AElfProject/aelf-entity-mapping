@@ -182,7 +182,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
         {
             var client = _elasticsearchClientProvider.GetClient();
             var response = await client.Indices.ExistsAsync(collectionName);
-            if (!response.IsValid)
+            if (response.ServerError != null)
             {
                 throw new ElasticsearchException(
                     $"Exists Document failed at index {collectionName} :{response.ServerError.Error.Reason}");
