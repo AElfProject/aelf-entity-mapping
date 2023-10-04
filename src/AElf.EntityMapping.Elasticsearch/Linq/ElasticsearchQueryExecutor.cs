@@ -230,7 +230,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             {
                 if (resultOperator is CountResultOperator)
                 {
-                    var result = _elasticClient.Count<object>(descriptor =>
+                    var response = _elasticClient.Count<object>(descriptor =>
                     {
                         descriptor.Index(index);
                     
@@ -240,8 +240,13 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                         }
                         var dsl = _elasticClient.RequestResponseSerializer.SerializeToString(descriptor);
                         return descriptor;
-                    }).Count;
-
+                    });
+                    if (!response.IsValid)
+                    {
+                        throw new ElasticsearchException(
+                            $"Count Document failed at index {index} :{response.ServerError.Error.Reason}");
+                    }
+                    var result = response.Count;
                     /*if (result > ElasticQueryLimit)
                     {
                         result = ElasticQueryLimit;
