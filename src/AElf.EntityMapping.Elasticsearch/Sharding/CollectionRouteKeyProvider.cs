@@ -167,8 +167,15 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
         var selector = new Func<GetDescriptor<RouteKeyCollection>, IGetRequest>(s => s
             .Index(indexName));
         var result = new GetResponse<RouteKeyCollection>();
-        result = await client.GetAsync(new Nest.DocumentPath<RouteKeyCollection>(new Id(new { id = id.ToString() })),
-            selector, cancellationToken);
+        try
+        {
+            result = await client.GetAsync(new Nest.DocumentPath<RouteKeyCollection>(new Id(new { id = id.ToString() })),
+                selector, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            throw new EntityNotFoundException(id.ToString(), e);
+        }
         return result.Found ? result.Source : null;
     }
 
@@ -204,6 +211,12 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 var collectionRouteKeyResult = await client.IndexAsync(collectionRouteKeyIndexModel,
                     ss => ss.Index(collectionRouteKeyIndexName).Refresh(_elasticsearchOptions.Refresh),
                     cancellationToken);
+                if (!collectionRouteKeyResult.IsValid)
+                {
+                    throw new Exception(
+                        $"Index document failed at index {collectionRouteKeyIndexName} id {collectionRouteKeyIndexModel.Id} :" +
+                        collectionRouteKeyResult.ServerError.Error.Reason);
+                }
 
             }
         }
@@ -226,7 +239,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 var collectionRouteKeyIndexId = model.Id.ToString();
                 var collectionRouteKeyIndexModel =
                     await GetRouteKeyCollectionAsync(collectionRouteKeyIndexId,
-                        collectionRouteKeyIndexName);
+                        collectionRouteKeyIndexName, cancellationToken);
                 // var collectionRouteKeyIndexModel = GetAsync((TKey)Convert.ChangeType(collectionRouteKeyIndexId, typeof(TKey)), collectionRouteKeyIndexName)  as RouteKeyCollection;
 
                 // var value = model.GetType().GetProperty(collectionRouteKey.FieldName)?.GetValue(model);
@@ -236,11 +249,17 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     // collectionRouteKeyIndexModel.SearchKey = Convert.ChangeType(value, collectionRouteKey.FieldValueType);
                     collectionRouteKeyIndexModel.CollectionRouteKey = value?.ToString();
 
-                    var collectionRouteKeyRouteResult = await client.UpdateAsync(
+                    var collectionRouteKeyResult = await client.UpdateAsync(
                         DocumentPath<RouteKeyCollection>.Id(new Id(collectionRouteKeyIndexModel)),
                         ss => ss.Index(collectionRouteKeyIndexName).Doc((RouteKeyCollection)collectionRouteKeyIndexModel).RetryOnConflict(3)
                             .Refresh(_elasticsearchOptions.Refresh),
                         cancellationToken);
+                    if (!collectionRouteKeyResult.IsValid)
+                    {
+                        throw new Exception(
+                            $"Update document failed at index {collectionRouteKeyIndexName} id {collectionRouteKeyIndexModel.Id} :" +
+                            collectionRouteKeyResult.ServerError.Error.Reason);
+                    }
                 }
             }
         }
@@ -257,12 +276,18 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
             var client = await GetElasticsearchClientAsync(cancellationToken);
             foreach (var collectionRouteKey in _collectionRouteKeys)
             {
-                var collectionRouteKeyRouteIndexName =
+                var collectionRouteKeyIndexName =
                     IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,_aelfEntityMappingOptions.CollectionPrefix);
                 var collectionRouteKeyIndexId = id;
                 var collectionRouteKeyResult=await client.DeleteAsync(
-                    new DeleteRequest(collectionRouteKeyRouteIndexName, new Id(new { id = collectionRouteKeyIndexId.ToString() }))
+                    new DeleteRequest(collectionRouteKeyIndexName, new Id(new { id = collectionRouteKeyIndexId.ToString() }))
                         { Refresh = _elasticsearchOptions.Refresh }, cancellationToken);
+                if (collectionRouteKeyResult.ServerError != null)
+                {
+                    throw new Exception(
+                        $"Delete document failed at index {collectionRouteKeyIndexName} id {collectionRouteKeyIndexId} :" +
+                        collectionRouteKeyResult.ServerError.Error.Reason);
+                }
             }
         }
     }
