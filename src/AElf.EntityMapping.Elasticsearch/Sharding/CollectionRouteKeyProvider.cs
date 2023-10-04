@@ -214,7 +214,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 if (!collectionRouteKeyResult.IsValid)
                 {
                     throw new Exception(
-                        $"Index document failed at index {collectionRouteKeyIndexName} id {collectionRouteKeyIndexModel.Id} :" +
+                        $"Index document failed at index {collectionRouteKeyIndexName} id {(collectionRouteKeyIndexModel == null ? "" : collectionRouteKeyIndexModel.Id)} :" +
                         collectionRouteKeyResult.ServerError.Error.Reason);
                 }
 
@@ -257,7 +257,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     if (!collectionRouteKeyResult.IsValid)
                     {
                         throw new Exception(
-                            $"Update document failed at index {collectionRouteKeyIndexName} id {collectionRouteKeyIndexModel.Id} :" +
+                            $"Update document failed at index {collectionRouteKeyIndexName} id {(collectionRouteKeyIndexModel == null ? "" : collectionRouteKeyIndexModel.Id)} :" +
                             collectionRouteKeyResult.ServerError.Error.Reason);
                     }
                 }
