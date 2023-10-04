@@ -59,7 +59,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         }
         catch (Exception e)
         {
-            throw new EntityNotFoundException(id.ToString(), e);
+            throw new ElasticsearchException($"Get Document failed at index {indexName} id {id.ToString()}", e);
         }
 
         
