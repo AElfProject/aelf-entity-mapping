@@ -11,6 +11,8 @@ namespace AElf.EntityMapping.Repositories
         Task AddOrUpdateManyAsync(List<TEntity> list, string collectionName = null, CancellationToken cancellationToken = default);
 
         Task UpdateAsync(TEntity model, string collectionName = null, CancellationToken cancellationToken = default);
+        
+        Task UpdateManyAsync(List<TEntity> list, string collectionName = null, CancellationToken cancellationToken = default);
 
         Task DeleteAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default);
         
