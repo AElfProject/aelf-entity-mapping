@@ -252,7 +252,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var isSharding = _shardingKeyProvider.IsShardingCollection();
         if (!isSharding)
         {
-            BulkUpdateAsync(client, indexNames, list, isSharding, cancellationToken);
+            await BulkUpdateAsync(client, indexNames, list, isSharding, cancellationToken);
             return;
         }
         
