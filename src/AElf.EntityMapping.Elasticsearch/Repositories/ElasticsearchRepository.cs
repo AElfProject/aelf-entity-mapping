@@ -244,6 +244,74 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             $"Update Document failed at index {indexName} id {(model == null ? "" : model.Id.ToString())} : {result.ServerError.Error.Reason}");
     }
 
+    public async Task UpdateManyAsync(List<TEntity> list, string collectionName = null,
+        CancellationToken cancellationToken = default)
+    {
+        var indexNames = await GetFullCollectionNameAsync(collectionName, list);
+        var client = await GetElasticsearchClientAsync(cancellationToken);
+        var isSharding = _shardingKeyProvider.IsShardingCollection();
+        if (!isSharding)
+        {
+            await BulkUpdateAsync(client, indexNames, list, isSharding, cancellationToken);
+            return;
+        }
+        
+        var bulkUpdateTaskList = new List<Task>();
+        bulkUpdateTaskList.Add(BulkUpdateAsync(client, indexNames, list, isSharding, cancellationToken));
+        var routeKeyTaskList =
+            await GetBulkUpdateCollectionRouteKeyTasksAsync(isSharding, list, indexNames, cancellationToken);
+        if (routeKeyTaskList.Count > 0)
+        {
+            bulkUpdateTaskList.AddRange(routeKeyTaskList);
+        }
+        await Task.WhenAll(bulkUpdateTaskList.ToArray());
+    }
+
+    private async Task BulkUpdateAsync(IElasticClient client, List<string> indexNames, List<TEntity> list, bool isSharding,
+        CancellationToken cancellationToken = default)
+    {
+        var response = new BulkResponse();
+        var currentIndexName = indexNames[0];
+        var bulk = new BulkRequest(currentIndexName)
+        {
+            Operations = new List<IBulkOperation>(),
+            Refresh = _elasticsearchOptions.Refresh
+        };
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (isSharding && (currentIndexName != indexNames[i]))
+            {
+                response = await client.BulkAsync(bulk, cancellationToken);
+                if (!response.IsValid)
+                {
+                    throw new ElasticsearchException(
+                        $"Bulk Update Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
+                }
+                
+                currentIndexName = indexNames[i];
+                
+                bulk = new BulkRequest(currentIndexName)
+                {
+                    Operations = new List<IBulkOperation>(),
+                    Refresh = _elasticsearchOptions.Refresh
+                };
+            }
+            var updateOperation = new BulkUpdateOperation<TEntity,TEntity>(new Id(list[i]))
+            {
+                Doc = list[i],
+                Index = currentIndexName
+            };
+            bulk.Operations.Add(updateOperation);
+        }
+        
+        response = await client.BulkAsync(bulk, cancellationToken);
+        if (!response.IsValid)
+        {
+            throw new ElasticsearchException(
+                $"Bulk Update Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
+        }
+    }
+
     public async Task DeleteAsync(TKey id, string collectionName = null, CancellationToken cancellationToken = default)
     {
         var indexName = await GetFullCollectionNameByIdAsync(id);
@@ -450,6 +518,69 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         {
             throw new ElasticsearchException(
                 $"Bulk InsertOrUpdate Document failed at index {collectionRouteKeyIndexName} :{response.ServerError.Error.Reason}");
+        }
+    }
+
+    private async Task<List<Task>> GetBulkUpdateCollectionRouteKeyTasksAsync(bool isSharding, List<TEntity> modelList,
+        List<string> fullCollectionNameList, CancellationToken cancellationToken = default)
+    {
+        var collectionRouteKeys = await _collectionRouteKeyProvider.GetCollectionRouteKeyItemsAsync();
+        if (collectionRouteKeys != null && collectionRouteKeys.Any() && isSharding)
+        {
+            var routeKeyTaskList = new List<Task>();
+            var client = await GetElasticsearchClientAsync(cancellationToken);
+            foreach (var collectionRouteKey in collectionRouteKeys)
+            {
+                routeKeyTaskList.Add(BulkUpdateRouteKey(client, modelList, collectionRouteKey, fullCollectionNameList,
+                    cancellationToken));
+            }
+
+            return routeKeyTaskList;
+        }
+
+        return new List<Task>();
+    }
+
+    private async Task BulkUpdateRouteKey(IElasticClient client, List<TEntity> modelList,
+        CollectionRouteKeyItem<TEntity> collectionRouteKey, List<string> fullCollectionNameList,
+        CancellationToken cancellationToken)
+    {
+        var collectionRouteKeyIndexName =
+            IndexNameHelper.GetCollectionRouteKeyIndexName(typeof(TEntity), collectionRouteKey.FieldName,
+                _aelfEntityMappingOptions.CollectionPrefix);
+        var collectionRouteKeyBulk = new BulkRequest(collectionRouteKeyIndexName)
+        {
+            Operations = new List<IBulkOperation>(),
+            Refresh = _elasticsearchOptions.Refresh
+        };
+        int indexNameCount = 0;
+        foreach (var item in modelList)
+        {
+            // var value = item.GetType().GetProperty(collectionRouteKey.FieldName)?.GetValue(item);
+            var value = collectionRouteKey.GetRouteKeyValueFunc(item);
+            string indexName = IndexNameHelper.RemoveCollectionPrefix(fullCollectionNameList[indexNameCount],
+                _aelfEntityMappingOptions.CollectionPrefix);
+            var collectionRouteKeyIndexModel = new RouteKeyCollection()
+            {
+                Id = item.Id.ToString(),
+                CollectionName = indexName,
+                // SearchKey = Convert.ChangeType(value, collectionRouteKey.FieldValueType)
+                CollectionRouteKey = value?.ToString()
+            };
+            var updateOperation = new BulkUpdateOperation<RouteKeyCollection,RouteKeyCollection>(new Id(collectionRouteKeyIndexModel))
+            {
+                Doc = collectionRouteKeyIndexModel,
+                Index = collectionRouteKeyIndexName
+            };
+            collectionRouteKeyBulk.Operations.Add(updateOperation);
+            indexNameCount++;
+        }
+
+        var response = await client.BulkAsync(collectionRouteKeyBulk, cancellationToken);
+        if (!response.IsValid)
+        {
+            throw new ElasticsearchException(
+                $"Bulk Update Document failed at index {collectionRouteKeyIndexName} :{response.ServerError.Error.Reason}");
         }
     }
 
