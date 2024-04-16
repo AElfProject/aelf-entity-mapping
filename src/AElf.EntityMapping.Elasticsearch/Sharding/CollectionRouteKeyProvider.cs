@@ -121,7 +121,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                             .Cardinality("courseAgg", ca => ca.Field(f=>f.CollectionName))));
                 if (result == null)
                 {
-                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  result is null");
+                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  result is null fieldValue:{fieldValue}");
                 }
                 if (!result.IsValid)
                 {
@@ -130,7 +130,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
 
                 if (result.Documents == null)
                 {
-                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  result.Documents is null");
+                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  result.Documents is null fieldValue:{fieldValue}");
                 }
                 var collectionList = result.Documents.ToList();
                 _logger.LogDebug($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
