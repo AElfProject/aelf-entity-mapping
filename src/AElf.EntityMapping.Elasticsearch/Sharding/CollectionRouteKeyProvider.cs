@@ -111,13 +111,26 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
             if (condition.Type == ConditionType.Equal)
             {
                 var client = _elasticsearchClientProvider.GetClient();
+                if (client == null)
+                {
+                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  client is null");
+                }
                 var result = await client.SearchAsync<RouteKeyCollection>(s =>
                     s.Index(collectionRouteKeyIndexName).Size(10000).Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
                         .Collapse(c => c.Field(f=>f.CollectionName)).Aggregations(a => a
                             .Cardinality("courseAgg", ca => ca.Field(f=>f.CollectionName))));
+                if (result == null)
+                {
+                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  result is null");
+                }
                 if (!result.IsValid)
                 {
                     throw new ElasticsearchException($"Search document failed at index {collectionRouteKeyIndexName} :" + result.ServerError.Error.Reason);
+                }
+
+                if (result.Documents == null)
+                {
+                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  result.Documents is null");
                 }
                 var collectionList = result.Documents.ToList();
                 _logger.LogDebug($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
