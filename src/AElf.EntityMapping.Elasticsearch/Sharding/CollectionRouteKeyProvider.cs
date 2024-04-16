@@ -110,6 +110,10 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                                    $"collectionRouteKeyIndexName: {collectionRouteKeyIndexName}");
             if (condition.Type == ConditionType.Equal)
             {
+                if (_elasticsearchClientProvider == null)
+                {
+                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  elasticsearchClientProvider is null");
+                }
                 var client = _elasticsearchClientProvider.GetClient();
                 if (client == null)
                 {
@@ -125,7 +129,12 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 }
                 if (!result.IsValid)
                 {
-                    throw new ElasticsearchException($"Search document failed at index {collectionRouteKeyIndexName} :" + result.ServerError.Error.Reason);
+                    if (result.ServerError == null || result.ServerError.Error == null || result.ServerError.Error.Reason == null)
+                    {
+                        _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  result.ServerError is null result:{JsonConvert.SerializeObject(result)}");
+                    }
+                    var reason = result.ServerError?.Error?.Reason ?? "Unknown error";
+                    throw new ElasticsearchException($"Search document failed at index {collectionRouteKeyIndexName} :{reason}");
                 }
 
                 if (result.Documents == null)
