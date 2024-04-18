@@ -126,10 +126,10 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
 
             return expression;
         }
-        
-        private static string GetFullNameKey(MemberExpression memberExpression)
+
+        private string GetFullNameKey(MemberExpression memberExpression)
         {
-            string key = memberExpression.Member.Name;
+            var key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
             while (memberExpression.Expression != null)
             {
                 memberExpression = memberExpression.Expression as MemberExpression;
@@ -137,9 +137,11 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                 {
                     break;
                 }
-                key =  memberExpression.Member.Name +"."+ key;
+
+                key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name + "." + key);
                 return key;
             }
+
             return key;
         }
 
@@ -204,9 +206,9 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                         {
                             Visit(whereClause.Predicate);
                             Node tmp = (Node)QueryMap[whereClause.Predicate].Clone();
-                            QueryMap[expression] = tmp ;
+                            QueryMap[expression] = tmp;
                             QueryMap[expression].IsSubQuery = true;
-                            QueryMap[expression].SubQueryPath = from;//from.ToLower();
+                            QueryMap[expression].SubQueryPath = from; //from.ToLower();
                             QueryMap[expression].SubQueryFullPath = fullPath;
 //                            VisitBinarySetSubQuery((BinaryExpression)whereClause.Predicate, from, fullPath, true);
                             BinaryExpression predicate = (BinaryExpression)whereClause.Predicate;
@@ -214,6 +216,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                             {
                                 VisitBinarySetSubQuery((BinaryExpression)predicate.Left, from, fullPath, true);
                             }
+
                             if (predicate.Right is BinaryExpression)
                             {
                                 VisitBinarySetSubQuery((BinaryExpression)predicate.Right, from, fullPath, true);
@@ -396,10 +399,10 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             {
                 case ExpressionType.Equal:
                     return new TermNode(PropertyName, Value);
-               // return new MatchPhraseNode(PropertyName, Value);
+                // return new MatchPhraseNode(PropertyName, Value);
                 case ExpressionType.NotEqual:
                     return new NotNode(new TermNode(PropertyName, Value));
-                    //return new NotNode(new MatchPhraseNode(PropertyName, Value));
+                //return new NotNode(new MatchPhraseNode(PropertyName, Value));
                 default:
                     return null;
             }
@@ -572,9 +575,9 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
 
             return (int)enumValue;
         }
+
         protected void VisitBinarySetSubQuery(BinaryExpression expression, string path, string fullPath, bool parentIsSubQuery)
         {
-
             if (expression.Left is BinaryExpression && expression.Right is ConstantExpression)
             {
                 return;

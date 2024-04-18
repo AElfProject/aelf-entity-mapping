@@ -108,7 +108,7 @@ public static class QueryModelExtensions
     }
     private static string GetCollectionNameKey(MemberExpression memberExpression)
     {
-        string key = memberExpression.Member.Name;
+        var key = memberExpression.Member.Name;
         while (memberExpression.Expression != null)
         {
             memberExpression = memberExpression.Expression as MemberExpression;
