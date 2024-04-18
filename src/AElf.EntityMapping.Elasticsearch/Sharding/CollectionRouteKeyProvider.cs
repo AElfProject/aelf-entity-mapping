@@ -110,14 +110,41 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                                    $"collectionRouteKeyIndexName: {collectionRouteKeyIndexName}");
             if (condition.Type == ConditionType.Equal)
             {
+                if (_elasticsearchClientProvider == null)
+                {
+                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  elasticsearchClientProvider is null");
+                }
                 var client = _elasticsearchClientProvider.GetClient();
+                if (client == null)
+                {
+                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  client is null");
+                }
+                // var result = await client.SearchAsync<RouteKeyCollection>(s =>
+                //     s.Index(collectionRouteKeyIndexName).Size(10000).Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
+                //         .Collapse(c => c.Field(f=>f.CollectionName)).Aggregations(a => a
+                //             .Cardinality("courseAgg", ca => ca.Field(f=>f.CollectionName))));
                 var result = await client.SearchAsync<RouteKeyCollection>(s =>
-                    s.Index(collectionRouteKeyIndexName).Size(10000).Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
-                        .Collapse(c => c.Field(f=>f.CollectionName)).Aggregations(a => a
-                            .Cardinality("courseAgg", ca => ca.Field(f=>f.CollectionName))));
+                    s.Index(collectionRouteKeyIndexName)
+                        .Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
+                        .Collapse(c => c.Field(f => f.CollectionName))
+                        .Size(1000)); 
+                if (result == null)
+                {
+                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  result is null fieldValue:{fieldValue}");
+                }
                 if (!result.IsValid)
                 {
-                    throw new ElasticsearchException($"Search document failed at index {collectionRouteKeyIndexName} :" + result.ServerError.Error.Reason);
+                    if (result.ServerError == null || result.ServerError.Error == null || result.ServerError.Error.Reason == null)
+                    {
+                        _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  result.ServerError is null result:{JsonConvert.SerializeObject(result)}");
+                    }
+                    var reason = result.ServerError?.Error?.Reason ?? "Unknown error";
+                    throw new ElasticsearchException($"Search document failed at index {collectionRouteKeyIndexName} :{reason}");
+                }
+
+                if (result.Documents == null)
+                {
+                    _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  result.Documents is null fieldValue:{fieldValue}");
                 }
                 var collectionList = result.Documents.ToList();
                 _logger.LogDebug($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  " +
