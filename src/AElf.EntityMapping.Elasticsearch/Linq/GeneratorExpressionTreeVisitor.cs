@@ -126,13 +126,29 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
 
             return expression;
         }
+        
+        private static string GetFullNameKey(MemberExpression memberExpression)
+        {
+            string key = memberExpression.Member.Name;
+            while (memberExpression.Expression != null)
+            {
+                memberExpression = memberExpression.Expression as MemberExpression;
+                if (memberExpression == null)
+                {
+                    break;
+                }
+                key =  memberExpression.Member.Name +"."+ key;
+                return key;
+            }
+            return key;
+        }
 
         protected override Expression VisitMember(MemberExpression expression)
         {
             Visit(expression.Expression);
 
             PropertyType = Nullable.GetUnderlyingType(expression.Type) ?? expression.Type;
-            PropertyName = _propertyNameInferrerParser.Parser(expression.Member.Name);
+            PropertyName = _propertyNameInferrerParser.Parser(GetFullNameKey(expression));
 
             // Implicit boolean is only a member visit
             if (expression.Type == typeof(bool))

@@ -110,6 +110,21 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             base.VisitResultOperators(resultOperators, queryModel);
         }
         
+        private static string GetCollectionNameKey(MemberExpression memberExpression)
+        {
+            string key = memberExpression.Member.Name;
+            while (memberExpression.Expression != null)
+            {
+                memberExpression = memberExpression.Expression as MemberExpression;
+                if (memberExpression == null)
+                {
+                    break;
+                }
+                key =  memberExpression.Member.Name +"."+ key;
+                return key;
+            }
+            return key;
+        }
         public override void VisitOrderByClause(OrderByClause orderByClause, QueryModel queryModel, int index)
         {
             foreach (var ordering in orderByClause.Orderings)

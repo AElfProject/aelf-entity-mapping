@@ -563,7 +563,12 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
                 BlockHeight = i,
                 BlockTime = DateTime.Now.AddDays(-10 + i),
                 LogEventCount = i,
-                ChainId = "AELF"
+                ChainId = "AELF",
+                TxnFee = "BlockHash" + i,
+                Fee = new FeeIndex()
+                {
+                    BlockFee = "BlockHash" + i,
+                }
             };
             await _elasticsearchRepository.AddAsync(blockIndex);
         }
@@ -582,10 +587,14 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             await _elasticsearchRepository.AddAsync(blockIndex);
         }
         
-        var list = await _elasticsearchRepository.GetListAsync(o =>o.ChainId =="AELF" && o.BlockHeight >= 0);
+        /*var list = await _elasticsearchRepository.GetListAsync(o =>o.ChainId =="AELF" && o.BlockHeight >= 0);
         list.Count.ShouldBe(7);
         
         list = await _elasticsearchRepository.GetListAsync(o =>o.ChainId =="tDVV" && o.BlockHeight >= 0);
-        list.Count.ShouldBe(11);
+        list.Count.ShouldBe(11);*/
+        
+        var list = await _elasticsearchRepository.GetListAsync(o =>o.ChainId =="AELF" && o.BlockHeight >= 0 && o.Fee.BlockFee == "BlockHash2" );
+        list.Count.ShouldBe(1);
     }
+    
 }

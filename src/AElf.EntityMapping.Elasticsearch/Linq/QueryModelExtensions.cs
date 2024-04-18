@@ -56,13 +56,14 @@ public static class QueryModelExtensions
         {
             var memberExpression = expression.Left as MemberExpression;
             var constantExpression = expression.Right as ConstantExpression;
-            
             conditions.Add(new CollectionNameCondition
             {
-                Key = memberExpression.Member.Name,
+                
+                Key =  GetCollectionNameKey(memberExpression),
                 Value = constantExpression.Value,
                 Type = GetConditionType(expression.NodeType)
             });
+            
             return;
         }
         
@@ -104,5 +105,20 @@ public static class QueryModelExtensions
             default:
                 throw new ArgumentOutOfRangeException(nameof(expressionType), expressionType, null);
         }
+    }
+    private static string GetCollectionNameKey(MemberExpression memberExpression)
+    {
+        string key = memberExpression.Member.Name;
+        while (memberExpression.Expression != null)
+        {
+            memberExpression = memberExpression.Expression as MemberExpression;
+            if (memberExpression == null)
+            {
+                break;
+            }
+            key =  memberExpression.Member.Name +"."+ key;
+            return key;
+        }
+        return key;
     }
 }

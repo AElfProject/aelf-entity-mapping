@@ -238,7 +238,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                         {
                             descriptor.Query(q => queryAggregator.Query);
                         }
-                        // var dsl = _elasticClient.RequestResponseSerializer.SerializeToString(descriptor);
+                        var dsl = _elasticClient.RequestResponseSerializer.SerializeToString(descriptor);
                         return descriptor;
                     });
                     if (!response.IsValid)
@@ -311,6 +311,22 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             var indexNames =
                 AsyncHelper.RunSync(async () => await _collectionNameProvider.GetFullCollectionNameAsync(conditions));
             return IndexNameHelper.FormatIndexName(indexNames);
+        }
+        
+        private static string GetCollectionNameKey(MemberExpression memberExpression)
+        {
+            string key = memberExpression.Member.Name;
+            while (memberExpression.Expression != null)
+            {
+                memberExpression = memberExpression.Expression as MemberExpression;
+                if (memberExpression == null)
+                {
+                    break;
+                }
+                key =  memberExpression.Member.Name +"."+ key;
+                return key;
+            }
+            return key;
         }
     }
 
