@@ -17,35 +17,44 @@ public static class QueryModelExtensions
     private static void VisitQueryModel(List<CollectionNameCondition> conditions, QueryModel queryModel)
     {
         var whereClauses = queryModel.BodyClauses.OfType<WhereClause>().ToList();
-        foreach (var predicate in whereClauses.Select(whereClause => (BinaryExpression)whereClause.Predicate))
+        foreach (var predicate in whereClauses.Select(whereClause => whereClause.Predicate))
         {
-            switch (predicate.Left)
+            switch (predicate)
             {
-                case BinaryExpression left:
-                    VisitBinaryExpression(conditions, left);
-                    break;
-                case SubQueryExpression leftSub:
-                    VisitQueryModel(conditions, leftSub.QueryModel);
-                    break;
-            }
-            
-            switch (predicate.Right)
-            {
-                case BinaryExpression right:
-                    VisitBinaryExpression(conditions, right);
-                    break;
-                case SubQueryExpression rightSub:
-                    VisitQueryModel(conditions, rightSub.QueryModel);
-                    break;
-            }
+                case BinaryExpression binaryExpression:
+                    switch (binaryExpression.Left)
+                    {
+                        case BinaryExpression left:
+                            VisitBinaryExpression(conditions, left);
+                            break;
+                        case SubQueryExpression leftSub:
+                            VisitQueryModel(conditions, leftSub.QueryModel);
+                            break;
+                    }
 
-            if (predicate.Left is not BinaryExpression 
-                && predicate.Left is not SubQueryExpression 
-                && predicate.Right is not BinaryExpression 
-                && predicate.Right is not SubQueryExpression
-                && predicate is BinaryExpression p)
-            {
-                VisitBinaryExpression(conditions, p);
+                    switch (binaryExpression.Right)
+                    {
+                        case BinaryExpression right:
+                            VisitBinaryExpression(conditions, right);
+                            break;
+                        case SubQueryExpression rightSub:
+                            VisitQueryModel(conditions, rightSub.QueryModel);
+                            break;
+                    }
+
+                    if (binaryExpression.Left is not BinaryExpression
+                        && binaryExpression.Left is not SubQueryExpression
+                        && binaryExpression.Right is not BinaryExpression
+                        && binaryExpression.Right is not SubQueryExpression
+                        && binaryExpression is BinaryExpression p)
+                    {
+                        VisitBinaryExpression(conditions, p);
+                    }
+
+                    break;
+                case SubQueryExpression subQueryExpression:
+                    VisitQueryModel(conditions, subQueryExpression.QueryModel);
+                    break;
             }
         }
     }
@@ -58,15 +67,14 @@ public static class QueryModelExtensions
             var constantExpression = expression.Right as ConstantExpression;
             conditions.Add(new CollectionNameCondition
             {
-                
-                Key =  GetCollectionNameKey(memberExpression),
+                Key = GetCollectionNameKey(memberExpression),
                 Value = constantExpression.Value,
                 Type = GetConditionType(expression.NodeType)
             });
-            
+
             return;
         }
-        
+
         switch (expression.Left)
         {
             case SubQueryExpression leftSub:
@@ -106,6 +114,7 @@ public static class QueryModelExtensions
                 throw new ArgumentOutOfRangeException(nameof(expressionType), expressionType, null);
         }
     }
+
     private static string GetCollectionNameKey(MemberExpression memberExpression)
     {
         var key = memberExpression.Member.Name;
@@ -116,9 +125,11 @@ public static class QueryModelExtensions
             {
                 break;
             }
-            key =  memberExpression.Member.Name +"."+ key;
+
+            key = memberExpression.Member.Name + "." + key;
             return key;
         }
+
         return key;
     }
 }
