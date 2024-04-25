@@ -119,10 +119,6 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 {
                     _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  client is null");
                 }
-                // var result = await client.SearchAsync<RouteKeyCollection>(s =>
-                //     s.Index(collectionRouteKeyIndexName).Size(10000).Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))
-                //         .Collapse(c => c.Field(f=>f.CollectionName)).Aggregations(a => a
-                //             .Cardinality("courseAgg", ca => ca.Field(f=>f.CollectionName))));
                 var result = await client.SearchAsync<RouteKeyCollection>(s =>
                     s.Index(collectionRouteKeyIndexName)
                         .Query(q => q.Term(t => t.Field(f => f.CollectionRouteKey).Value(fieldValue)))

@@ -399,10 +399,8 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             {
                 case ExpressionType.Equal:
                     return new TermNode(PropertyName, Value);
-                // return new MatchPhraseNode(PropertyName, Value);
                 case ExpressionType.NotEqual:
                     return new NotNode(new TermNode(PropertyName, Value));
-                //return new NotNode(new MatchPhraseNode(PropertyName, Value));
                 default:
                     return null;
             }
