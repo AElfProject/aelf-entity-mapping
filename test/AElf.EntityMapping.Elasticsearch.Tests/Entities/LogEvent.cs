@@ -3,12 +3,10 @@ using Nest;
 
 namespace AElf.EntityMapping.Elasticsearch.Entities
 {
-
     [NestedAttributes("LogEvents")]
     public class LogEvent : IBlockchainData
     {
-        [Keyword] 
-        public string ChainId { get; set; }
+        [Keyword] public string ChainId { get; set; }
 
         [Keyword] public string BlockHash { get; set; }
 
@@ -31,5 +29,4 @@ namespace AElf.EntityMapping.Elasticsearch.Entities
 
         public Dictionary<string, string> ExtraProperties { get; set; }
     }
-    
 }

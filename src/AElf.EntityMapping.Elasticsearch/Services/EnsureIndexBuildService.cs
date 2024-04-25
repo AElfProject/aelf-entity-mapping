@@ -10,14 +10,14 @@ using Volo.Abp.Threading;
 
 namespace AElf.EntityMapping.Elasticsearch.Services;
 
-public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDependency
+public class EnsureIndexBuildService : IEnsureIndexBuildService, ITransientDependency
 {
     private readonly IElasticIndexService _elasticIndexService;
     private readonly List<Type> _modules;
     private readonly ElasticsearchOptions _elasticsearchOptions;
     private readonly AElfEntityMappingOptions _entityMappingOptions;
-    
-    
+
+
     public EnsureIndexBuildService(IOptions<CollectionCreateOptions> moduleConfiguration,
         IElasticIndexService elasticIndexService,
         IOptions<AElfEntityMappingOptions> entityMappingOptions,
@@ -28,7 +28,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
         _elasticsearchOptions = elasticsearchOptions.Value;
         _entityMappingOptions = entityMappingOptions.Value;
     }
-    
+
     public void EnsureIndexesCreate()
     {
         AsyncHelper.RunSync(async () =>
@@ -39,19 +39,19 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
             }
         });
     }
-    
+
     private async Task HandleModuleAsync(Type moduleType)
     {
         var types = GetTypesAssignableFrom<IEntityMappingEntity>(moduleType.Assembly);
         foreach (var t in types)
         {
-            var indexName = IndexNameHelper.GetDefaultFullIndexName(t,_entityMappingOptions.CollectionPrefix);
-            
+            var indexName = IndexNameHelper.GetDefaultFullIndexName(t, _entityMappingOptions.CollectionPrefix);
+
             if (IsShardingCollection(t))
             {
                 //if shard index, create index Template
                 var indexTemplateName = indexName + "-template";
-                await _elasticIndexService.CreateIndexTemplateAsync(indexTemplateName,indexName, t,
+                await _elasticIndexService.CreateIndexTemplateAsync(indexTemplateName, indexName, t,
                     _elasticsearchOptions.NumberOfShards,
                     _elasticsearchOptions.NumberOfReplicas);
                 //create index marked field cache
@@ -66,9 +66,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
                 await _elasticIndexService.CreateIndexAsync(indexName, t, _elasticsearchOptions.NumberOfShards,
                     _elasticsearchOptions.NumberOfReplicas);
             }
-            
         }
-        
     }
 
     private async Task CreateShardingCollectionTailIndexAsync()
@@ -86,7 +84,7 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
                            !type.IsAbstract && type.IsClass && compareType != type)
             .Cast<Type>().ToList();
     }
-    
+
     private bool IsShardingCollection(Type type)
     {
         if (_entityMappingOptions == null || _entityMappingOptions.ShardInitSettings == null)
@@ -94,6 +92,4 @@ public class EnsureIndexBuildService: IEnsureIndexBuildService, ITransientDepend
         var options = _entityMappingOptions.ShardInitSettings.Find(a => a.CollectionName == type.Name);
         return options != null;
     }
-    
-
 }

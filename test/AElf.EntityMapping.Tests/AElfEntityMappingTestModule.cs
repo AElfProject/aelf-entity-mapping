@@ -1,3 +1,4 @@
+using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Options;
 using AElf.EntityMapping.Sharding;
 using AElf.EntityMapping.TestBase;
@@ -20,6 +21,10 @@ public class AElfEntityMappingTestModule : AbpModule
         {
             x.AddModule(typeof(AElfEntityMappingTestModule));
         });
+        Configure<ElasticsearchOptions>(x =>
+        {
+            x.Uris = new List<string> {"http://localhost:9200"};
+        });
         
         context.Services.Configure<AElfEntityMappingOptions>(options =>
         {
@@ -31,93 +36,97 @@ public class AElfEntityMappingTestModule : AbpModule
     
     private List<ShardInitSetting> InitShardInitSettingOptions()
         {
-            ShardInitSetting blockIndexDto = new ShardInitSetting();
-            blockIndexDto.CollectionName = "BlockIndex";
-            blockIndexDto.ShardGroups = new List<ShardGroup>()
+            var blockIndexDto = new ShardInitSetting
             {
-                new ShardGroup()
+                CollectionName = "BlockIndex",
+                ShardGroups = new List<ShardGroup>()
                 {
-                    ShardKeys = new List<ShardKey>()
+                    new ShardGroup()
                     {
-                        new ShardKey()
+                        ShardKeys = new List<ShardKey>()
                         {
-                            Name = "ChainId",
-                            Value = "AELF",
-                            Step = "",
-                            StepType = StepType.None
-                        },
-                        new ShardKey()
-                        {
-                            Name = "BlockHeight",
-                            Value = "0",
-                            Step = "5",
-                            StepType = StepType.Floor
+                            new ShardKey()
+                            {
+                                Name = "ChainId",
+                                Value = "AELF",
+                                Step = "",
+                                StepType = StepType.None
+                            },
+                            new ShardKey()
+                            {
+                                Name = "BlockHeight",
+                                Value = "0",
+                                Step = "5",
+                                StepType = StepType.Floor
+                            }
                         }
-                    }
-                },
-                new ShardGroup()
-                {
-                    ShardKeys = new List<ShardKey>()
+                    },
+                    new ShardGroup()
                     {
-                        new ShardKey()
+                        ShardKeys = new List<ShardKey>()
                         {
-                            Name = "ChainId",
-                            Value = "tDVV",
-                            Step = "",
-                            StepType = StepType.None
-                        },
-                        new ShardKey()
-                        {
-                            Name = "BlockHeight",
-                            Value = "0",
-                            Step = "10",
-                            StepType = StepType.Floor
+                            new ShardKey()
+                            {
+                                Name = "ChainId",
+                                Value = "tDVV",
+                                Step = "",
+                                StepType = StepType.None
+                            },
+                            new ShardKey()
+                            {
+                                Name = "BlockHeight",
+                                Value = "0",
+                                Step = "10",
+                                StepType = StepType.Floor
+                            }
                         }
                     }
                 }
             };
 
-            ShardInitSetting logEventIndexDto = new ShardInitSetting();
-            logEventIndexDto.CollectionName = "LogEventIndex";
-            logEventIndexDto.ShardGroups = new List<ShardGroup>()
+            var logEventIndexDto = new ShardInitSetting
             {
-                new ShardGroup()
+                CollectionName = "LogEventIndex",
+                ShardGroups = new List<ShardGroup>()
                 {
-                    ShardKeys = new List<ShardKey>()
+                    new ShardGroup()
                     {
-                        new ShardKey()
+                        ShardKeys = new List<ShardKey>()
                         {
-                            Name = "ChainId",
-                            Value = "AELF",
-                            Step = "",
-                            StepType = StepType.None
-                        },
-                        new ShardKey()
-                        {
-                            Name = "BlockHeight",
-                            Value = "0",
-                            Step = "2000",
-                            StepType = StepType.Floor
+                            new ShardKey()
+                            {
+                                Name = "ChainId",
+                                Value = "AELF",
+                                Step = "",
+                                StepType = StepType.None
+                            },
+                            new ShardKey()
+                            {
+                                Name = "BlockHeight",
+                                Value = "0",
+                                Step = "2000",
+                                StepType = StepType.Floor
+                            }
                         }
-                    }
-                },
-                new ShardGroup()
-                {
-                    ShardKeys = new List<ShardKey>()
+                    },
+                    new ShardGroup()
                     {
-                        new ShardKey()
+                        ShardKeys = new List<ShardKey>()
                         {
-                            Name = "ChainId",
-                            Value = "tDVV",
-                            Step = "",
-                            StepType = StepType.None
-                        },
-                        new ShardKey()
-                        {
-                            Name = "BlockHeight",
-                            Value = "0",
-                            Step = "1000",
-                            StepType = StepType.Floor
+                            new ShardKey()
+                            {
+                                Name = "ChainId",
+                                Value = "tDVV",
+                                Step = "",
+                                StepType = StepType.None
+                            },
+                            new ShardKey()
+                            {
+                                Name = "BlockHeight",
+                                Value = "0",
+                                Step = "1000",
+                                StepType = StepType.Floor
+                            }
                         }
                     }
                 }

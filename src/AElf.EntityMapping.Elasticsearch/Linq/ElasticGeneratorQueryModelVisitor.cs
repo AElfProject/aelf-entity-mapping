@@ -25,8 +25,8 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             QueryAggregator = new QueryAggregator();
             VisitQueryModel(queryModel);
             return QueryAggregator;
-        } 
-        
+        }
+
         public override void VisitQueryModel(QueryModel queryModel)
         {
             queryModel.SelectClause.Accept(this, queryModel);
@@ -34,17 +34,17 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             VisitBodyClauses(queryModel.BodyClauses, queryModel);
             VisitResultOperators(queryModel.ResultOperators, queryModel);
         }
-        
+
         public override void VisitMainFromClause(MainFromClause fromClause, QueryModel queryModel)
         {
             if (fromClause.FromExpression is SubQueryExpression subQueryExpression)
             {
                 VisitQueryModel(subQueryExpression.QueryModel);
             }
-            
+
             base.VisitMainFromClause(fromClause, queryModel);
         }
-        
+
         public override void VisitWhereClause(WhereClause whereClause, QueryModel queryModel, int index)
         {
             var tree = new GeneratorExpressionTreeVisitor<TU>(_propertyNameInferrerParser);
@@ -66,9 +66,10 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
 
                 QueryAggregator.Query = query;
             }
+
             base.VisitWhereClause(whereClause, queryModel, index);
         }
-        
+
         protected override void VisitResultOperators(ObservableCollection<ResultOperatorBase> resultOperators,
             QueryModel queryModel)
         {
@@ -78,7 +79,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                 {
                     QueryAggregator.Skip = skipResultOperator.GetConstantCount();
                 }
-                
+
                 if (resultOperator is TakeResultOperator takeResultOperator)
                 {
                     QueryAggregator.Take = takeResultOperator.GetConstantCount();
@@ -87,40 +88,56 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                 if (resultOperator is GroupResultOperator groupResultOperator)
                 {
                     var members = new List<Tuple<string, Type>>();
-                    
+
                     switch (groupResultOperator.KeySelector)
                     {
                         case MemberExpression memberExpression:
-                            members.Add(new Tuple<string, Type>(memberExpression.Member.Name, memberExpression.Type));
+                            members.Add(new Tuple<string, Type>(GetFullNameKey(memberExpression), memberExpression.Type));
                             break;
                         case NewExpression newExpression:
                             members.AddRange(newExpression.Arguments
                                 .Cast<MemberExpression>()
-                                .Select(memberExpression => new Tuple<string, Type>(memberExpression.Member.Name, memberExpression.Type)));
+                                .Select(memberExpression => new Tuple<string, Type>(GetFullNameKey(memberExpression), memberExpression.Type)));
                             break;
                     }
-                    
-                    members.ForEach(property =>
-                    {
-                        QueryAggregator.GroupByExpressions.Add(new GroupByProperties(property.Item1, property.Item2));
-                    });
+
+                    members.ForEach(property => { QueryAggregator.GroupByExpressions.Add(new GroupByProperties(property.Item1, property.Item2)); });
                 }
             }
-            
+
             base.VisitResultOperators(resultOperators, queryModel);
         }
-        
+
+        private string GetFullNameKey(MemberExpression memberExpression)
+        {
+            var key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
+            while (memberExpression.Expression != null)
+            {
+                memberExpression = memberExpression.Expression as MemberExpression;
+                if (memberExpression == null)
+                {
+                    break;
+                }
+
+                key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name) + "." + key;
+                return key;
+            }
+
+            return key;
+        }
+
+
         public override void VisitOrderByClause(OrderByClause orderByClause, QueryModel queryModel, int index)
         {
             foreach (var ordering in orderByClause.Orderings)
             {
-                var memberExpression = (MemberExpression) ordering.Expression;
+                var memberExpression = (MemberExpression)ordering.Expression;
                 var direction = orderByClause.Orderings[0].OrderingDirection;
-                var propertyName = memberExpression.Member.Name;
+                var propertyName = GetFullNameKey(memberExpression);
                 var type = memberExpression.Type;
-                QueryAggregator.OrderByExpressions.Add(new OrderProperties(propertyName, type, direction)); 
+                QueryAggregator.OrderByExpressions.Add(new OrderProperties(propertyName, type, direction));
             }
-            
+
             base.VisitOrderByClause(orderByClause, queryModel, index);
         }
     }
