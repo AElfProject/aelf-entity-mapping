@@ -1,10 +1,8 @@
-using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Transactions;
 using AElf.EntityMapping.Elasticsearch.Entities;
 using AElf.EntityMapping.Elasticsearch.Services;
 using AElf.EntityMapping.Options;
-using AElf.EntityMapping.Repositories;
 using Microsoft.Extensions.Options;
 using Shouldly;
 using Xunit;
@@ -666,6 +664,67 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             e.ChainId.ShouldBe(chainId);
             e.BlockHeight.ShouldBeGreaterThanOrEqualTo(2);
         }
+    }
+
+    [Fact]
+    public async Task GetList_WildCard_Test()
+    {
+        for (int i = 1; i <= 7; i++)
+        {
+            var blockIndex = new BlockIndex
+            {
+                Id = "block" + i,
+                BlockHash = "BlockHash" + i,
+                BlockHeight = i,
+                BlockTime = DateTime.Now.AddDays(-10 + i),
+                LogEventCount = i,
+                ChainId = "AELF",
+                TxnFee = "BlockHash" + i,
+                Fee = new FeeIndex()
+                {
+                    BlockFee = "BlockHash" + i,
+                    Fee = i % 4
+                }
+            };
+            await _elasticsearchRepository.AddAsync(blockIndex);
+        }
+
+        for (int i = 1; i <= 11; i++)
+        {
+            var blockIndex = new BlockIndex
+            {
+                Id = "block" + i,
+                BlockHash = "BlockHash" + i,
+                BlockHeight = i,
+                BlockTime = DateTime.Now.AddDays(-10 + i),
+                LogEventCount = i,
+                ChainId = "tDVV"
+            };
+            await _elasticsearchRepository.AddAsync(blockIndex);
+        }
+
+        var queryable = await _elasticsearchRepository.GetQueryableAsync();
+        var list4 = queryable.Where(o => o.ChainId == "AELF" && o.BlockHash.StartsWith("BlockHash")).ToList();
+        list4.Count.ShouldBe(7);
+
+        var list5 = queryable.Where(o => o.ChainId == "AELF" && o.Id.Contains("6")).ToList();
+        list5.Count.ShouldBe(1);
+        list5.First().Id.ShouldBe("block6");
+
+        var list6 = queryable.Where(o => o.ChainId == "AELF" && o.BlockHash.EndsWith("7")).ToList();
+        list6.Count.ShouldBe(1);
+        list6.First().Id.ShouldBe("block7");
+
+        var list7 = queryable.Where(o => o.ChainId == "AELF" && o.Fee.BlockFee.StartsWith("BlockHash")).ToList();
+        list7.Count.ShouldBe(7);
+
+        var list8 = queryable.Where(o => o.ChainId == "AELF" && o.Fee.BlockFee.Contains("6")).ToList();
+        list8.Count.ShouldBe(1);
+        list8.First().Id.ShouldBe("block6");
+
+        var list9 = queryable.Where(o => o.ChainId == "AELF" && o.Fee.BlockFee.EndsWith("7")).ToList();
+        list9.Count.ShouldBe(1);
+        list9.First().Id.ShouldBe("block7");
     }
 
 

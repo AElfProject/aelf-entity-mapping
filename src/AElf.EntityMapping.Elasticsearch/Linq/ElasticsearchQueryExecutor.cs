@@ -95,7 +95,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                 {
                     descriptor.MatchAll();
                 }
-            
+
             
                 if (queryAggregator.OrderByExpressions.Any())
                 {

@@ -70,8 +70,8 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             return new List<string>();
         }
 
-        List<ShardingKeyInfo<TEntity>> shardingKeyInfos = GetShardKeyInfoList();
-        List<ShardingKeyInfo<TEntity>> filterShardingKeyInfos = shardingKeyInfos;
+        var shardingKeyInfos = GetShardKeyInfoList();
+        var filterShardingKeyInfos = shardingKeyInfos;
         List<CollectionNameCondition> filterConditions = new List<CollectionNameCondition>();
        
         foreach (var condition in conditions)

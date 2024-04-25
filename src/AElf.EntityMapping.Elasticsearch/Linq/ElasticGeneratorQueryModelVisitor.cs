@@ -92,12 +92,12 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                     switch (groupResultOperator.KeySelector)
                     {
                         case MemberExpression memberExpression:
-                            members.Add(new Tuple<string, Type>(memberExpression.Member.Name, memberExpression.Type));
+                            members.Add(new Tuple<string, Type>(GetFullNameKey(memberExpression), memberExpression.Type));
                             break;
                         case NewExpression newExpression:
                             members.AddRange(newExpression.Arguments
                                 .Cast<MemberExpression>()
-                                .Select(memberExpression => new Tuple<string, Type>(memberExpression.Member.Name, memberExpression.Type)));
+                                .Select(memberExpression => new Tuple<string, Type>(GetFullNameKey(memberExpression), memberExpression.Type)));
                             break;
                     }
 
@@ -108,7 +108,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             base.VisitResultOperators(resultOperators, queryModel);
         }
 
-        private string GetCollectionNameKey(MemberExpression memberExpression)
+        private string GetFullNameKey(MemberExpression memberExpression)
         {
             var key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
             while (memberExpression.Expression != null)
@@ -133,7 +133,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             {
                 var memberExpression = (MemberExpression)ordering.Expression;
                 var direction = orderByClause.Orderings[0].OrderingDirection;
-                var propertyName = GetCollectionNameKey(memberExpression);
+                var propertyName = GetFullNameKey(memberExpression);
                 var type = memberExpression.Type;
                 QueryAggregator.OrderByExpressions.Add(new OrderProperties(propertyName, type, direction));
             }
