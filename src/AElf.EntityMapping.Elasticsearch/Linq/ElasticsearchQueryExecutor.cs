@@ -238,7 +238,6 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                         {
                             descriptor.Query(q => queryAggregator.Query);
                         }
-                        var dsl = _elasticClient.RequestResponseSerializer.SerializeToString(descriptor);
                         return descriptor;
                     });
                     if (!response.IsValid)
