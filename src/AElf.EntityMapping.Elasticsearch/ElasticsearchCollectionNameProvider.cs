@@ -38,19 +38,17 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
     {
         if (!_shardingKeyProvider.IsShardingCollection())
             return new List<string> { GetDefaultCollectionName() };
-        
-        var shardKeyCollectionNames = await _shardingKeyProvider.GetCollectionNameAsync(conditions);
-        var routeKeyCollectionNames =
-            await _collectionRouteKeyProvider.GetCollectionNameAsync(conditions);
 
-        if (shardKeyCollectionNames.Count > 0 && routeKeyCollectionNames.Count > 0)
+        var shardKeyCollectionNames = await _shardingKeyProvider.GetCollectionNameAsync(conditions);
+        if (shardKeyCollectionNames.IsNullOrEmpty())
         {
-            return shardKeyCollectionNames.Intersect(routeKeyCollectionNames).ToList();
+            return await _collectionRouteKeyProvider.GetCollectionNameAsync(conditions);
         }
-        return shardKeyCollectionNames.Concat(routeKeyCollectionNames).ToList();
+
+        return shardKeyCollectionNames;
     }
 
-    protected override  async Task<List<string>> GetCollectionNameByEntityAsync(TEntity entity)
+    protected override async Task<List<string>> GetCollectionNameByEntityAsync(TEntity entity)
     {
         if (entity == null)
             return new List<string> { GetDefaultCollectionName() };
@@ -65,7 +63,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
     {
         if (entities == null || entities.Count == 0)
             return new List<string> { GetDefaultCollectionName() };
-        
+
         return _shardingKeyProvider.IsShardingCollection()
             ? await _shardingKeyProvider.GetCollectionNameAsync(entities)
             : new List<string> { GetDefaultCollectionName() };
@@ -73,7 +71,7 @@ public class ElasticsearchCollectionNameProvider<TEntity> : CollectionNameProvid
 
     protected override async Task<string> GetCollectionNameByIdAsync<TKey>(TKey id)
     {
-        if (!_shardingKeyProvider.IsShardingCollection()) 
+        if (!_shardingKeyProvider.IsShardingCollection())
             return GetDefaultCollectionName();
         return await _collectionRouteKeyProvider.GetCollectionNameAsync(id.ToString());
     }
