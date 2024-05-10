@@ -17,9 +17,9 @@ jobs:
           dotnet-version: '7.0.x' # SDK Version to use.
         env:
           NUGET_AUTH_TOKEN: ${{secrets.NUGET_AUTH_TOKEN}}
-      - run: dotnet build --configuration Release <my project>
+      - run: dotnet build --configuration Release AElf.EntityMapping.Elasticsearch
       - name: Create the package
-        run: dotnet pack --configuration Release <my project>
+        run: dotnet pack --configuration Release AElf.EntityMapping.Elasticsearch
       - name: Publish the package to GPR
-        run: dotnet nuget push <my project>/bin/Release/*.nupkg
+        run: dotnet nuget push AElf.EntityMapping.Elasticsearch/bin/Release/*.nupkg
         
