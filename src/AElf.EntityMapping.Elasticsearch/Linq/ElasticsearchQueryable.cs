@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
+using AElf.EntityMapping.Linq;
 using Nest;
 using Remotion.Linq;
-using Remotion.Linq.Parsing.Structure;
 using Volo.Abp.Domain.Entities;
 
 namespace AElf.EntityMapping.Elasticsearch.Linq
@@ -11,7 +11,8 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
     {
         public ElasticsearchQueryable(IElasticClient elasticClient, ICollectionNameProvider<T> collectionNameProvider,
             string index)
-            : base(new DefaultQueryProvider(typeof(ElasticsearchQueryable<>), QueryParser.CreateDefault(),
+            : base(new DefaultQueryProvider(typeof(ElasticsearchQueryable<>), 
+                QueryParserFactory.Create(),
                 new ElasticsearchQueryExecutor<T>(elasticClient, collectionNameProvider, index)))
         {
         }

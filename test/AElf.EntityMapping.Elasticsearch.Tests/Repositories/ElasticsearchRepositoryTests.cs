@@ -1,3 +1,4 @@
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Transactions;
 using AElf.EntityMapping.Elasticsearch.Entities;
@@ -788,5 +789,68 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
     public static string CreateBlockHash()
     {
         return Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+    }
+    
+    [Fact]
+    public async Task After_Test()
+    {
+        var blockIndex = new BlockIndex
+        {
+            Id = "block010",
+            BlockHash = "BlockHash",
+            BlockHeight = 10,
+            BlockTime = DateTime.Now,
+            ChainId = "AELF"
+        };
+        await _elasticsearchRepository.AddAsync(blockIndex);
+        
+        blockIndex = new BlockIndex
+        {
+            Id = "block005",
+            BlockHash = "BlockHash",
+            BlockHeight = 10,
+            BlockTime = DateTime.Now,
+            ChainId = "AELF"
+        };
+        await _elasticsearchRepository.AddAsync(blockIndex);
+        
+        blockIndex = new BlockIndex
+        {
+            Id = "block009",
+            BlockHash = "BlockHash",
+            BlockHeight = 9,
+            BlockTime = DateTime.Now,
+            ChainId = "AELF"
+        };
+        await _elasticsearchRepository.AddAsync(blockIndex);
+        
+        blockIndex = new BlockIndex
+        {
+            Id = "block008",
+            BlockHash = "BlockHash",
+            BlockHeight = 12,
+            BlockTime = DateTime.Now,
+            ChainId = "AELF"
+        };
+        await _elasticsearchRepository.AddAsync(blockIndex);
+        
+        blockIndex = new BlockIndex
+        {
+            Id = "block001",
+            BlockHash = "BlockHash",
+            BlockHeight = 1,
+            BlockTime = DateTime.Now,
+            ChainId = "AELF"
+        };
+        await _elasticsearchRepository.AddAsync(blockIndex);
+        
+        
+        var queryable = await _elasticsearchRepository.GetQueryableAsync();
+        queryable = queryable.Where(o => o.ChainId == "AELF" && o.BlockHeight >= 1).OrderBy(o=>o.BlockHeight).OrderBy(o=>o.Id).After(new object[]{9,"block009"});
+        var list = queryable.ToList();
+        list.Count.ShouldBe(3);
+        list[0].Id.ShouldBe("block005");
+        list[1].Id.ShouldBe("block010");
+        list[2].Id.ShouldBe("block008");
     }
 }

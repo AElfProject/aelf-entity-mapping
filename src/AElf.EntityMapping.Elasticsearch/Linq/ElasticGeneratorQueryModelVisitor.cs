@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Linq.Expressions;
+using AElf.EntityMapping.Linq;
 using Nest;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -75,33 +76,36 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
         {
             foreach (var resultOperator in resultOperators)
             {
-                if (resultOperator is SkipResultOperator skipResultOperator)
+                switch (resultOperator)
                 {
-                    QueryAggregator.Skip = skipResultOperator.GetConstantCount();
-                }
-
-                if (resultOperator is TakeResultOperator takeResultOperator)
-                {
-                    QueryAggregator.Take = takeResultOperator.GetConstantCount();
-                }
-
-                if (resultOperator is GroupResultOperator groupResultOperator)
-                {
-                    var members = new List<Tuple<string, Type>>();
-
-                    switch (groupResultOperator.KeySelector)
+                    case SkipResultOperator skipResultOperator:
+                        QueryAggregator.Skip = skipResultOperator.GetConstantCount();
+                        break;
+                    case TakeResultOperator takeResultOperator:
+                        QueryAggregator.Take = takeResultOperator.GetConstantCount();
+                        break;
+                    case GroupResultOperator groupResultOperator:
                     {
-                        case MemberExpression memberExpression:
-                            members.Add(new Tuple<string, Type>(GetFullNameKey(memberExpression), memberExpression.Type));
-                            break;
-                        case NewExpression newExpression:
-                            members.AddRange(newExpression.Arguments
-                                .Cast<MemberExpression>()
-                                .Select(memberExpression => new Tuple<string, Type>(GetFullNameKey(memberExpression), memberExpression.Type)));
-                            break;
-                    }
+                        var members = new List<Tuple<string, Type>>();
 
-                    members.ForEach(property => { QueryAggregator.GroupByExpressions.Add(new GroupByProperties(property.Item1, property.Item2)); });
+                        switch (groupResultOperator.KeySelector)
+                        {
+                            case MemberExpression memberExpression:
+                                members.Add(new Tuple<string, Type>(GetFullNameKey(memberExpression), memberExpression.Type));
+                                break;
+                            case NewExpression newExpression:
+                                members.AddRange(newExpression.Arguments
+                                    .Cast<MemberExpression>()
+                                    .Select(memberExpression => new Tuple<string, Type>(GetFullNameKey(memberExpression), memberExpression.Type)));
+                                break;
+                        }
+
+                        members.ForEach(property => { QueryAggregator.GroupByExpressions.Add(new GroupByProperties(property.Item1, property.Item2)); });
+                        break;
+                    }
+                    case AfterResultOperator afterResultOperator:
+                        QueryAggregator.After = afterResultOperator.GetConstantPosition();
+                        break;
                 }
             }
 
