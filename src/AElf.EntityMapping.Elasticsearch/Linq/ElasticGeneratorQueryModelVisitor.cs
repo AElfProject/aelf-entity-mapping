@@ -137,12 +137,32 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             {
                 var memberExpression = (MemberExpression)ordering.Expression;
                 var direction = orderByClause.Orderings[0].OrderingDirection;
-                var propertyName = GetFullNameKey(memberExpression);
-                var type = memberExpression.Type;
-                QueryAggregator.OrderByExpressions.Add(new OrderProperties(propertyName, type, direction));
+                //get full property path if there is sub object
+                string propertyName = GetFullPropertyPath(memberExpression);
+
+                if (!string.IsNullOrEmpty(propertyName))
+                {
+                    var type = memberExpression.Type; 
+                    QueryAggregator.OrderByExpressions.Add(new OrderProperties(propertyName, type, direction));
+                }
             }
 
             base.VisitOrderByClause(orderByClause, queryModel, index);
+        }
+        
+        private string GetFullPropertyPath(Expression expression)
+        {
+            if (expression is MemberExpression memberExpression)
+            {
+                var parentPath = GetFullPropertyPath(memberExpression.Expression);
+                if (string.IsNullOrEmpty(parentPath))
+                {
+                    return _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
+                }
+                return $"{_propertyNameInferrerParser.Parser(parentPath)}.{_propertyNameInferrerParser.Parser(memberExpression.Member.Name)}";
+            }
+
+            return null;
         }
     }
 }
