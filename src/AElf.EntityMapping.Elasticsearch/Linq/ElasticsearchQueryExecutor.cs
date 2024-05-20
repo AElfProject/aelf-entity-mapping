@@ -109,6 +109,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                         foreach (var orderByExpression in queryAggregator.OrderByExpressions)
                         {
                             var property = _propertyNameInferrerParser.Parser(orderByExpression.PropertyName);
+                            
                             d.Field(property,
                                 orderByExpression.OrderingDirection == OrderingDirection.Asc
                                     ? SortOrder.Ascending

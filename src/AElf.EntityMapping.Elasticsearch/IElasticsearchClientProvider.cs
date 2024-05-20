@@ -28,11 +28,11 @@ public class ElasticsearchClientProvider : IElasticsearchClientProvider, ISingle
             //     {
             //         Console.WriteLine($"Request JSON: {Encoding.UTF8.GetString(callDetails.RequestBodyInBytes)}");
             //     }
-            //     // Print Response Data
-            //     if (callDetails.ResponseBodyInBytes != null)
-            //     {
-            //         Console.WriteLine($"Response JSON: {Encoding.UTF8.GetString(callDetails.ResponseBodyInBytes)}");
-            //     }
+            //     // // Print Response Data
+            //     // if (callDetails.ResponseBodyInBytes != null)
+            //     // {
+            //     //     Console.WriteLine($"Response JSON: {Encoding.UTF8.GetString(callDetails.ResponseBodyInBytes)}");
+            //     // }
             // });
         _elasticClient = new ElasticClient(settings);
     }
