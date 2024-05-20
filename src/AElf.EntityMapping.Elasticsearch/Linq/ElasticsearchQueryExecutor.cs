@@ -86,7 +86,12 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                     descriptor.Take(take);
                     descriptor.Size(take);
                 }
-                
+
+                if (queryAggregator.After != null)
+                {
+                    descriptor.SearchAfter(queryAggregator.After);
+                }
+
                 if (queryAggregator.Query != null)
                 {
                     descriptor.Query(q => queryAggregator.Query);
@@ -103,8 +108,6 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                     {
                         foreach (var orderByExpression in queryAggregator.OrderByExpressions)
                         {
-                            // var property = _propertyNameInferrerParser.Parser(orderByExpression.PropertyName) +
-                            //                orderByExpression.GetKeywordIfNecessary();
                             var property = _propertyNameInferrerParser.Parser(orderByExpression.PropertyName);
                             
                             d.Field(property,
