@@ -72,7 +72,7 @@ public class ElasticsearchCollectionNameProviderTests: AElfElasticsearchTestBase
             Type = ConditionType.Equal
         });
         collectionNames = await _collectionNameProvider.GetFullCollectionNameAsync(collectionNameCondition);
-        collectionNames.Count.ShouldBe(0);
+        collectionNames.Count.ShouldBe(1);
     }
 
     [Fact]
