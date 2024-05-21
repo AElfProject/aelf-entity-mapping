@@ -135,7 +135,6 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                 var direction = orderByClause.Orderings[0].OrderingDirection;
                 //get full property path if there is sub object
                 string propertyName = GetFullPropertyPath(memberExpression);
-                // string propertyName = GetFullNameKey(memberExpression);
 
                 if (!string.IsNullOrEmpty(propertyName))
                 {

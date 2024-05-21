@@ -103,8 +103,6 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                     {
                         foreach (var orderByExpression in queryAggregator.OrderByExpressions)
                         {
-                            // var property = _propertyNameInferrerParser.Parser(orderByExpression.PropertyName) +
-                            //                orderByExpression.GetKeywordIfNecessary();
                             var property = _propertyNameInferrerParser.Parser(orderByExpression.PropertyName);
                             
                             d.Field(property,
