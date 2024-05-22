@@ -133,12 +133,40 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             {
                 var memberExpression = (MemberExpression)ordering.Expression;
                 var direction = orderByClause.Orderings[0].OrderingDirection;
-                var propertyName = GetFullNameKey(memberExpression);
-                var type = memberExpression.Type;
-                QueryAggregator.OrderByExpressions.Add(new OrderProperties(propertyName, type, direction));
+                //get full property path if there is sub object
+                string propertyName = GetFullPropertyPath(memberExpression);
+
+                if (!string.IsNullOrEmpty(propertyName))
+                {
+                    var type = memberExpression.Type; 
+                    QueryAggregator.OrderByExpressions.Add(new OrderProperties(propertyName, type, direction));
+                }
             }
 
             base.VisitOrderByClause(orderByClause, queryModel, index);
+        }
+        
+        private string GetFullPropertyPath(Expression expression)
+        {
+            switch (expression)
+            {
+                case MemberExpression memberExpression:
+                    var parentPath = GetFullPropertyPath(memberExpression.Expression);
+                    var currentMemberName = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
+                    return string.IsNullOrEmpty(parentPath) ? currentMemberName : $"{parentPath}.{currentMemberName}";
+
+                case MethodCallExpression methodCallExpression:
+                    // Handles method calls like 'get_Item', which are usually associated with indexed access to collections
+                    if (methodCallExpression.Method.Name.Equals("get_Item") && methodCallExpression.Object != null)
+                    {
+                        // Assuming this is an indexed access to an array or list, we will ignore the index and use only the name of the collection
+                        var collectionPath = GetFullPropertyPath(methodCallExpression.Object);
+                        return collectionPath; // Returns the path of the collection directly, without adding an index
+                    }
+                    break;
+            }
+
+            return null;
         }
     }
 }
