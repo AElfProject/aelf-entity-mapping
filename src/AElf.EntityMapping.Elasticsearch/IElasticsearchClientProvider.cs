@@ -1,3 +1,4 @@
+using System.Text;
 using AElf.EntityMapping.Elasticsearch.Options;
 using Elasticsearch.Net;
 using Microsoft.Extensions.Options;
@@ -20,6 +21,20 @@ public class ElasticsearchClientProvider : IElasticsearchClientProvider, ISingle
         var uris = options.Value.Uris.ConvertAll(x => new Uri(x));
         var connectionPool = new StaticConnectionPool(uris);
         var settings = new ConnectionSettings(connectionPool);
+            // .DisableDirectStreaming();
+            // .OnRequestCompleted(callDetails =>
+            // {
+            //     // Print Request DSL
+            //     if (callDetails.RequestBodyInBytes != null)
+            //     {
+            //         Console.WriteLine($"Request JSON: {Encoding.UTF8.GetString(callDetails.RequestBodyInBytes)}");
+            //     }
+            //     // // Print Response Data
+            //     // if (callDetails.ResponseBodyInBytes != null)
+            //     // {
+            //     //     Console.WriteLine($"Response JSON: {Encoding.UTF8.GetString(callDetails.ResponseBodyInBytes)}");
+            //     // }
+            // });
         _elasticClient = new ElasticClient(settings);
     }
 
