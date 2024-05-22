@@ -38,7 +38,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
         return Task.FromResult(_elasticsearchClientProvider.GetClient());
     }
     
-    public async Task CreateIndexAsync(string indexName, Type type, int shard = 1, int numberOfReplicas = 1)
+    public async Task CreateIndexAsync(string indexName, Type type, int shard = 1, int numberOfReplicas = 1, Dictionary<string, object> indexSettings = null)
     {
         if (!type.IsClass || type.IsAbstract || !typeof(IEntityMappingEntity).IsAssignableFrom(type))
         {
@@ -60,8 +60,19 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
                 ss =>
                     ss.Index(indexName)
                         .Settings(
-                            o => o.NumberOfShards(shard).NumberOfReplicas(numberOfReplicas)
-                                .Setting("max_result_window", _elasticsearchOptions.MaxResultWindow))
+                            o =>
+                            {
+                                var setting =  o.NumberOfShards(shard).NumberOfReplicas(numberOfReplicas)
+                                    .Setting("max_result_window", _elasticsearchOptions.MaxResultWindow);
+                                if (indexSettings != null)
+                                {
+                                    foreach (var indexSetting in indexSettings)
+                                    {
+                                        setting.Setting(indexSetting.Key, indexSetting.Value);
+                                    }
+                                }
+                                return setting;
+                            })
                         .Map(m => m.AutoMap(type)));
         if (!result.Acknowledged)
             throw new ElasticsearchException($"Create Index {indexName} failed : " +
