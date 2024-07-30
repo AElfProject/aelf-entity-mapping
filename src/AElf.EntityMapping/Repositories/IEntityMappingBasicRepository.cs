@@ -19,5 +19,7 @@ namespace AElf.EntityMapping.Repositories
         Task DeleteAsync(TEntity model, string collectionName = null, CancellationToken cancellationToken = default);
         
         Task DeleteManyAsync(List<TEntity> list, string collectionName = null, CancellationToken cancellationToken = default);
+
+        Task DropCollectionAsync(string collectionName = null, CancellationToken cancellationToken = default);
     }
 }
