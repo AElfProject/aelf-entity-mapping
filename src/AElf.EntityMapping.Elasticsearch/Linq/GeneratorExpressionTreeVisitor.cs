@@ -127,22 +127,45 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             return expression;
         }
 
-        private string GetFullNameKey(MemberExpression memberExpression)
+        // private string GetFullNameKey(MemberExpression memberExpression)
+        // {
+            // var key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
+            // while (memberExpression.Expression != null)
+            // {
+            //     memberExpression = memberExpression.Expression as MemberExpression;
+            //     if (memberExpression == null)
+            //     {
+            //         break;
+            //     }
+            //
+            //     key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name + "." + key);
+            //     return key;
+            // }
+            //
+            // return key;
+        // }
+        
+        private string GetFullPropertyPath(Expression expression)
         {
-            var key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
-            while (memberExpression.Expression != null)
+            switch (expression)
             {
-                memberExpression = memberExpression.Expression as MemberExpression;
-                if (memberExpression == null)
-                {
-                    break;
-                }
+                case MemberExpression memberExpression:
+                    var parentPath = GetFullPropertyPath(memberExpression.Expression);
+                    var currentMemberName = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
+                    return string.IsNullOrEmpty(parentPath) ? currentMemberName : $"{parentPath}.{currentMemberName}";
 
-                key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name + "." + key);
-                return key;
+                case MethodCallExpression methodCallExpression:
+                    // Handles method calls like 'get_Item', which are usually associated with indexed access to collections
+                    if (methodCallExpression.Method.Name.Equals("get_Item") && methodCallExpression.Object != null)
+                    {
+                        // Assuming this is an indexed access to an array or list, we will ignore the index and use only the name of the collection
+                        var collectionPath = GetFullPropertyPath(methodCallExpression.Object);
+                        return collectionPath; // Returns the path of the collection directly, without adding an index
+                    }
+                    break;
             }
 
-            return key;
+            return null;
         }
 
         protected override Expression VisitMember(MemberExpression expression)
@@ -150,7 +173,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             Visit(expression.Expression);
 
             PropertyType = Nullable.GetUnderlyingType(expression.Type) ?? expression.Type;
-            PropertyName = _propertyNameInferrerParser.Parser(GetFullNameKey(expression));
+            PropertyName = _propertyNameInferrerParser.Parser(GetFullPropertyPath(expression));
 
             // Implicit boolean is only a member visit
             if (expression.Type == typeof(bool))

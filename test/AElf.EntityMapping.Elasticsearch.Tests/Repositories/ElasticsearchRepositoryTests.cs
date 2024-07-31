@@ -14,6 +14,7 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
 {
     private readonly IElasticsearchRepository<BlockIndex, string> _elasticsearchRepository;
     private readonly IElasticsearchRepository<TransactionIndex, string> _transactionIndexRepository;
+    private readonly IElasticsearchRepository<AccountBalanceEntity, string> _accountBalanceRepository;
     private readonly IElasticIndexService _elasticIndexService;
     private readonly AElfEntityMappingOptions _option;
 
@@ -21,6 +22,7 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
     {
         _elasticsearchRepository = GetRequiredService<IElasticsearchRepository<BlockIndex, string>>();
         _transactionIndexRepository = GetRequiredService<IElasticsearchRepository<TransactionIndex, string>>();
+        _accountBalanceRepository = GetRequiredService<IElasticsearchRepository<AccountBalanceEntity, string>>();
         _elasticIndexService = GetRequiredService<IElasticIndexService>();
         _option = GetRequiredService<IOptionsSnapshot<AElfEntityMappingOptions>>().Value;
     }
@@ -591,6 +593,43 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         filterList.Count.ShouldBe(1);
     }
 
+    [Fact]
+    public async Task SubObjectQueryTest()
+    {
+        for (int i = 1; i <= 7; i++)
+        {
+            var accountBalanceEntity = new AccountBalanceEntity
+            {
+                Id = "block" + i,
+                Account = "BlockHash" + i,
+                Amount = i,
+                Symbol = "AELF",
+                Metadata = new Metadata()
+                {
+                    ChainId = "tDVV",
+                    Block=new BlockMetadata()
+                    {
+                        BlockHash = "BlockHash" + i,
+                        BlockHeight = i,
+                        BlockTime = DateTime.Now.AddDays(-10 + i)
+                    },
+                    IsDeleted=false
+                }
+            };
+            await _accountBalanceRepository.AddAsync(accountBalanceEntity);
+        }
+        
+        var queryable = await _accountBalanceRepository.GetQueryableAsync();
+        var list1 = queryable.Where(o => o.Metadata.Block.BlockHash == "BlockHash5").ToList();
+        // var list1 = queryable.Where(o => o.Metadata.ChainId == "tDVV").ToList();
+        // var list1 = queryable.Where(o => o.Account == "BlockHash3").ToList();
+        list1.Count.ShouldBe(1);
+        
+        var list = await _accountBalanceRepository.GetListAsync(o=>o.Metadata.Block.BlockHash == "BlockHash4");
+        // var list = await _accountBalanceRepository.GetListAsync(o => o.Account == "BlockHash3");
+        list.Count.ShouldBe(1);
+    }
+
 
     [Fact]
     public async Task GetList_MultipleChain_Test()
@@ -630,7 +669,10 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         }
 
         var chainId = "AELF";
-        var list = await _elasticsearchRepository.GetListAsync(o => o.ChainId == chainId && o.BlockHeight >= 0 && o.Fee.BlockFee == "BlockHash2");
+        // var list = await _elasticsearchRepository.GetListAsync(o => o.ChainId == chainId && o.BlockHeight >= 0 && o.Fee.BlockFee == "BlockHash2");
+        // var list = await _elasticsearchRepository.GetListAsync(o=>o.ChainId == chainId && o.Fee.BlockFee == "BlockHash2");
+        // var list = await _elasticsearchRepository.GetListAsync(o=>o.Fee.BlockFee == "BlockHash2");
+        var list = await _elasticsearchRepository.GetListAsync(o=>o.ChainId == chainId);
         list.Count.ShouldBe(1);
         foreach (var e in list)
         {

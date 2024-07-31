@@ -144,7 +144,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                     });
             
                 }
-
+                // var dsl = _elasticClient.RequestResponseSerializer.SerializeToString(descriptor);
                 return descriptor;
             
             });
