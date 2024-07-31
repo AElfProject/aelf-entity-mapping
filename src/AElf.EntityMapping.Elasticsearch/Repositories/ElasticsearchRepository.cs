@@ -630,41 +630,4 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             $"Bulk Delete Document at index {collectionRouteKeyRouteIndexName} :{response.ServerError.Error.Reason}");
     }
 
-    public async Task DropCollectionAsync(string collectionName = null, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(collectionName))
-        {
-            throw new ArgumentNullException(nameof(collectionName), "Collection name must be provided.");
-        }
-
-        try
-        {
-            var client = await GetElasticsearchClientAsync(cancellationToken);
-            var response = await client.Indices.DeleteAsync(collectionName, ct: cancellationToken);
-            if (!response.IsValid)
-            {
-                if (response.ServerError == null)
-                {
-                    return;
-                }
-                
-                if (response.ServerError?.Status == 404)
-                {
-                    _logger.LogError("Failed to delete index {0} does not exist.", collectionName);
-                    return;
-                }
-
-                // Log the error or throw an exception based on the response
-                throw new ElasticsearchException($"Failed to delete index {collectionName}: {response.ServerError.Error.Reason}");
-            }
-
-            _logger.LogDebug("Index {0} deleted successfully.", collectionName);
-        }
-        catch (Exception ex)
-        {
-            // Handle exceptions from the client (network issues, etc.)
-            throw new ElasticsearchException($"An error occurred while delete index {collectionName}: {ex.Message}");
-        }
-    }
-
 }
