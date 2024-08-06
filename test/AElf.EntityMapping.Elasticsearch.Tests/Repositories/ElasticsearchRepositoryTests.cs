@@ -669,10 +669,7 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         }
 
         var chainId = "AELF";
-        // var list = await _elasticsearchRepository.GetListAsync(o => o.ChainId == chainId && o.BlockHeight >= 0 && o.Fee.BlockFee == "BlockHash2");
-        // var list = await _elasticsearchRepository.GetListAsync(o=>o.ChainId == chainId && o.Fee.BlockFee == "BlockHash2");
-        // var list = await _elasticsearchRepository.GetListAsync(o=>o.Fee.BlockFee == "BlockHash2");
-        var list = await _elasticsearchRepository.GetListAsync(o=>o.ChainId == chainId);
+        var list = await _elasticsearchRepository.GetListAsync(o => o.ChainId == chainId && o.BlockHeight >= 0 && o.Fee.BlockFee == "BlockHash2");
         list.Count.ShouldBe(1);
         foreach (var e in list)
         {
