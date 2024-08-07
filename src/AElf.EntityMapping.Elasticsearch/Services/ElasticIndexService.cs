@@ -146,4 +146,41 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
             }
         }
     }
+    
+    public async Task DeleteIndexAsync(string collectionName = null, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(collectionName))
+        {
+            throw new ArgumentNullException(nameof(collectionName), "Collection name must be provided.");
+        }
+
+        try
+        {
+            var elasticClient = await GetElasticsearchClientAsync();
+            var response = await elasticClient.Indices.DeleteAsync(collectionName, ct: cancellationToken);
+            if (!response.IsValid)
+            {
+                if (response.ServerError == null)
+                {
+                    return;
+                }
+                
+                if (response.ServerError?.Status == 404)
+                {
+                    _logger.LogError("Failed to delete index {0} does not exist.", collectionName);
+                    return;
+                }
+
+                // Log the error or throw an exception based on the response
+                throw new ElasticsearchException($"Failed to delete index {collectionName}: {response.ServerError.Error.Reason}");
+            }
+
+            _logger.LogInformation("Index {0} deleted successfully.", collectionName);
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions from the client (network issues, etc.)
+            throw new ElasticsearchException($"An error occurred while delete index {collectionName}: {ex.Message}");
+        }
+    }
 }
