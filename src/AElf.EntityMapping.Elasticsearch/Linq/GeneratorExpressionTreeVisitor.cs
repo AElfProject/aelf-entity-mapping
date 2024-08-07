@@ -127,12 +127,53 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             return expression;
         }
 
+        // private string GetFullNameKey(MemberExpression memberExpression)
+        // {
+            // var key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
+            // while (memberExpression.Expression != null)
+            // {
+            //     memberExpression = memberExpression.Expression as MemberExpression;
+            //     if (memberExpression == null)
+            //     {
+            //         break;
+            //     }
+            //
+            //     key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name + "." + key);
+            //     return key;
+            // }
+            //
+            // return key;
+        // }
+        
+        private string GetFullPropertyPath(Expression expression)
+        {
+            switch (expression)
+            {
+                case MemberExpression memberExpression:
+                    var parentPath = GetFullPropertyPath(memberExpression.Expression);
+                    var currentMemberName = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
+                    return string.IsNullOrEmpty(parentPath) ? currentMemberName : $"{parentPath}.{currentMemberName}";
+
+                case MethodCallExpression methodCallExpression:
+                    // Handles method calls like 'get_Item', which are usually associated with indexed access to collections
+                    if (methodCallExpression.Method.Name.Equals("get_Item") && methodCallExpression.Object != null)
+                    {
+                        // Assuming this is an indexed access to an array or list, we will ignore the index and use only the name of the collection
+                        var collectionPath = GetFullPropertyPath(methodCallExpression.Object);
+                        return collectionPath; // Returns the path of the collection directly, without adding an index
+                    }
+                    break;
+            }
+
+            return null;
+        }
+
         protected override Expression VisitMember(MemberExpression expression)
         {
             Visit(expression.Expression);
 
             PropertyType = Nullable.GetUnderlyingType(expression.Type) ?? expression.Type;
-            PropertyName = _propertyNameInferrerParser.Parser(expression.Member.Name);
+            PropertyName = _propertyNameInferrerParser.Parser(GetFullPropertyPath(expression));
 
             // Implicit boolean is only a member visit
             if (expression.Type == typeof(bool))
@@ -188,9 +229,9 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                         {
                             Visit(whereClause.Predicate);
                             Node tmp = (Node)QueryMap[whereClause.Predicate].Clone();
-                            QueryMap[expression] = tmp ;
+                            QueryMap[expression] = tmp;
                             QueryMap[expression].IsSubQuery = true;
-                            QueryMap[expression].SubQueryPath = from;//from.ToLower();
+                            QueryMap[expression].SubQueryPath = from; //from.ToLower();
                             QueryMap[expression].SubQueryFullPath = fullPath;
 //                            VisitBinarySetSubQuery((BinaryExpression)whereClause.Predicate, from, fullPath, true);
                             BinaryExpression predicate = (BinaryExpression)whereClause.Predicate;
@@ -198,6 +239,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                             {
                                 VisitBinarySetSubQuery((BinaryExpression)predicate.Left, from, fullPath, true);
                             }
+
                             if (predicate.Right is BinaryExpression)
                             {
                                 VisitBinarySetSubQuery((BinaryExpression)predicate.Right, from, fullPath, true);
@@ -380,10 +422,8 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             {
                 case ExpressionType.Equal:
                     return new TermNode(PropertyName, Value);
-               // return new MatchPhraseNode(PropertyName, Value);
                 case ExpressionType.NotEqual:
                     return new NotNode(new TermNode(PropertyName, Value));
-                    //return new NotNode(new MatchPhraseNode(PropertyName, Value));
                 default:
                     return null;
             }
@@ -556,9 +596,9 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
 
             return (int)enumValue;
         }
+
         protected void VisitBinarySetSubQuery(BinaryExpression expression, string path, string fullPath, bool parentIsSubQuery)
         {
-
             if (expression.Left is BinaryExpression && expression.Right is ConstantExpression)
             {
                 return;

@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Linq.Expressions;
+using AElf.EntityMapping.Linq;
 using Nest;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -25,8 +26,8 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             QueryAggregator = new QueryAggregator();
             VisitQueryModel(queryModel);
             return QueryAggregator;
-        } 
-        
+        }
+
         public override void VisitQueryModel(QueryModel queryModel)
         {
             queryModel.SelectClause.Accept(this, queryModel);
@@ -34,17 +35,17 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             VisitBodyClauses(queryModel.BodyClauses, queryModel);
             VisitResultOperators(queryModel.ResultOperators, queryModel);
         }
-        
+
         public override void VisitMainFromClause(MainFromClause fromClause, QueryModel queryModel)
         {
             if (fromClause.FromExpression is SubQueryExpression subQueryExpression)
             {
                 VisitQueryModel(subQueryExpression.QueryModel);
             }
-            
+
             base.VisitMainFromClause(fromClause, queryModel);
         }
-        
+
         public override void VisitWhereClause(WhereClause whereClause, QueryModel queryModel, int index)
         {
             var tree = new GeneratorExpressionTreeVisitor<TU>(_propertyNameInferrerParser);
@@ -66,62 +67,110 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
 
                 QueryAggregator.Query = query;
             }
+
             base.VisitWhereClause(whereClause, queryModel, index);
         }
-        
+
         protected override void VisitResultOperators(ObservableCollection<ResultOperatorBase> resultOperators,
             QueryModel queryModel)
         {
             foreach (var resultOperator in resultOperators)
             {
-                if (resultOperator is SkipResultOperator skipResultOperator)
+                switch (resultOperator)
                 {
-                    QueryAggregator.Skip = skipResultOperator.GetConstantCount();
-                }
-                
-                if (resultOperator is TakeResultOperator takeResultOperator)
-                {
-                    QueryAggregator.Take = takeResultOperator.GetConstantCount();
-                }
+                    case SkipResultOperator skipResultOperator:
+                        QueryAggregator.Skip = skipResultOperator.GetConstantCount();
+                        break;
+                    case TakeResultOperator takeResultOperator:
+                        QueryAggregator.Take = takeResultOperator.GetConstantCount();
+                        break;
+                    case GroupResultOperator groupResultOperator:
+                    {
+                        var members = new List<Tuple<string, Type>>();
 
-                if (resultOperator is GroupResultOperator groupResultOperator)
-                {
-                    var members = new List<Tuple<string, Type>>();
-                    
-                    switch (groupResultOperator.KeySelector)
-                    {
-                        case MemberExpression memberExpression:
-                            members.Add(new Tuple<string, Type>(memberExpression.Member.Name, memberExpression.Type));
-                            break;
-                        case NewExpression newExpression:
-                            members.AddRange(newExpression.Arguments
-                                .Cast<MemberExpression>()
-                                .Select(memberExpression => new Tuple<string, Type>(memberExpression.Member.Name, memberExpression.Type)));
-                            break;
+                        switch (groupResultOperator.KeySelector)
+                        {
+                            case MemberExpression memberExpression:
+                                members.Add(new Tuple<string, Type>(GetFullNameKey(memberExpression), memberExpression.Type));
+                                break;
+                            case NewExpression newExpression:
+                                members.AddRange(newExpression.Arguments
+                                    .Cast<MemberExpression>()
+                                    .Select(memberExpression => new Tuple<string, Type>(GetFullNameKey(memberExpression), memberExpression.Type)));
+                                break;
+                        }
+
+                        members.ForEach(property => { QueryAggregator.GroupByExpressions.Add(new GroupByProperties(property.Item1, property.Item2)); });
+                        break;
                     }
-                    
-                    members.ForEach(property =>
-                    {
-                        QueryAggregator.GroupByExpressions.Add(new GroupByProperties(property.Item1, property.Item2));
-                    });
+                    case AfterResultOperator afterResultOperator:
+                        QueryAggregator.After = afterResultOperator.GetConstantPosition();
+                        break;
                 }
             }
-            
+
             base.VisitResultOperators(resultOperators, queryModel);
         }
-        
+
+        private string GetFullNameKey(MemberExpression memberExpression)
+        {
+            var key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
+            while (memberExpression.Expression != null)
+            {
+                memberExpression = memberExpression.Expression as MemberExpression;
+                if (memberExpression == null)
+                {
+                    break;
+                }
+
+                key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name) + "." + key;
+                return key;
+            }
+
+            return key;
+        }
+
+
         public override void VisitOrderByClause(OrderByClause orderByClause, QueryModel queryModel, int index)
         {
             foreach (var ordering in orderByClause.Orderings)
             {
-                var memberExpression = (MemberExpression) ordering.Expression;
+                var memberExpression = (MemberExpression)ordering.Expression;
                 var direction = orderByClause.Orderings[0].OrderingDirection;
-                var propertyName = memberExpression.Member.Name;
-                var type = memberExpression.Type;
-                QueryAggregator.OrderByExpressions.Add(new OrderProperties(propertyName, type, direction)); 
+                //get full property path if there is sub object
+                string propertyName = GetFullPropertyPath(memberExpression);
+
+                if (!string.IsNullOrEmpty(propertyName))
+                {
+                    var type = memberExpression.Type; 
+                    QueryAggregator.OrderByExpressions.Add(new OrderProperties(propertyName, type, direction));
+                }
             }
-            
+
             base.VisitOrderByClause(orderByClause, queryModel, index);
+        }
+        
+        private string GetFullPropertyPath(Expression expression)
+        {
+            switch (expression)
+            {
+                case MemberExpression memberExpression:
+                    var parentPath = GetFullPropertyPath(memberExpression.Expression);
+                    var currentMemberName = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
+                    return string.IsNullOrEmpty(parentPath) ? currentMemberName : $"{parentPath}.{currentMemberName}";
+
+                case MethodCallExpression methodCallExpression:
+                    // Handles method calls like 'get_Item', which are usually associated with indexed access to collections
+                    if (methodCallExpression.Method.Name.Equals("get_Item") && methodCallExpression.Object != null)
+                    {
+                        // Assuming this is an indexed access to an array or list, we will ignore the index and use only the name of the collection
+                        var collectionPath = GetFullPropertyPath(methodCallExpression.Object);
+                        return collectionPath; // Returns the path of the collection directly, without adding an index
+                    }
+                    break;
+            }
+
+            return null;
         }
     }
 }

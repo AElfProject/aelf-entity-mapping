@@ -86,7 +86,12 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                     descriptor.Take(take);
                     descriptor.Size(take);
                 }
-                
+
+                if (queryAggregator.After != null)
+                {
+                    descriptor.SearchAfter(queryAggregator.After);
+                }
+
                 if (queryAggregator.Query != null)
                 {
                     descriptor.Query(q => queryAggregator.Query);
@@ -95,7 +100,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                 {
                     descriptor.MatchAll();
                 }
-            
+
             
                 if (queryAggregator.OrderByExpressions.Any())
                 {
@@ -103,8 +108,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                     {
                         foreach (var orderByExpression in queryAggregator.OrderByExpressions)
                         {
-                            var property = _propertyNameInferrerParser.Parser(orderByExpression.PropertyName) +
-                                           orderByExpression.GetKeywordIfNecessary();
+                            var property = _propertyNameInferrerParser.Parser(orderByExpression.PropertyName);
                             d.Field(property,
                                 orderByExpression.OrderingDirection == OrderingDirection.Asc
                                     ? SortOrder.Ascending
@@ -140,7 +144,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                     });
             
                 }
-
+                // var dsl = _elasticClient.RequestResponseSerializer.SerializeToString(descriptor);
                 return descriptor;
             
             });
@@ -238,7 +242,6 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                         {
                             descriptor.Query(q => queryAggregator.Query);
                         }
-                        // var dsl = _elasticClient.RequestResponseSerializer.SerializeToString(descriptor);
                         return descriptor;
                     });
                     if (!response.IsValid)
@@ -311,6 +314,22 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             var indexNames =
                 AsyncHelper.RunSync(async () => await _collectionNameProvider.GetFullCollectionNameAsync(conditions));
             return IndexNameHelper.FormatIndexName(indexNames);
+        }
+        
+        private static string GetCollectionNameKey(MemberExpression memberExpression)
+        {
+            string key = memberExpression.Member.Name;
+            while (memberExpression.Expression != null)
+            {
+                memberExpression = memberExpression.Expression as MemberExpression;
+                if (memberExpression == null)
+                {
+                    break;
+                }
+                key =  memberExpression.Member.Name +"."+ key;
+                return key;
+            }
+            return key;
         }
     }
 

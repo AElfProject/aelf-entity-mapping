@@ -11,6 +11,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
         public List<string> PropertiesToSelect = new List<string>();
         public List<OrderProperties> OrderByExpressions = new List<OrderProperties>();
         public List<GroupByProperties> GroupByExpressions = new List<GroupByProperties>();
+        public object[] After { get; set; }
     }
 
     public class OrderProperties
