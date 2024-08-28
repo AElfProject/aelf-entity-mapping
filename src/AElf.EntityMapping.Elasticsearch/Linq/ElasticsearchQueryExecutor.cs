@@ -74,17 +74,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             
                 if (queryAggregator.Take != null)
                 {
-                    var take = queryAggregator.Take.Value;
-                    var skip = queryAggregator.Skip ?? 0;
-                    
-                    if (skip + take > ElasticQueryLimit)
-                    {
-                        var exceedCount = skip + take - ElasticQueryLimit;
-                        take -= exceedCount;
-                    }
-                    
-                    descriptor.Take(take);
-                    descriptor.Size(take);
+                    descriptor.Size(queryAggregator.Take.Value);
                 }
 
                 if (queryAggregator.After != null)
