@@ -204,8 +204,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 response = await client.BulkAsync(bulk, cancellationToken);
                 if (!response.IsValid)
                 {
+                    var errorMessage = ElasticsearchResponseHelper.GetErrorMessage(response);
+                    errorMessage = response.ItemsWithErrors.Where(item => item.Error != null).Aggregate(errorMessage, (current, item) => current + item.Error);
                     throw new ElasticsearchException(
-                        $"Bulk InsertOrUpdate Document failed at index {indexNames} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
+                        $"Bulk InsertOrUpdate Document failed at index {indexNames} :{errorMessage}");
                 }
                 
                 currentIndexName = indexNames[i];
@@ -222,8 +224,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         response = await client.BulkAsync(bulk, cancellationToken);
         if (!response.IsValid)
         {
+            var errorMessage = ElasticsearchResponseHelper.GetErrorMessage(response);
+            errorMessage = response.ItemsWithErrors.Where(item => item.Error != null).Aggregate(errorMessage, (current, item) => current + item.Error);
             throw new ElasticsearchException(
-                $"Bulk InsertOrUpdate Document failed at index {indexNames} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
+                $"Bulk InsertOrUpdate Document failed at index {indexNames} :{errorMessage}");
         }
     }
 
