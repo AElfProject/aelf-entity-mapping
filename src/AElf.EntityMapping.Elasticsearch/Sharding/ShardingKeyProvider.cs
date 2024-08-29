@@ -185,7 +185,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             if (response.ServerError != null)
             {
                 throw new ElasticsearchException(
-                    $"Exists Document failed at index {collectionName} :{response.ServerError.Error.Reason}");
+                    $"Exists Document failed at index {collectionName} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
             }
             if (response.Exists)
             {

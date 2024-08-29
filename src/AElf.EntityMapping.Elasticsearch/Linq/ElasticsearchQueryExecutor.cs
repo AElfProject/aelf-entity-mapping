@@ -142,7 +142,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             if (!documents.IsValid)
             {
                 throw new ElasticsearchException($"Search document failed at index {index} :" +
-                                                 documents.ServerError.Error.Reason);
+                                                 ElasticsearchResponseHelper.GetErrorMessage(documents));
             }
 
             if (queryModel.SelectClause?.Selector is MemberExpression)
@@ -237,7 +237,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                     if (!response.IsValid)
                     {
                         throw new ElasticsearchException(
-                            $"Count Document failed at index {index} :{response.ServerError.Error.Reason}");
+                            $"Count Document failed at index {index} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
                     }
                     var result = response.Count;
                     /*if (result > ElasticQueryLimit)
