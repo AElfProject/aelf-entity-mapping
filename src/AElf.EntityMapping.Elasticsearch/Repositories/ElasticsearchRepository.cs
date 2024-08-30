@@ -110,7 +110,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         if (result.IsValid)
             return;
         throw new ElasticsearchException(
-            $"Insert Document failed at index {indexName} id {(model == null ? "" : model.Id.ToString())} : {result.ServerError.Error.Reason}");
+            $"Insert Document failed at index {indexName} id {(model == null ? "" : model.Id.ToString())} : {ElasticsearchResponseHelper.GetErrorMessage(result)}");
     }
 
     public async Task AddOrUpdateAsync(TEntity model, string collectionName = null,
@@ -132,7 +132,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             if (result.IsValid)
                 return;
             throw new ElasticsearchException(
-                $"Update Document failed at index {indexName} id {(model == null ? "" : model.Id.ToString())} : {result.ServerError.Error.Reason}");
+                $"Update Document failed at index {indexName} id {(model == null ? "" : model.Id.ToString())} : {ElasticsearchResponseHelper.GetErrorMessage(result)}");
         }
         else
         {
@@ -145,7 +145,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             if (result.IsValid)
                 return;
             throw new ElasticsearchException(
-                $"Insert Document failed at index {indexName} id {(model == null ? "" : model.Id.ToString())} : {result.ServerError.Error.Reason}");
+                $"Insert Document failed at index {indexName} id {(model == null ? "" : model.Id.ToString())} : {ElasticsearchResponseHelper.GetErrorMessage(result)}");
         }
     }
 
@@ -204,8 +204,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 response = await client.BulkAsync(bulk, cancellationToken);
                 if (!response.IsValid)
                 {
+                    var errorMessage = ElasticsearchResponseHelper.GetErrorMessage(response);
+                    errorMessage = response.ItemsWithErrors.Where(item => item.Error != null).Aggregate(errorMessage, (current, item) => current + item.Error);
                     throw new ElasticsearchException(
-                        $"Bulk InsertOrUpdate Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
+                        $"Bulk InsertOrUpdate Document failed at index {indexNames} :{errorMessage}");
                 }
                 
                 currentIndexName = indexNames[i];
@@ -222,8 +224,10 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         response = await client.BulkAsync(bulk, cancellationToken);
         if (!response.IsValid)
         {
+            var errorMessage = ElasticsearchResponseHelper.GetErrorMessage(response);
+            errorMessage = response.ItemsWithErrors.Where(item => item.Error != null).Aggregate(errorMessage, (current, item) => current + item.Error);
             throw new ElasticsearchException(
-                $"Bulk InsertOrUpdate Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
+                $"Bulk InsertOrUpdate Document failed at index {indexNames} :{errorMessage}");
         }
     }
 
@@ -241,7 +245,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         if (result.IsValid)
             return;
         throw new ElasticsearchException(
-            $"Update Document failed at index {indexName} id {(model == null ? "" : model.Id.ToString())} : {result.ServerError.Error.Reason}");
+            $"Update Document failed at index {indexName} id {(model == null ? "" : model.Id.ToString())} : {ElasticsearchResponseHelper.GetErrorMessage(result)}");
     }
 
     public async Task UpdateManyAsync(List<TEntity> list, string collectionName = null,
@@ -285,7 +289,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 if (!response.IsValid)
                 {
                     throw new ElasticsearchException(
-                        $"Bulk Update Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
+                        $"Bulk Update Document failed at index {indexNames} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
                 }
                 
                 currentIndexName = indexNames[i];
@@ -308,7 +312,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         if (!response.IsValid)
         {
             throw new ElasticsearchException(
-                $"Bulk Update Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
+                $"Bulk Update Document failed at index {indexNames} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
         }
     }
 
@@ -328,7 +332,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
             return;
         }
 
-        throw new ElasticsearchException($"Delete Document at index {indexName} id {id.ToString()} :{response.ServerError.Error.Reason}");
+        throw new ElasticsearchException($"Delete Document at index {indexName} id {id.ToString()} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
     }
 
     public async Task DeleteAsync(TEntity model, string collectionName = null,
@@ -349,7 +353,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         }
 
         throw new ElasticsearchException(
-            $"Delete Document at index {indexName} id {(model == null ? "" : model.Id.ToString())} :{response.ServerError.Error.Reason}");
+            $"Delete Document at index {indexName} id {(model == null ? "" : model.Id.ToString())} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
     }
 
     public async Task DeleteManyAsync(List<TEntity> list, string collectionName = null,
@@ -396,7 +400,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
                 if (response.ServerError != null)
                 {
                     throw new ElasticsearchException(
-                        $"Bulk Delete Document failed at index {indexNames} :{response.ServerError.Error.Reason}");
+                        $"Bulk Delete Document failed at index {indexNames} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
                 }
                 
                 currentIndexName = indexNames[i];
@@ -418,7 +422,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         }
 
         throw new ElasticsearchException(
-            $"Bulk Delete Document at index {indexNames} :{response.ServerError.Error.Reason}");
+            $"Bulk Delete Document at index {indexNames} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
     }
 
     public Task<IElasticClient> GetElasticsearchClientAsync(CancellationToken cancellationToken = default)
@@ -517,7 +521,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         if (!response.IsValid)
         {
             throw new ElasticsearchException(
-                $"Bulk InsertOrUpdate Document failed at index {collectionRouteKeyIndexName} :{response.ServerError.Error.Reason}");
+                $"Bulk InsertOrUpdate Document failed at index {collectionRouteKeyIndexName} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
         }
     }
 
@@ -580,7 +584,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         if (!response.IsValid)
         {
             throw new ElasticsearchException(
-                $"Bulk Update Document failed at index {collectionRouteKeyIndexName} :{response.ServerError.Error.Reason}");
+                $"Bulk Update Document failed at index {collectionRouteKeyIndexName} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
         }
     }
 
@@ -627,7 +631,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         }
 
         throw new ElasticsearchException(
-            $"Bulk Delete Document at index {collectionRouteKeyRouteIndexName} :{response.ServerError.Error.Reason}");
+            $"Bulk Delete Document at index {collectionRouteKeyRouteIndexName} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
     }
 
 }

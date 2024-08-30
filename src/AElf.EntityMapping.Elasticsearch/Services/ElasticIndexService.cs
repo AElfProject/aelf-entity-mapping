@@ -76,7 +76,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
                         .Map(m => m.AutoMap(type)));
         if (!result.Acknowledged)
             throw new ElasticsearchException($"Create Index {indexName} failed : " +
-                                             result.ServerError.Error.Reason);
+                                             ElasticsearchResponseHelper.GetErrorMessage(result));
         
         //await client.Indices.PutAliasAsync(newName, indexName);
     }
@@ -172,7 +172,7 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
                 }
 
                 // Log the error or throw an exception based on the response
-                throw new ElasticsearchException($"Failed to delete index {collectionName}: {response.ServerError.Error.Reason}");
+                throw new ElasticsearchException($"Failed to delete index {collectionName}: {ElasticsearchResponseHelper.GetErrorMessage(response)}");
             }
 
             _logger.LogInformation("Index {0} deleted successfully.", collectionName);

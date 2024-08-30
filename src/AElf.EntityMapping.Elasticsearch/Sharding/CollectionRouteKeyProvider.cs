@@ -134,8 +134,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     {
                         _logger.LogError($"CollectionRouteKeyProvider.GetShardCollectionNameListByConditionsAsync:  result.ServerError is null result:{JsonConvert.SerializeObject(result)}");
                     }
-                    var reason = result.ServerError?.Error?.Reason ?? "Unknown error";
-                    throw new ElasticsearchException($"Search document failed at index {collectionRouteKeyIndexName} :{reason}");
+                    throw new ElasticsearchException($"Search document failed at index {collectionRouteKeyIndexName} :{ElasticsearchResponseHelper.GetErrorMessage(result)}");
                 }
 
                 if (result.Documents == null)
@@ -239,7 +238,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 {
                     throw new ElasticsearchException(
                         $"Index document failed at index {collectionRouteKeyIndexName} id {(collectionRouteKeyIndexModel == null ? "" : collectionRouteKeyIndexModel.Id)} :" +
-                        collectionRouteKeyResult.ServerError.Error.Reason);
+                        ElasticsearchResponseHelper.GetErrorMessage(collectionRouteKeyResult));
                 }
 
             }
@@ -282,7 +281,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                     {
                         throw new ElasticsearchException(
                             $"Update document failed at index {collectionRouteKeyIndexName} id {(collectionRouteKeyIndexModel == null ? "" : collectionRouteKeyIndexModel.Id)} :" +
-                            collectionRouteKeyResult.ServerError.Error.Reason);
+                            ElasticsearchResponseHelper.GetErrorMessage(collectionRouteKeyResult));
                     }
                 }
             }
@@ -310,7 +309,7 @@ public class CollectionRouteKeyProvider<TEntity>:ICollectionRouteKeyProvider<TEn
                 {
                     throw new ElasticsearchException(
                         $"Delete document failed at index {collectionRouteKeyIndexName} id {collectionRouteKeyIndexId} :" +
-                        collectionRouteKeyResult.ServerError.Error.Reason);
+                        ElasticsearchResponseHelper.GetErrorMessage(collectionRouteKeyResult));
                 }
             }
         }
