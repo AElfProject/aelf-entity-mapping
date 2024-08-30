@@ -8,5 +8,5 @@ public class ElasticsearchOptions
     public int NumberOfShards { get; set; } = 1;
     public int NumberOfReplicas { get; set; } = 1;
     public Refresh Refresh { get; set; } = Refresh.False;
-    public int MaxResultWindow { get; set; } = int.MaxValue;
+    public int MaxResultWindow { get; set; } = 10000;
 }

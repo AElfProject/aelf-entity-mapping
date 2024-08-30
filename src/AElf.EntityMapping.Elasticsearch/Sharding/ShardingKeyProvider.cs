@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using AElf.EntityMapping.Elasticsearch.Exceptions;
@@ -18,7 +19,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
     private readonly ILogger<ShardingKeyProvider<TEntity>> _logger;
 
     private List<ShardingKeyInfo<TEntity>> _shardKeyInfoList;
-    private readonly Dictionary<string, bool> _existIndexShardDictionary = new Dictionary<string, bool>();
+    private readonly ConcurrentDictionary<string, bool> _existIndexShardDictionary = new ConcurrentDictionary<string, bool>();
     private readonly Type _type = typeof(TEntity);
     private readonly string _defaultCollectionName;
     private readonly IShardingCollectionTailProvider<TEntity> _shardingCollectionTailProvider;
@@ -185,7 +186,7 @@ public class ShardingKeyProvider<TEntity> : IShardingKeyProvider<TEntity> where 
             if (response.ServerError != null)
             {
                 throw new ElasticsearchException(
-                    $"Exists Document failed at index {collectionName} :{response.ServerError.Error.Reason}");
+                    $"Exists Document failed at index {collectionName} :{ElasticsearchResponseHelper.GetErrorMessage(response)}");
             }
             if (response.Exists)
             {
