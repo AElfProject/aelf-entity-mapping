@@ -150,7 +150,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
     }
 
     public async Task AddOrUpdateManyAsync(List<TEntity> list, string collectionName = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, bool skipRouteKey = false)
     {
         string entityName = typeof(TEntity).Name;
         _logger.LogDebug("[{1}]Before AddOrUpdateManyAsync time: {0} ",
@@ -161,7 +161,7 @@ public class ElasticsearchRepository<TEntity, TKey> : IElasticsearchRepository<T
         var isSharding = _shardingKeyProvider.IsShardingCollection();
         
         var client = await GetElasticsearchClientAsync(cancellationToken);
-        if (!isSharding)
+        if (!isSharding || skipRouteKey)
         {
             await BulkAddAsync(client, indexNames, list, isSharding, cancellationToken);
             return;

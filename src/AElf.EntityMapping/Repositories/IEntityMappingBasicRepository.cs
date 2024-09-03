@@ -8,7 +8,7 @@ namespace AElf.EntityMapping.Repositories
         
         Task AddOrUpdateAsync(TEntity model, string collectionName = null, CancellationToken cancellationToken = default);
         
-        Task AddOrUpdateManyAsync(List<TEntity> list, string collectionName = null, CancellationToken cancellationToken = default);
+        Task AddOrUpdateManyAsync(List<TEntity> list, string collectionName = null, CancellationToken cancellationToken = default, bool skipRouteKey = false);
 
         Task UpdateAsync(TEntity model, string collectionName = null, CancellationToken cancellationToken = default);
         
