@@ -414,21 +414,21 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         block.LogEventCount.ShouldBe(blockIndex.LogEventCount);
         block.ChainId.ShouldBe(blockIndex.ChainId);
 
-        for (int i = 1; i <= 7; i++)
-        {
-            await _elasticsearchRepository.AddAsync(new BlockIndex
-            {
-                Id = "block" + i,
-                BlockHash = "BlockHash" + i,
-                BlockHeight = i,
-                BlockTime = DateTime.Now.AddDays(-10 + i),
-                LogEventCount = i,
-                ChainId = "AELF"
-            });
-        }
-
-        block = await _elasticsearchRepository.GetAsync("block7");
-        block.Id.ShouldBe("block7");
+        // for (int i = 1; i <= 7; i++)
+        // {
+        //     await _elasticsearchRepository.AddAsync(new BlockIndex
+        //     {
+        //         Id = "block" + i,
+        //         BlockHash = "BlockHash" + i,
+        //         BlockHeight = i,
+        //         BlockTime = DateTime.Now.AddDays(-10 + i),
+        //         LogEventCount = i,
+        //         ChainId = "AELF"
+        //     });
+        // }
+        //
+        // block = await _elasticsearchRepository.GetAsync("block7");
+        // block.Id.ShouldBe("block7");
     }
 
     [Fact]

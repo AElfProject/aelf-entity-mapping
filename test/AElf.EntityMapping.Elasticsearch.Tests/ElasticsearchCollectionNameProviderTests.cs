@@ -150,10 +150,12 @@ public class ElasticsearchCollectionNameProviderTests: AElfElasticsearchTestBase
         await InitBlocksAsync();
         
         var collectionNames = await _collectionNameProvider.GetFullCollectionNameByIdAsync("block1");
-        collectionNames.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-0");
+        // collectionNames.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-0");
+        collectionNames.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex");
         
         collectionNames = await _collectionNameProvider.GetFullCollectionNameByIdAsync("block6");
-        collectionNames.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
+        // collectionNames.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex-aelf-1");
+        collectionNames.ShouldBe($"{_option.CollectionPrefix.ToLower()}.blockindex");
     }
 
     private async Task InitBlocksAsync()

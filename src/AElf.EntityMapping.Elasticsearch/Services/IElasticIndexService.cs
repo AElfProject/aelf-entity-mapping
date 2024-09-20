@@ -8,7 +8,7 @@ public interface IElasticIndexService
     Task CreateIndexTemplateAsync(string indexTemplateName, string indexName, Type indexEntityType, int numberOfShards,
         int numberOfReplicas);
 
-    Task CreateCollectionRouteKeyIndexAsync(Type indexEntityType, int numberOfShards,
-        int numberOfReplicas);
+    // Task CreateCollectionRouteKeyIndexAsync(Type indexEntityType, int numberOfShards,
+    //     int numberOfReplicas);
     Task DeleteIndexAsync(string collectionName = null, CancellationToken cancellationToken = default);
 }
