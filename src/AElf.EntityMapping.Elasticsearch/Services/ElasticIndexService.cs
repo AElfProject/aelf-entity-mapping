@@ -127,25 +127,6 @@ public class ElasticIndexService: IElasticIndexService, ITransientDependency
             _logger.LogInformation("Index template {indexTemplateName} created successfully", indexTemplateName);
         }
     }
-
-    // public async Task CreateCollectionRouteKeyIndexAsync(Type type, int shard = 1, int numberOfReplicas = 1)
-    // {
-    //     var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-    //     foreach (var property in properties)
-    //     {
-    //         CollectionRouteKeyAttribute shardRouteAttribute = (CollectionRouteKeyAttribute)Attribute.GetCustomAttribute(property, typeof(CollectionRouteKeyAttribute));
-    //         if (shardRouteAttribute != null)
-    //         {
-    //             if (property.PropertyType != typeof(string))
-    //             {
-    //                 throw new NotSupportedException(
-    //                     $"{type.Name} Attribute Error! NeedShardRouteAttribute only support string type, please check field: {property.Name}");
-    //             }
-    //             var indexName = IndexNameHelper.GetCollectionRouteKeyIndexName(type, property.Name,_entityMappingOptions.CollectionPrefix);
-    //             await CreateIndexAsync(indexName, typeof(RouteKeyCollection), shard, numberOfReplicas);
-    //         }
-    //     }
-    // }
     
     public async Task DeleteIndexAsync(string collectionName = null, CancellationToken cancellationToken = default)
     {
