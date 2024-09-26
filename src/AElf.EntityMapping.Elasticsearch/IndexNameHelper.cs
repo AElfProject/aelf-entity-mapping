@@ -29,11 +29,4 @@ public static class IndexNameHelper
             : $"{collectionPrefix.ToLower()}.{GetDefaultIndexName(type)}";
         return fullIndexName;
     }
-    public static string GetCollectionRouteKeyIndexName(Type type, string fieldName,string collectionPrefix)
-    {
-        var routeIndexName= collectionPrefix.IsNullOrWhiteSpace()
-            ? $"route.{type.Name.ToLower()}.{fieldName.ToLower()}"
-            : $"{collectionPrefix.ToLower()}.route.{type.Name.ToLower()}.{fieldName.ToLower()}";
-        return routeIndexName;
-    }
 }
