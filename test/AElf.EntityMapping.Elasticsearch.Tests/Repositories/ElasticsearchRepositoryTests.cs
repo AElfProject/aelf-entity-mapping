@@ -623,6 +623,7 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             .Select(s => (Expression<Func<BlockIndex, bool>>)(info => info.BlockHash == s))
             .Aggregate((prev, next) => prev.Or(next));
         var filterList_predicate = queryable.Where(predicates).ToList();
+        filterList_predicate.Count.ShouldBe(3);
         
         var filterList = queryable.Where(item => inputs.Contains(item.BlockHash)).ToList();
         filterList.Count.ShouldBe(3);
