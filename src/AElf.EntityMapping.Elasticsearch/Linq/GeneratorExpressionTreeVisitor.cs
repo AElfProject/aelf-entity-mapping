@@ -223,7 +223,6 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                         {
                             if (whereClause.Predicate is SubQueryExpression subQueryExpression)
                             {
-                                var parentPropertyName = PropertyName.Clone().ToString();
                                 HandleNestedContains(subQueryExpression, expression, from,
                                     fullPath);
                             }

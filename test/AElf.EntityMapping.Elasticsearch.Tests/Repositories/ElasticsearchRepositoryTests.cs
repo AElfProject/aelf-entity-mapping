@@ -663,6 +663,7 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             .Select(s => (Expression<Func<TransactionIndex, bool>>)(info => info.LogEvents.Any(x => x.BlockHeight == s)))
             .Aggregate((prev, next) => prev.Or(next));
         var filterList_predicate = queryable_predicate.Where(predicates).ToList();
+        filterList_predicate.Count.ShouldBe(2);
 
         Expression<Func<TransactionIndex, bool>> mustQuery = item =>
             item.LogEvents.Any(x => inputs.Contains(x.BlockHeight));
