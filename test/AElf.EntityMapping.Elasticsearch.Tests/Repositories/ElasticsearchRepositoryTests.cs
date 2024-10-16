@@ -658,16 +658,16 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             101,
             103
         };
-        
-        // var predicates = inputs
-        //     .Select(s => (Expression<Func<TransactionIndex, bool>>)(info => info.LogEvents.Any(x => x.BlockHeight == s)))
-        //     .Aggregate((prev, next) => prev.Or(next));
+        var queryable_predicate = await _transactionIndexRepository.GetQueryableAsync();
+        var predicates = inputs
+            .Select(s => (Expression<Func<TransactionIndex, bool>>)(info => info.LogEvents.Any(x => x.BlockHeight == s)))
+            .Aggregate((prev, next) => prev.Or(next));
+        var filterList_predicate = queryable_predicate.Where(predicates).ToList();
 
         Expression<Func<TransactionIndex, bool>> mustQuery = item =>
             item.LogEvents.Any(x => inputs.Contains(x.BlockHeight));
         
         var queryable = await _transactionIndexRepository.GetQueryableAsync();
-        // var filterList = queryable.Where(predicates).ToList();
         var filterList = queryable.Where(mustQuery).ToList();
         filterList.Count.ShouldBe(2);
     }
