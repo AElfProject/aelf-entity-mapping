@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using System.Reflection;
 using Elasticsearch.Net;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
@@ -202,15 +203,41 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                     case ContainsResultOperator containsResultOperator:
                         Visit(containsResultOperator.Item);
                         Visit(expression.QueryModel.MainFromClause.FromExpression);
-
-                        if (containsResultOperator.Item.Type == typeof(Guid))
+                        
+                        // PropertyName = _propertyNameInferrerParser.Parser(GetFullPropertyPath(expression.QueryModel.MainFromClause.FromExpression));
+                        Type itemType = containsResultOperator.Item.Type;
+                        Type nonNullableType = Nullable.GetUnderlyingType(itemType) ?? itemType;
+                        
+                        // Handling different types
+                        if (itemType == typeof(Guid) || nonNullableType == typeof(Guid))
                         {
                             query = new TermsNode(PropertyName, ((IEnumerable<Guid>)Value).Select(x => x.ToString()));
                         }
-
-                        if (containsResultOperator.Item.Type == typeof(Guid?))
+                        else if (itemType == typeof(Guid?) || nonNullableType == typeof(Guid?))
                         {
-                            query = new TermsNode(PropertyName, ((IEnumerable<Guid?>)Value).Select(x => x.ToString()));
+                            query = new TermsNode(PropertyName, ((IEnumerable<Guid?>)Value).Select(x => x?.ToString()));
+                        }
+                        else if (nonNullableType == typeof(int) || nonNullableType == typeof(int?)) {
+                            query = new TermsNode(PropertyName, ((IEnumerable<int>)Value).Select(x => x.ToString()));
+                        }
+                        else if (nonNullableType == typeof(long) || nonNullableType == typeof(long?)) {
+                            query = new TermsNode(PropertyName, ((IEnumerable<long>)Value).Select(x => x.ToString()));
+                        }
+                        else if (nonNullableType == typeof(double) || nonNullableType == typeof(double?)) {
+                            query = new TermsNode(PropertyName, ((IEnumerable<double>)Value).Select(x => x.ToString()));
+                        }
+                        else if (nonNullableType == typeof(DateTime) || nonNullableType == typeof(DateTime?)) {
+                            query = new TermsNode(PropertyName, ((IEnumerable<DateTime>)Value).Select(x => x.ToString("o"))); // ISO 8601 format
+                        }
+                        else if (nonNullableType == typeof(bool) || nonNullableType == typeof(bool?)) {
+                            query = new TermsNode(PropertyName, ((IEnumerable<bool>)Value).Select(x => x.ToString()));
+                        }
+                        else if (nonNullableType == typeof(string)) {
+                            query = new TermsNode(PropertyName, (IEnumerable<string>)Value);
+                        }
+                        else
+                        {
+                            throw new NotSupportedException($"Type {nonNullableType.Name} is not supported for Terms queries.");
                         }
 
                         QueryMap[expression] = ParseQuery(query);
@@ -234,6 +261,11 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                             QueryMap[expression].SubQueryPath = from; //from.ToLower();
                             QueryMap[expression].SubQueryFullPath = fullPath;
 //                            VisitBinarySetSubQuery((BinaryExpression)whereClause.Predicate, from, fullPath, true);
+                            if (whereClause.Predicate is SubQueryExpression subQueryExpression)
+                            {
+                                // HandleNestedContains(subQueryExpression, tmp);
+                                return base.VisitSubQuery(expression);
+                            }
                             BinaryExpression predicate = (BinaryExpression)whereClause.Predicate;
                             if (predicate.Left is BinaryExpression)
                             {
@@ -279,6 +311,48 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             }
 
             return expression;
+        }
+
+        // private void HandleNestedContains(SubQueryExpression subQueryExpression, Node parent)
+        // {
+        //     if (subQueryExpression == null || parent == null)
+        //         throw new ArgumentNullException("SubQueryExpression or parent Node cannot be null.");
+        //     
+        //     PropertyName = _propertyNameInferrerParser.Parser(GetFullPropertyPath(subQueryExpression));
+        //     PropertyType = Nullable.GetUnderlyingType(subQueryExpression.Type) ?? subQueryExpression.Type;
+        //     Node query;
+        //     if (PropertyType == typeof(Guid) || PropertyType == typeof(Guid))
+        //     {
+        //         query = new TermsNode(PropertyName, ((IEnumerable<Guid>)Value).Select(x => x.ToString()));
+        //     }
+        //     else if (PropertyType == typeof(int) || PropertyType == typeof(int))
+        //     {
+        //         query = new TermsNode(PropertyName, ((IEnumerable<int>)Value).Select(x => x.ToString()));
+        //     }
+        //     else if (PropertyType == typeof(string))
+        //     {
+        //         query = new TermsNode(PropertyName, ((IEnumerable<bool>)Value).Select(x => x.ToString()));
+        //     }
+        //     else
+        //     {
+        //         throw new NotSupportedException($"Type {PropertyType.Name} is not supported for Contains queries.");
+        //     }
+        //     // parent.(query);
+        //     QueryMap[subQueryExpression] = ParseQuery(query);
+        // }
+        
+        private string GetMemberName(Expression expression)
+        {
+            if (expression is MemberExpression memberExpression)
+                return memberExpression.Member.Name;
+            throw new InvalidOperationException("Expression does not represent a member access.");
+        }
+        
+        private object GetValueFromExpression(Expression expression)
+        {
+            if (expression is ConstantExpression constantExpression)
+                return constantExpression.Value;
+            throw new InvalidOperationException("Expression is not a constant.");
         }
 
         protected override Expression VisitQuerySourceReference(QuerySourceReferenceExpression expression)
