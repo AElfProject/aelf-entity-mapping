@@ -313,13 +313,9 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
         private Node GetDifferentTypesTermsQueryNode()
         {
             Node query;
-            if (PropertyType == typeof(Guid) || PropertyType == typeof(Guid))
+            if (PropertyType == typeof(Guid) || PropertyType == typeof(Guid?))
             {
                 query = new TermsNode(PropertyName, ((IEnumerable<Guid>)Value).Select(x => x.ToString()));
-            }
-            else if (PropertyType == typeof(Guid?) || PropertyType == typeof(Guid?))
-            {
-                query = new TermsNode(PropertyName, ((IEnumerable<Guid?>)Value).Select(x => x?.ToString()));
             }
             else if (PropertyType == typeof(int) || PropertyType == typeof(int?))
             {
@@ -336,7 +332,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             else if (PropertyType == typeof(DateTime) || PropertyType == typeof(DateTime?))
             {
                 query = new TermsNode(PropertyName,
-                    ((IEnumerable<DateTime>)Value).Select(x => x.ToString("o"))); // ISO 8601 format
+                    ((IEnumerable<DateTime>)Value).Select(x => x.ToString()));
             }
             else if (PropertyType == typeof(bool) || PropertyType == typeof(bool?))
             {
