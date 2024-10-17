@@ -313,30 +313,55 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
         private Node GetDifferentTypesTermsQueryNode()
         {
             Node query;
-            if (PropertyType == typeof(Guid) || PropertyType == typeof(Guid?))
+            if (PropertyType == typeof(Guid))
             {
                 query = new TermsNode(PropertyName, ((IEnumerable<Guid>)Value).Select(x => x.ToString()));
             }
-            else if (PropertyType == typeof(int) || PropertyType == typeof(int?))
+            else if (PropertyType == typeof(Guid?))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<Guid?>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(int))
             {
                 query = new TermsNode(PropertyName, ((IEnumerable<int>)Value).Select(x => x.ToString()));
             }
-            else if (PropertyType == typeof(long) || PropertyType == typeof(long?))
+            else if (PropertyType == typeof(int?))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<int?>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(long))
             {
                 query = new TermsNode(PropertyName, ((IEnumerable<long>)Value).Select(x => x.ToString()));
             }
-            else if (PropertyType == typeof(double) || PropertyType == typeof(double?))
+            else if (PropertyType == typeof(long?))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<long?>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(double))
             {
                 query = new TermsNode(PropertyName, ((IEnumerable<double>)Value).Select(x => x.ToString()));
             }
-            else if (PropertyType == typeof(DateTime) || PropertyType == typeof(DateTime?))
+            else if(PropertyType == typeof(double?))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<double?>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(DateTime))
             {
                 query = new TermsNode(PropertyName,
                     ((IEnumerable<DateTime>)Value).Select(x => x.ToString()));
             }
-            else if (PropertyType == typeof(bool) || PropertyType == typeof(bool?))
+            else if (PropertyType == typeof(DateTime?))
+            {
+                query = new TermsNode(PropertyName,
+                    ((IEnumerable<DateTime?>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(bool))
             {
                 query = new TermsNode(PropertyName, ((IEnumerable<bool>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(bool?))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<bool?>)Value).Select(x => x.ToString()));
             }
             else if (PropertyType == typeof(string))
             {
