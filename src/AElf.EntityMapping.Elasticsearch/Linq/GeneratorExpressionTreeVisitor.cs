@@ -1,5 +1,5 @@
 ﻿using System.Linq.Expressions;
-using System.Reflection;
+using AElf.EntityMapping.Elasticsearch.Options;
 using Elasticsearch.Net;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
@@ -11,6 +11,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
     public class GeneratorExpressionTreeVisitor<T> : ThrowingExpressionVisitor
     {
         private readonly PropertyNameInferrerParser _propertyNameInferrerParser;
+        private readonly ElasticsearchOptions _elasticsearchOptions;
 
         private object Value { get; set; }
         private string PropertyName { get; set; }
@@ -20,9 +21,11 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
         public IDictionary<Expression, Node> QueryMap { get; } =
             new Dictionary<Expression, Node>();
 
-        public GeneratorExpressionTreeVisitor(PropertyNameInferrerParser propertyNameInferrerParser)
+        public GeneratorExpressionTreeVisitor(PropertyNameInferrerParser propertyNameInferrerParser,
+            ElasticsearchOptions elasticsearchOptions)
         {
             _propertyNameInferrerParser = propertyNameInferrerParser;
+            _elasticsearchOptions = elasticsearchOptions;
         }
 
         protected override Expression VisitUnary(UnaryExpression expression)
@@ -203,7 +206,14 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                     case ContainsResultOperator containsResultOperator:
                         Visit(containsResultOperator.Item);
                         Visit(expression.QueryModel.MainFromClause.FromExpression);
-                        
+
+                        //Check if the number of items in the Terms query array within the Contains clause is too large.
+                        if (expression.QueryModel.MainFromClause
+                                .FromExpression is ConstantExpression constantExpression)
+                        {
+                            CheckTermsArrayLength(constantExpression);
+                        }
+
                         // Handling different types
                         query = GetDifferentTypesTermsQueryNode();
 
@@ -290,6 +300,13 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             if (subQueryExpression == null || expression == null)
                 throw new ArgumentNullException("SubQueryExpression or expression cannot be null.");
             
+            //Check if the number of items in the Terms query array within the Contains clause is too large.
+            if (subQueryExpression.QueryModel.MainFromClause
+                    .FromExpression is ConstantExpression constantExpression)
+            {
+                CheckTermsArrayLength(constantExpression);
+            }
+            
             foreach (var resultOperator in subQueryExpression.QueryModel.ResultOperators)
             {
                 switch (resultOperator)
@@ -375,18 +392,16 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             return query;
         }
 
-        private string GetMemberName(Expression expression)
+        private void CheckTermsArrayLength(ConstantExpression constantExpression)
         {
-            if (expression is MemberExpression memberExpression)
-                return memberExpression.Member.Name;
-            throw new InvalidOperationException("Expression does not represent a member access.");
-        }
-        
-        private object GetValueFromExpression(Expression expression)
-        {
-            if (expression is ConstantExpression constantExpression)
-                return constantExpression.Value;
-            throw new InvalidOperationException("Expression is not a constant.");
+            if (constantExpression.Value is System.Collections.IEnumerable objectList)
+            {
+                var count = objectList.Cast<object>().Count();
+                if (count > _elasticsearchOptions.TermsArrayMaxLength)
+                {
+                    throw new Exception($"The array input for Terms query is too large, exceeding {_elasticsearchOptions.TermsArrayMaxLength} items.");
+                }
+            }
         }
 
         protected override Expression VisitQuerySourceReference(QuerySourceReferenceExpression expression)

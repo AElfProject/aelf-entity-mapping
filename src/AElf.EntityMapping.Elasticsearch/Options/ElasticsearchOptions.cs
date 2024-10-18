@@ -9,4 +9,5 @@ public class ElasticsearchOptions
     public int NumberOfReplicas { get; set; } = 1;
     public Refresh Refresh { get; set; } = Refresh.False;
     public int MaxResultWindow { get; set; } = 10000;
+    public int TermsArrayMaxLength { get; set; } = 100;
 }
