@@ -619,11 +619,11 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         
         var queryable = await _elasticsearchRepository.GetQueryableAsync();
         
-        // var predicates = inputs
-        //     .Select(s => (Expression<Func<BlockIndex, bool>>)(info => info.BlockHash == s))
-        //     .Aggregate((prev, next) => prev.Or(next));
-        // var filterList_predicate = queryable.Where(predicates).ToList();
-        // filterList_predicate.Count.ShouldBe(3);
+        var predicates = inputs
+            .Select(s => (Expression<Func<BlockIndex, bool>>)(info => info.BlockHash == s))
+            .Aggregate((prev, next) => prev.Or(next));
+        var filterList_predicate = queryable.Where(predicates).ToList();
+        filterList_predicate.Count.ShouldBe(3);
         
         var filterList = queryable.Where(item => inputs.Contains(item.BlockHash)).ToList();
         filterList.Count.ShouldBe(3);
@@ -659,12 +659,12 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
             101,
             103
         };
-        // var queryable_predicate = await _transactionIndexRepository.GetQueryableAsync();
-        // var predicates = inputs
-        //     .Select(s => (Expression<Func<TransactionIndex, bool>>)(info => info.LogEvents.Any(x => x.BlockHeight == s)))
-        //     .Aggregate((prev, next) => prev.Or(next));
-        // var filterList_predicate = queryable_predicate.Where(predicates).ToList();
-        // filterList_predicate.Count.ShouldBe(2);
+        var queryable_predicate = await _transactionIndexRepository.GetQueryableAsync();
+        var predicates = inputs
+            .Select(s => (Expression<Func<TransactionIndex, bool>>)(info => info.LogEvents.Any(x => x.BlockHeight == s)))
+            .Aggregate((prev, next) => prev.Or(next));
+        var filterList_predicate = queryable_predicate.Where(predicates).ToList();
+        filterList_predicate.Count.ShouldBe(2);
 
         Expression<Func<TransactionIndex, bool>> mustQuery = item =>
             item.LogEvents.Any(x => inputs.Contains(x.BlockHeight));
