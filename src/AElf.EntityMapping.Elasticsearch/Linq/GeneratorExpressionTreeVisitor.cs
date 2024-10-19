@@ -363,14 +363,6 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             {
                 query = GetTermsNode<double?>();
             }
-            else if (PropertyType == typeof(DateTime))
-            {
-                query = GetTermsNode<DateTime>();
-            }
-            else if (PropertyType == typeof(DateTime?))
-            {
-                query = GetTermsNode<DateTime?>();
-            }
             else if (PropertyType == typeof(bool))
             {
                 query = GetTermsNode<bool>();
@@ -378,6 +370,16 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             else if (PropertyType == typeof(bool?))
             {
                 query = GetTermsNode<bool?>();
+            }
+            else if (PropertyType == typeof(DateTime))
+            {
+                query = new TermsNode(PropertyName,
+                    ((IEnumerable<DateTime>)Value).Select(x => x.ToString("o")));
+            }
+            else if (PropertyType == typeof(DateTime?))
+            {
+                query = new TermsNode(PropertyName,
+                    ((IEnumerable<DateTime>)Value).Select(x => x.ToString("o")));
             }
             else if (PropertyType == typeof(string))
             {
