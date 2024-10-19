@@ -133,22 +133,22 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
 
         // private string GetFullNameKey(MemberExpression memberExpression)
         // {
-            // var key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
-            // while (memberExpression.Expression != null)
-            // {
-            //     memberExpression = memberExpression.Expression as MemberExpression;
-            //     if (memberExpression == null)
-            //     {
-            //         break;
-            //     }
-            //
-            //     key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name + "." + key);
-            //     return key;
-            // }
-            //
-            // return key;
+        // var key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
+        // while (memberExpression.Expression != null)
+        // {
+        //     memberExpression = memberExpression.Expression as MemberExpression;
+        //     if (memberExpression == null)
+        //     {
+        //         break;
+        //     }
+        //
+        //     key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name + "." + key);
+        //     return key;
         // }
-        
+        //
+        // return key;
+        // }
+
         private string GetFullPropertyPath(Expression expression)
         {
             switch (expression)
@@ -166,6 +166,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                         var collectionPath = GetFullPropertyPath(methodCallExpression.Object);
                         return collectionPath; // Returns the path of the collection directly, without adding an index
                     }
+
                     break;
             }
 
@@ -256,7 +257,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                                     VisitBinarySetSubQuery((BinaryExpression)predicate.Right, from, fullPath, true);
                                 }
                             }
-                            
+
                         }
 
                         break;
@@ -299,14 +300,14 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
         {
             if (subQueryExpression == null || expression == null)
                 throw new ArgumentNullException("SubQueryExpression or expression cannot be null.");
-            
+
             //Check if the number of items in the Terms query array within the Contains clause is too large.
             if (subQueryExpression.QueryModel.MainFromClause
                     .FromExpression is ConstantExpression constantExpression)
             {
                 CheckTermsArrayLength(constantExpression);
             }
-            
+
             foreach (var resultOperator in subQueryExpression.QueryModel.ResultOperators)
             {
                 switch (resultOperator)
@@ -320,28 +321,47 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
 
             Node query;
             query = GetDifferentTypesTermsQueryNode();
-            
+
             QueryMap[expression] = ParseQuery(query);
             QueryMap[expression].IsSubQuery = true;
             QueryMap[expression].SubQueryPath = subQueryPath; //from.ToLower();
             QueryMap[expression].SubQueryFullPath = subQueryFullPath;
         }
-
-        private static readonly HashSet<Type> SupportedTermsTypes = new HashSet<Type>
-        {
-            typeof(Guid), typeof(Guid?),
-            typeof(int), typeof(int?),
-            typeof(long), typeof(long?),
-            typeof(double), typeof(double?),
-            typeof(bool), typeof(bool?)
-        };
         
         private Node GetDifferentTypesTermsQueryNode()
         {
             Node query;
-            if (SupportedTermsTypes.Contains(PropertyType))
+            if (PropertyType == typeof(Guid))
             {
                 query = new TermsNode(PropertyName, ((IEnumerable<Guid>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(Guid?))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<Guid?>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(int))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<int>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(int?))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<int?>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(long))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<long>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(long?))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<long?>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(double))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<double>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(double?))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<double?>)Value).Select(x => x.ToString()));
             }
             else if (PropertyType == typeof(DateTime))
             {
@@ -352,6 +372,14 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             {
                 query = new TermsNode(PropertyName,
                     ((IEnumerable<DateTime?>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(bool))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<bool>)Value).Select(x => x.ToString()));
+            }
+            else if (PropertyType == typeof(bool?))
+            {
+                query = new TermsNode(PropertyName, ((IEnumerable<bool?>)Value).Select(x => x.ToString()));
             }
             else if (PropertyType == typeof(string))
             {
@@ -365,6 +393,8 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             return query;
         }
 
+
+
         private void CheckTermsArrayLength(ConstantExpression constantExpression)
         {
             if (constantExpression.Value is System.Collections.IEnumerable objectList)
@@ -372,7 +402,8 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                 var count = objectList.Cast<object>().Count();
                 if (count > _elasticsearchOptions.TermsArrayMaxLength)
                 {
-                    throw new Exception($"The array input for Terms query is too large, exceeding {_elasticsearchOptions.TermsArrayMaxLength} items.");
+                    throw new Exception(
+                        $"The array input for Terms query is too large, exceeding {_elasticsearchOptions.TermsArrayMaxLength} items.");
                 }
             }
         }
@@ -693,7 +724,8 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             return (int)enumValue;
         }
 
-        protected void VisitBinarySetSubQuery(BinaryExpression expression, string path, string fullPath, bool parentIsSubQuery)
+        protected void VisitBinarySetSubQuery(BinaryExpression expression, string path, string fullPath,
+            bool parentIsSubQuery)
         {
             if (expression.Left is BinaryExpression && expression.Right is ConstantExpression)
             {
