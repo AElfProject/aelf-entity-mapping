@@ -333,53 +333,51 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             Node query;
             if (PropertyType == typeof(Guid))
             {
-                query = new TermsNode(PropertyName, ((IEnumerable<Guid>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<Guid>();
             }
             else if (PropertyType == typeof(Guid?))
             {
-                query = new TermsNode(PropertyName, ((IEnumerable<Guid?>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<Guid?>();
             }
             else if (PropertyType == typeof(int))
             {
-                query = new TermsNode(PropertyName, ((IEnumerable<int>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<int>();
             }
             else if (PropertyType == typeof(int?))
             {
-                query = new TermsNode(PropertyName, ((IEnumerable<int?>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<int?>();
             }
             else if (PropertyType == typeof(long))
             {
-                query = new TermsNode(PropertyName, ((IEnumerable<long>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<long>();
             }
             else if (PropertyType == typeof(long?))
             {
-                query = new TermsNode(PropertyName, ((IEnumerable<long?>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<long?>();
             }
             else if (PropertyType == typeof(double))
             {
-                query = new TermsNode(PropertyName, ((IEnumerable<double>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<double>();
             }
             else if (PropertyType == typeof(double?))
             {
-                query = new TermsNode(PropertyName, ((IEnumerable<double?>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<double?>();
             }
             else if (PropertyType == typeof(DateTime))
             {
-                query = new TermsNode(PropertyName,
-                    ((IEnumerable<DateTime>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<DateTime>();
             }
             else if (PropertyType == typeof(DateTime?))
             {
-                query = new TermsNode(PropertyName,
-                    ((IEnumerable<DateTime?>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<DateTime?>();
             }
             else if (PropertyType == typeof(bool))
             {
-                query = new TermsNode(PropertyName, ((IEnumerable<bool>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<bool>();
             }
             else if (PropertyType == typeof(bool?))
             {
-                query = new TermsNode(PropertyName, ((IEnumerable<bool?>)Value).Select(x => x.ToString()));
+                query = GetTermsNode<bool?>();
             }
             else if (PropertyType == typeof(string))
             {
@@ -393,7 +391,11 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             return query;
         }
 
-
+        private TermsNode GetTermsNode<T>()
+        {
+            return new TermsNode(PropertyName,
+                ((IEnumerable<T>)Value).Select(x => x.ToString()));
+        }
 
         private void CheckTermsArrayLength(ConstantExpression constantExpression)
         {
