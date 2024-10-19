@@ -596,6 +596,7 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
     [Fact]
     public async Task GetList_Terms_Test()
     {
+        var timeNow = DateTime.Now;
         for (int i = 1; i <= 7; i++)
         {
             var blockIndex = new BlockIndex
@@ -603,7 +604,7 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
                 Id = "block" + i,
                 BlockHash = "BlockHash" + i,
                 BlockHeight = i,
-                BlockTime = DateTime.Now.AddDays(-10 + i),
+                BlockTime = timeNow.AddDays(i),
                 LogEventCount = i,
                 ChainId = "AELF"
             };
@@ -627,7 +628,7 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         
         var filterList = queryable.Where(item => inputs.Contains(item.BlockHash)).ToList();
         filterList.Count.ShouldBe(3);
-
+        
         List<long> heights = new List<long>()
         {
             4, 5
@@ -635,6 +636,14 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
         Expression<Func<BlockIndex, bool>> mustQuery = item => heights.Contains(item.BlockHeight);
         var filterList_heights = queryable.Where(mustQuery).ToList();
         filterList_heights.Count.ShouldBe(2);
+
+        List<DateTime> times = new List<DateTime>()
+        {
+            DateTime.Now, timeNow.AddDays(1), timeNow.AddDays(2)
+        };
+        Expression<Func<BlockIndex, bool>> termsQuery = item => times.Contains(item.BlockTime);
+        var filterList_times = queryable.Where(termsQuery).ToList();
+        filterList_times.Count.ShouldBe(2);
     }
 
     [Fact]
