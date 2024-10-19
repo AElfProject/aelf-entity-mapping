@@ -404,7 +404,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                 var count = objectList.Cast<object>().Count();
                 if (count > _elasticsearchOptions.TermsArrayMaxLength)
                 {
-                    throw new Exception(
+                    throw new ArgumentException(
                         $"The array input for Terms query is too large, exceeding {_elasticsearchOptions.TermsArrayMaxLength} items.");
                 }
             }
