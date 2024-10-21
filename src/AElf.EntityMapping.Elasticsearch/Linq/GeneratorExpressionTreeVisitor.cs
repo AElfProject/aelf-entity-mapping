@@ -335,48 +335,23 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             {
                 query = GetTermsNode<Guid>();
             }
-            else if (PropertyType == typeof(Guid?))
-            {
-                query = GetTermsNode<Guid?>();
-            }
             else if (PropertyType == typeof(int))
             {
                 query = GetTermsNode<int>();
-            }
-            else if (PropertyType == typeof(int?))
-            {
-                query = GetTermsNode<int?>();
             }
             else if (PropertyType == typeof(long))
             {
                 query = GetTermsNode<long>();
             }
-            else if (PropertyType == typeof(long?))
-            {
-                query = GetTermsNode<long?>();
-            }
             else if (PropertyType == typeof(double))
             {
                 query = GetTermsNode<double>();
-            }
-            else if (PropertyType == typeof(double?))
-            {
-                query = GetTermsNode<double?>();
             }
             else if (PropertyType == typeof(bool))
             {
                 query = GetTermsNode<bool>();
             }
-            else if (PropertyType == typeof(bool?))
-            {
-                query = GetTermsNode<bool?>();
-            }
             else if (PropertyType == typeof(DateTime))
-            {
-                query = new TermsNode(PropertyName,
-                    ((IEnumerable<DateTime>)Value).Select(x => x.ToString("o")));
-            }
-            else if (PropertyType == typeof(DateTime?))
             {
                 query = new TermsNode(PropertyName,
                     ((IEnumerable<DateTime>)Value).Select(x => x.ToString("o")));
