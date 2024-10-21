@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using AElf.EntityMapping.Elasticsearch.Options;
 using Elasticsearch.Net;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
@@ -10,6 +11,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
     public class GeneratorExpressionTreeVisitor<T> : ThrowingExpressionVisitor
     {
         private readonly PropertyNameInferrerParser _propertyNameInferrerParser;
+        private readonly ElasticsearchOptions _elasticsearchOptions;
 
         private object Value { get; set; }
         private string PropertyName { get; set; }
@@ -19,9 +21,11 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
         public IDictionary<Expression, Node> QueryMap { get; } =
             new Dictionary<Expression, Node>();
 
-        public GeneratorExpressionTreeVisitor(PropertyNameInferrerParser propertyNameInferrerParser)
+        public GeneratorExpressionTreeVisitor(PropertyNameInferrerParser propertyNameInferrerParser,
+            ElasticsearchOptions elasticsearchOptions)
         {
             _propertyNameInferrerParser = propertyNameInferrerParser;
+            _elasticsearchOptions = elasticsearchOptions;
         }
 
         protected override Expression VisitUnary(UnaryExpression expression)
@@ -129,22 +133,22 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
 
         // private string GetFullNameKey(MemberExpression memberExpression)
         // {
-            // var key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
-            // while (memberExpression.Expression != null)
-            // {
-            //     memberExpression = memberExpression.Expression as MemberExpression;
-            //     if (memberExpression == null)
-            //     {
-            //         break;
-            //     }
-            //
-            //     key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name + "." + key);
-            //     return key;
-            // }
-            //
-            // return key;
+        // var key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name);
+        // while (memberExpression.Expression != null)
+        // {
+        //     memberExpression = memberExpression.Expression as MemberExpression;
+        //     if (memberExpression == null)
+        //     {
+        //         break;
+        //     }
+        //
+        //     key = _propertyNameInferrerParser.Parser(memberExpression.Member.Name + "." + key);
+        //     return key;
         // }
-        
+        //
+        // return key;
+        // }
+
         private string GetFullPropertyPath(Expression expression)
         {
             switch (expression)
@@ -162,6 +166,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                         var collectionPath = GetFullPropertyPath(methodCallExpression.Object);
                         return collectionPath; // Returns the path of the collection directly, without adding an index
                     }
+
                     break;
             }
 
@@ -203,15 +208,15 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
                         Visit(containsResultOperator.Item);
                         Visit(expression.QueryModel.MainFromClause.FromExpression);
 
-                        if (containsResultOperator.Item.Type == typeof(Guid))
+                        //Check if the number of items in the Terms query array within the Contains clause is too large.
+                        if (expression.QueryModel.MainFromClause
+                                .FromExpression is ConstantExpression constantExpression)
                         {
-                            query = new TermsNode(PropertyName, ((IEnumerable<Guid>)Value).Select(x => x.ToString()));
+                            CheckTermsArrayLength(constantExpression);
                         }
 
-                        if (containsResultOperator.Item.Type == typeof(Guid?))
-                        {
-                            query = new TermsNode(PropertyName, ((IEnumerable<Guid?>)Value).Select(x => x.ToString()));
-                        }
+                        // Handling different types
+                        query = GetDifferentTypesTermsQueryNode();
 
                         QueryMap[expression] = ParseQuery(query);
                         break;
@@ -227,23 +232,32 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
 
                         foreach (var whereClause in whereClauses)
                         {
-                            Visit(whereClause.Predicate);
-                            Node tmp = (Node)QueryMap[whereClause.Predicate].Clone();
-                            QueryMap[expression] = tmp;
-                            QueryMap[expression].IsSubQuery = true;
-                            QueryMap[expression].SubQueryPath = from; //from.ToLower();
-                            QueryMap[expression].SubQueryFullPath = fullPath;
-//                            VisitBinarySetSubQuery((BinaryExpression)whereClause.Predicate, from, fullPath, true);
-                            BinaryExpression predicate = (BinaryExpression)whereClause.Predicate;
-                            if (predicate.Left is BinaryExpression)
+                            if (whereClause.Predicate is SubQueryExpression subQueryExpression)
                             {
-                                VisitBinarySetSubQuery((BinaryExpression)predicate.Left, from, fullPath, true);
+                                HandleNestedContains(subQueryExpression, expression, from,
+                                    fullPath);
+                            }
+                            else
+                            {
+                                Visit(whereClause.Predicate);
+                                Node tmp = (Node)QueryMap[whereClause.Predicate].Clone();
+                                QueryMap[expression] = tmp;
+                                QueryMap[expression].IsSubQuery = true;
+                                QueryMap[expression].SubQueryPath = from; //from.ToLower();
+                                QueryMap[expression].SubQueryFullPath = fullPath;
+//                            VisitBinarySetSubQuery((BinaryExpression)whereClause.Predicate, from, fullPath, true);
+                                BinaryExpression predicate = (BinaryExpression)whereClause.Predicate;
+                                if (predicate.Left is BinaryExpression)
+                                {
+                                    VisitBinarySetSubQuery((BinaryExpression)predicate.Left, from, fullPath, true);
+                                }
+
+                                if (predicate.Right is BinaryExpression)
+                                {
+                                    VisitBinarySetSubQuery((BinaryExpression)predicate.Right, from, fullPath, true);
+                                }
                             }
 
-                            if (predicate.Right is BinaryExpression)
-                            {
-                                VisitBinarySetSubQuery((BinaryExpression)predicate.Right, from, fullPath, true);
-                            }
                         }
 
                         break;
@@ -279,6 +293,98 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             }
 
             return expression;
+        }
+
+        private void HandleNestedContains(SubQueryExpression subQueryExpression, Expression expression,
+            string subQueryPath, string subQueryFullPath)
+        {
+            if (subQueryExpression == null || expression == null)
+                throw new ArgumentNullException("SubQueryExpression or expression cannot be null.");
+
+            //Check if the number of items in the Terms query array within the Contains clause is too large.
+            if (subQueryExpression.QueryModel.MainFromClause
+                    .FromExpression is ConstantExpression constantExpression)
+            {
+                CheckTermsArrayLength(constantExpression);
+            }
+
+            foreach (var resultOperator in subQueryExpression.QueryModel.ResultOperators)
+            {
+                switch (resultOperator)
+                {
+                    case ContainsResultOperator containsResultOperator:
+                        Visit(containsResultOperator.Item);
+                        Visit(subQueryExpression.QueryModel.MainFromClause.FromExpression);
+                        break;
+                }
+            }
+
+            Node query;
+            query = GetDifferentTypesTermsQueryNode();
+
+            QueryMap[expression] = ParseQuery(query);
+            QueryMap[expression].IsSubQuery = true;
+            QueryMap[expression].SubQueryPath = subQueryPath; //from.ToLower();
+            QueryMap[expression].SubQueryFullPath = subQueryFullPath;
+        }
+        
+        private Node GetDifferentTypesTermsQueryNode()
+        {
+            Node query;
+            if (PropertyType == typeof(Guid))
+            {
+                query = GetTermsNode<Guid>();
+            }
+            else if (PropertyType == typeof(int))
+            {
+                query = GetTermsNode<int>();
+            }
+            else if (PropertyType == typeof(long))
+            {
+                query = GetTermsNode<long>();
+            }
+            else if (PropertyType == typeof(double))
+            {
+                query = GetTermsNode<double>();
+            }
+            else if (PropertyType == typeof(bool))
+            {
+                query = GetTermsNode<bool>();
+            }
+            else if (PropertyType == typeof(DateTime))
+            {
+                query = new TermsNode(PropertyName,
+                    ((IEnumerable<DateTime>)Value).Select(x => x.ToString("o")));
+            }
+            else if (PropertyType == typeof(string))
+            {
+                query = new TermsNode(PropertyName, (IEnumerable<string>)Value);
+            }
+            else
+            {
+                throw new NotSupportedException($"Type {PropertyType.Name} is not supported for Terms queries.");
+            }
+
+            return query;
+        }
+
+        private TermsNode GetTermsNode<T>()
+        {
+            return new TermsNode(PropertyName,
+                ((IEnumerable<T>)Value).Select(x => x.ToString()));
+        }
+
+        private void CheckTermsArrayLength(ConstantExpression constantExpression)
+        {
+            if (constantExpression.Value is System.Collections.IEnumerable objectList)
+            {
+                var count = objectList.Cast<object>().Count();
+                if (count > _elasticsearchOptions.TermsArrayMaxLength)
+                {
+                    throw new ArgumentException(
+                        $"The array input for Terms query is too large, exceeding {_elasticsearchOptions.TermsArrayMaxLength} items.");
+                }
+            }
         }
 
         protected override Expression VisitQuerySourceReference(QuerySourceReferenceExpression expression)
@@ -597,7 +703,8 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
             return (int)enumValue;
         }
 
-        protected void VisitBinarySetSubQuery(BinaryExpression expression, string path, string fullPath, bool parentIsSubQuery)
+        protected void VisitBinarySetSubQuery(BinaryExpression expression, string path, string fullPath,
+            bool parentIsSubQuery)
         {
             if (expression.Left is BinaryExpression && expression.Right is ConstantExpression)
             {

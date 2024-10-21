@@ -21,7 +21,7 @@ public class ElasticsearchClientProvider : IElasticsearchClientProvider, ISingle
         var uris = options.Value.Uris.ConvertAll(x => new Uri(x));
         var connectionPool = new StaticConnectionPool(uris);
         var settings = new ConnectionSettings(connectionPool);
-            // .DisableDirectStreaming();
+            // .DisableDirectStreaming()
             // .OnRequestCompleted(callDetails =>
             // {
             //     // Print Request DSL

@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Linq;
 using Nest;
 using Remotion.Linq;
@@ -10,10 +11,10 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
         where T : class, IEntity
     {
         public ElasticsearchQueryable(IElasticClient elasticClient, ICollectionNameProvider<T> collectionNameProvider,
-            string index)
-            : base(new DefaultQueryProvider(typeof(ElasticsearchQueryable<>), 
+            string index, ElasticsearchOptions elasticsearchOptions)
+            : base(new DefaultQueryProvider(typeof(ElasticsearchQueryable<>),
                 QueryParserFactory.Create(),
-                new ElasticsearchQueryExecutor<T>(elasticClient, collectionNameProvider, index)))
+                new ElasticsearchQueryExecutor<T>(elasticClient, collectionNameProvider, index, elasticsearchOptions)))
         {
         }
 

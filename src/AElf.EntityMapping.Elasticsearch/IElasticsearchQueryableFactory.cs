@@ -1,4 +1,6 @@
 using AElf.EntityMapping.Elasticsearch.Linq;
+using AElf.EntityMapping.Elasticsearch.Options;
+using Microsoft.Extensions.Options;
 using Nest;
 using Volo.Abp.Domain.Entities;
 
@@ -14,14 +16,18 @@ public class ElasticsearchQueryableFactory<TEntity> : IElasticsearchQueryableFac
     where TEntity : class, IEntity
 {
     private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
+    private readonly ElasticsearchOptions _elasticsearchOptions;
 
-    public ElasticsearchQueryableFactory(ICollectionNameProvider<TEntity> collectionNameProvider)
+    public ElasticsearchQueryableFactory(ICollectionNameProvider<TEntity> collectionNameProvider,
+        IOptions<ElasticsearchOptions> elasticsearchOptions)
     {
         _collectionNameProvider = collectionNameProvider;
+        _elasticsearchOptions = elasticsearchOptions.Value;
     }
 
-    public ElasticsearchQueryable<TEntity> Create(IElasticClient client, string index = null)
+    public ElasticsearchQueryable<TEntity> Create(IElasticClient client,
+        string index = null)
     {
-        return new ElasticsearchQueryable<TEntity>(client, _collectionNameProvider, index);
+        return new ElasticsearchQueryable<TEntity>(client, _collectionNameProvider, index, _elasticsearchOptions);
     }
 }

@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Dynamic;
 using System.Linq.Expressions;
 using AElf.EntityMapping.Elasticsearch.Exceptions;
+using AElf.EntityMapping.Elasticsearch.Options;
 using Elasticsearch.Net;
 using Nest;
 using Newtonsoft.Json;
@@ -23,16 +24,20 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
         private readonly JsonSerializerSettings _deserializerSettings;
         private readonly ICollectionNameProvider<TEntity> _collectionNameProvider;
         private const int ElasticQueryLimit = 10000;
+        private readonly ElasticsearchOptions _elasticsearchOptions;
 
         public ElasticsearchQueryExecutor(IElasticClient elasticClient,
-            ICollectionNameProvider<TEntity> collectionNameProvider, string index)
+            ICollectionNameProvider<TEntity> collectionNameProvider, string index,
+            ElasticsearchOptions elasticsearchOptions)
         {
             _elasticClient = elasticClient;
             _collectionNameProvider = collectionNameProvider;
             _index = index;
             _propertyNameInferrerParser = new PropertyNameInferrerParser(_elasticClient);
+            _elasticsearchOptions = elasticsearchOptions;
             _elasticsearchGeneratorQueryModelVisitor =
-                new ElasticsearchGeneratorQueryModelVisitor<TEntity>(_propertyNameInferrerParser);
+                new ElasticsearchGeneratorQueryModelVisitor<TEntity>(_propertyNameInferrerParser,
+                    _elasticsearchOptions);
             _deserializerSettings = new JsonSerializerSettings
             {
                 // Nest maps TimeSpan as a long (TimeSpan ticks)
