@@ -6,6 +6,21 @@ public class ElasticsearchResponseHelper
 {
     public static string GetErrorMessage(IResponse response)
     {
-        return response.ServerError == null ? "Unknown error." : response.ServerError.ToString();
+        if (response.ServerError == null)
+        {
+            if (response.OriginalException == null)
+            {
+                return "Unknown error.";
+            }
+
+            if (response.OriginalException.InnerException == null)
+            {
+                return response.OriginalException.Message;
+            }
+            
+            return response.OriginalException.InnerException.Message;
+        }
+
+        return response.ServerError.ToString();
     }
 }

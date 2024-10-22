@@ -1,6 +1,9 @@
 ﻿using System.Collections.ObjectModel;
 using System.Linq.Expressions;
+using AElf.EntityMapping.Elasticsearch.Options;
 using AElf.EntityMapping.Linq;
+using AElf.EntityMapping.Options;
+using Microsoft.Extensions.Options;
 using Nest;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -13,12 +16,15 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
     {
         private readonly PropertyNameInferrerParser _propertyNameInferrerParser;
         private readonly INodeVisitor _nodeVisitor;
+        private readonly ElasticsearchOptions _elasticsearchOptions;
         private QueryAggregator QueryAggregator { get; set; } = new QueryAggregator();
 
-        public ElasticsearchGeneratorQueryModelVisitor(PropertyNameInferrerParser propertyNameInferrerParser)
+        public ElasticsearchGeneratorQueryModelVisitor(PropertyNameInferrerParser propertyNameInferrerParser,
+            ElasticsearchOptions elasticsearchOptions)
         {
             _propertyNameInferrerParser = propertyNameInferrerParser;
             _nodeVisitor = new NodeVisitor();
+            _elasticsearchOptions = elasticsearchOptions;
         }
 
         public QueryAggregator GenerateElasticQuery<T>(QueryModel queryModel)
@@ -48,7 +54,7 @@ namespace AElf.EntityMapping.Elasticsearch.Linq
 
         public override void VisitWhereClause(WhereClause whereClause, QueryModel queryModel, int index)
         {
-            var tree = new GeneratorExpressionTreeVisitor<TU>(_propertyNameInferrerParser);
+            var tree = new GeneratorExpressionTreeVisitor<TU>(_propertyNameInferrerParser, _elasticsearchOptions);
             tree.Visit(whereClause.Predicate);
             if (QueryAggregator.Query == null)
             {
