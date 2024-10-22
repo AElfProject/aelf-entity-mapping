@@ -594,6 +594,96 @@ public class ElasticsearchRepositoryTests : AElfElasticsearchTestBase
     }
 
     [Fact]
+    public async Task GetList_Terms_Test()
+    {
+        var timeNow = DateTime.Now;
+        for (int i = 1; i <= 7; i++)
+        {
+            var blockIndex = new BlockIndex
+            {
+                Id = "block" + i,
+                BlockHash = "BlockHash" + i,
+                BlockHeight = i,
+                BlockTime = timeNow.AddDays(i),
+                LogEventCount = i,
+                ChainId = "AELF"
+            };
+            await _elasticsearchRepository.AddAsync(blockIndex);
+        }
+
+        List<string> inputs = new List<string>()
+        {
+            "BlockHash2",
+            "BlockHash3",
+            "BlockHash4"
+        };
+        
+        var queryable = await _elasticsearchRepository.GetQueryableAsync();
+        
+        var predicates = inputs
+            .Select(s => (Expression<Func<BlockIndex, bool>>)(info => info.BlockHash == s))
+            .Aggregate((prev, next) => prev.Or(next));
+        var filterList_predicate = queryable.Where(predicates).ToList();
+        filterList_predicate.Count.ShouldBe(3);
+        
+        var filterList = queryable.Where(item => inputs.Contains(item.BlockHash)).ToList();
+        filterList.Count.ShouldBe(3);
+        
+        List<long> heights = new List<long>()
+        {
+            4, 5
+        };
+        Expression<Func<BlockIndex, bool>> mustQuery = item => heights.Contains(item.BlockHeight);
+        var filterList_heights = queryable.Where(mustQuery).ToList();
+        filterList_heights.Count.ShouldBe(2);
+
+        List<DateTime> times = new List<DateTime>()
+        {
+            DateTime.Now, timeNow.AddDays(1), timeNow.AddDays(2)
+        };
+        Expression<Func<BlockIndex, bool>> termsQuery = item => times.Contains(item.BlockTime);
+        var filterList_times = queryable.Where(termsQuery).ToList();
+        filterList_times.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task GetNestedList_Terms_Test()
+    {
+        //clear data for unit test
+        ClearTransactionIndex("AELF", 100, 110);
+
+        Thread.Sleep(2000);
+        //Unit Test 14
+        var transaction_100 = MockNewTransactionEtoData(100, false, "token_contract_address", "DonateResourceToken");
+        var transaction_101 = MockNewTransactionEtoData(101, false, "", "");
+        var transaction_103 = MockNewTransactionEtoData(103, false, "consensus_contract_address", "UpdateValue");
+        var transaction_110 = MockNewTransactionEtoData(110, true, "consensus_contract_address", "UpdateTinyBlockInformation");
+        await _transactionIndexRepository.AddAsync(transaction_100);
+        await _transactionIndexRepository.AddAsync(transaction_101);
+        await _transactionIndexRepository.AddAsync(transaction_103);
+        await _transactionIndexRepository.AddAsync(transaction_110);
+        
+        List<long> inputs = new List<long>()
+        {
+            101,
+            103
+        };
+        var queryable_predicate = await _transactionIndexRepository.GetQueryableAsync();
+        var predicates = inputs
+            .Select(s => (Expression<Func<TransactionIndex, bool>>)(info => info.LogEvents.Any(x => x.BlockHeight == s)))
+            .Aggregate((prev, next) => prev.Or(next));
+        var filterList_predicate = queryable_predicate.Where(predicates).ToList();
+        filterList_predicate.Count.ShouldBe(2);
+
+        Expression<Func<TransactionIndex, bool>> mustQuery = item =>
+            item.LogEvents.Any(x => inputs.Contains(x.BlockHeight));
+        
+        var queryable = await _transactionIndexRepository.GetQueryableAsync();
+        var filterList = queryable.Where(mustQuery).ToList();
+        filterList.Count.ShouldBe(2);
+    }
+
+    [Fact]
     public async Task SubObjectQueryTest()
     {
         for (int i = 1; i <= 7; i++)
